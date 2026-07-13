@@ -1,0 +1,31 @@
+<Project>
+
+    <!--
+    Convention, not configuration: hand every .resx and every *.Designer.cs to the resx key generator
+    so it can emit the typed <Name>Keys classes with no per-project setup.
+    @(EmbeddedResource) / @(Compile) are populated by the SDK default-item globs, so this covers
+    each project's resources automatically and is benign for projects with none.
+
+    Done in a target (not a bare ItemGroup) so the per-item metadata Conditions batch correctly and run
+    before the compiler collects @(AdditionalFiles).
+
+    SINGLE SOURCE OF TRUTH. This file is consumed two ways:
+      * In-repo: Directory.Build.targets <Import>s it (the sample/tests use ProjectReference and so do
+        NOT receive the package's build assets).
+      * As a NuGet package: each UI package (ResXLocalization.Avalonia, ResXLocalization.WPF) packs this
+        file to buildTransitive/<PackageId>.targets (the file name must equal the PackageId so NuGet
+        auto-imports it for direct and transitive consumers).
+  -->
+    <Target Name="AddResxAdditionalFilesForResXLocalization"
+            BeforeTargets="CoreCompile">
+        <ItemGroup>
+            <AdditionalFiles Include="@(EmbeddedResource)"
+                             Condition="'%(Extension)' == '.resx'" />
+            <AdditionalFiles Include="@(Compile)"
+                             Condition="$([System.String]::new('%(Filename)').EndsWith('.Designer'))" />
+            <UpToDateCheckInput Include="@(EmbeddedResource)"
+                                Condition="'%(Extension)' == '.resx'" />
+        </ItemGroup>
+    </Target>
+
+</Project>

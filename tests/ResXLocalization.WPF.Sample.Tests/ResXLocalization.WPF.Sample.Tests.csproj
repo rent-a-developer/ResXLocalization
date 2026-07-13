@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>$(CurrentWindowsTargetFramework)</TargetFramework>
+        <UseWPF>true</UseWPF>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\samples\ResXLocalization.WPF.Sample\ResXLocalization.WPF.Sample.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0-windows</TargetFramework>
+        <UseWPF>true</UseWPF>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <ResXLocalizationVersion Condition="'$(ResXLocalizationVersion)' == ''">1.0.0</ResXLocalizationVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="ResXLocalization.Avalonia" Version="$(ResXLocalizationVersion)" />
+        <PackageReference Include="ResXLocalization.WPF" Version="$(ResXLocalizationVersion)" />
+    </ItemGroup>
+
+</Project>

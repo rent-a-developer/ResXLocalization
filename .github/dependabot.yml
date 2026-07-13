@@ -1,0 +1,21 @@
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: "/"
+    schedule:
+      interval: weekly
+    groups:
+      # Avalonia packages are version-locked to each other; update them together.
+      avalonia:
+        patterns:
+          - "Avalonia*"
+    ignore:
+      # 3.x targets Microsoft.Testing.Platform; the repo tests through VSTest
+      # (dotnet test --logger GitHubActions), so 2.x is the correct major.
+      - dependency-name: GitHubActionsTestLogger
+        update-types:
+          - "version-update:semver-major"
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly

@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <IsAotCompatible>true</IsAotCompatible>
+        <!-- net8.0 (LTS) keeps the library usable for the large installed base; net10.0 is current.
+             Avalonia 12 ships both TFMs as well. -->
+        <TargetFrameworks>$(LibraryTargetFrameworks)</TargetFrameworks>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <IsPackable>true</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Keep the package floor at 12.0.5: Avalonia 12.1's XAML generator requires Roslyn 4.14,
+             which the .NET 8 SDK cannot load. Samples/tests resolve the central 12.1.0 versions and
+             therefore verify current-framework compatibility on the repo's .NET 10 SDK. -->
+        <PackageReference Include="Avalonia" VersionOverride="12.0.5" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Packs as a normal transitive dependency so Avalonia and WPF consumers resolve one
+             deterministic Core version, including projects that use both UI frameworks. -->
+        <ProjectReference Include="..\ResXLocalization.Core\ResXLocalization.Core.csproj" />
+
+        <!-- The source generator ships as an analyzer, not a lib. PrivateAssets="all" keeps both the
+             generator project AND its Microsoft.CodeAnalysis.CSharp reference out of the package's
+             dependency list; ReferenceOutputAssembly="false" keeps the generator dll out of lib/. The
+             imported packaging targets pack it to analyzers/dotnet/cs instead. -->
+        <ProjectReference Include="..\ResXLocalization.SourceGenerators\ResXLocalization.SourceGenerators.csproj" OutputItemType="Analyzer" PrivateAssets="all" ReferenceOutputAssembly="false" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Tracks the declared public API surface (PublicAPI.Shipped.txt / PublicAPI.Unshipped.txt):
+             an unreviewed public API change fails the build (RS0016/RS0017). -->
+        <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+    </ItemGroup>
+
+    <!-- Shared analyzer + buildTransitive packaging (mirrored by ResXLocalization.WPF). -->
+    <Import Project="..\..\build\ResXLocalization.Packaging.targets" />
+
+</Project>

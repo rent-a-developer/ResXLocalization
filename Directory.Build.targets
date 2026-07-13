@@ -1,0 +1,12 @@
+<Project>
+
+    <!--
+    The resx -> @(AdditionalFiles) wiring lives in build/ResXLocalization.Resx.targets (one source of truth):
+    in-repo projects reference the engine via ProjectReference and therefore do NOT receive the NuGet
+    package's buildTransitive assets, so import the shared targets here. The very same file is packed to
+    buildTransitive/ResXLocalization.Avalonia.targets and buildTransitive/ResXLocalization.WPF.targets by the
+    UI projects for external consumers.
+    -->
+    <Import Project="$(MSBuildThisFileDirectory)build\ResXLocalization.Resx.targets" />
+
+</Project>

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>$(CurrentTargetFramework)</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Pinned to the same Roslyn version the generator itself builds against. -->
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- The generator is referenced as a plain library here (not as an analyzer): the tests
+             instantiate ResxKeysGenerator directly and drive it in-memory with CSharpGeneratorDriver. -->
+        <ProjectReference Include="..\..\src\ResXLocalization.SourceGenerators\ResXLocalization.SourceGenerators.csproj" />
+    </ItemGroup>
+
+</Project>

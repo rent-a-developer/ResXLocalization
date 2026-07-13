@@ -1,0 +1,7 @@
+<Project>
+    <!-- Deliberately empty: this file stops MSBuild's upward search, so the repository's
+         Directory.Build.props / Directory.Build.targets (which wire the in-repo source generator,
+         resx targets, and analyzers) do NOT apply here. The consumer projects must receive
+         everything - engine, generator, MSBuild wiring - exclusively from the packed NuGet
+         packages, or these tests prove nothing. -->
+</Project>

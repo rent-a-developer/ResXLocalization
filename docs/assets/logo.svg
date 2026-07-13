@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="51" height="51" viewBox="12 21 76 58" fill="none" stroke="currentColor" style="color:#05051E" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="ResXLocalization.Avalonia">
+  <path d="M27 25.5 Q21.5 25.5 21.5 33.667 L21.5 41.833 Q21.5 50 16.5 50 Q21.5 50 21.5 58.167 L21.5 66.333 Q21.5 74.5 27 74.5" stroke-width="6.2"></path>
+  <path d="M73 25.5 Q78.5 25.5 78.5 33.667 L78.5 41.833 Q78.5 50 83.5 50 Q78.5 50 78.5 58.167 L78.5 66.333 Q78.5 74.5 73 74.5" stroke-width="6.2"></path>
+  <circle cx="50" cy="50" r="18.5" stroke-width="5.8"></circle>
+  <line x1="31.5" y1="50" x2="68.5" y2="50" stroke-width="3.94"></line>
+  <ellipse cx="50" cy="50" rx="8.88" ry="18.5" stroke-width="3.94"></ellipse>
+</svg>

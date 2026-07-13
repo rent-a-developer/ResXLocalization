@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Test-only resource file, registered before Fallback.resx. It defines Shared (which Fallback also
+    defines) so the tests can prove that a search-all lookup returns the first registered match while a
+    scoped lookup reads exactly the named file, plus the keys used by the plain and enum lookup tests.
+  -->
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Shared" xml:space="preserve">
+    <value>CatalogShared</value>
+  </data>
+  <data name="CatalogOnly" xml:space="preserve">
+    <value>CatalogOnlyValue</value>
+  </data>
+  <data name="Greeting" xml:space="preserve">
+    <value>Hello and welcome!</value>
+  </data>
+  <data name="Enum_TestSortOrder_Ascending" xml:space="preserve">
+    <value>Ascending</value>
+  </data>
+  <data name="Display_TestSortOrder_Ascending" xml:space="preserve">
+    <value>A to Z</value>
+  </data>
+  <data name="ItemsFound" xml:space="preserve">
+    <value>Found {0:N1} items in {1}.</value>
+  </data>
+  <data name="NeutralOnly" xml:space="preserve">
+    <value>Neutral fallback value</value>
+  </data>
+</root>

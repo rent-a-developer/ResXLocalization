@@ -1,0 +1,22 @@
+# Build outputs
+bin/
+obj/
+artifacts/
+TestResults/
+*.binlog
+
+# Isolated package cache of the consumption tests
+tests/package-consumption/.packages/
+
+# Generated documentation
+docs/_site/
+docs/api/
+
+# IDE and user-specific files
+.vs/
+.vscode/
+.idea/
+*.user
+
+# OS cruft
+.DS_Store

@@ -1,0 +1,923 @@
+﻿<Window x:Class="RentADeveloper.ResXLocalization.WPF.Sample.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:RentADeveloper.ResXLocalization.WPF.Sample.Controls"
+        xmlns:core="clr-namespace:RentADeveloper.ResXLocalization;assembly=ResXLocalization.Core"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:l="clr-namespace:RentADeveloper.ResXLocalization.WPF;assembly=ResXLocalization.WPF"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:res="clr-namespace:RentADeveloper.ResXLocalization.WPF.Sample.Resources"
+        xmlns:viewModels="clr-namespace:RentADeveloper.ResXLocalization.WPF.Sample.ViewModels"
+        Title="{l:Localize {x:Static res:ApplicationStringsKeys.WindowTitle}}"
+        Width="900"
+        Height="857"
+        d:DataContext="{d:DesignInstance viewModels:MainWindowViewModel}"
+        Background="White"
+        Icon="../Assets/logo.ico"
+        WindowStartupLocation="CenterScreen"
+        mc:Ignorable="d">
+
+    <!--
+        This window is a guided tour of every feature of RentADeveloper.ResXLocalization.WPF, ordered from the
+        simplest, recommended usage to the most advanced. Pick a different language at the top and watch every
+        demonstrated value update live, with no view reload. The section headers are intentionally left in
+        English: they are documentation for you, the reader, not part of the localized content.
+    -->
+
+    <Window.Resources>
+        <!--
+            Four LocalizeEnumConverter configurations for the "enum bound as a value" section. The converter is
+            used in a MultiBinding [enumValue, currentCulture]; the culture child only exists to re-trigger the
+            conversion on a language switch.
+        -->
+        <l:LocalizeEnumConverter x:Key="EnumConverterCustomPrefixSearchAll"
+                                 KeyPrefix="Display_" />
+        <l:LocalizeEnumConverter x:Key="EnumConverterScopedDefaultPrefix"
+                                 ResourceManager="{x:Static res:ApplicationStrings.ResourceManager}" />
+        <l:LocalizeEnumConverter x:Key="EnumConverterScopedCustomPrefix"
+                                 KeyPrefix="Display_"
+                                 ResourceManager="{x:Static res:SortingStrings.ResourceManager}" />
+
+        <!--
+            A section is a stack of stitched-together bordered rows: one header on top, a run of rows below,
+            and a rounded last row that closes the group.
+        -->
+        <Style x:Key="SectionHeader"
+               TargetType="Border">
+            <Setter Property="Background" Value="#0A808080" />
+            <Setter Property="BorderBrush" Value="#33808080" />
+            <Setter Property="BorderThickness" Value="1,1,1,0" />
+            <Setter Property="CornerRadius" Value="4,4,0,0" />
+            <Setter Property="Padding" Value="10" />
+        </Style>
+        <Style x:Key="SectionRow"
+               TargetType="Border">
+            <Setter Property="Background" Value="White" />
+            <Setter Property="BorderBrush" Value="#33808080" />
+            <Setter Property="BorderThickness" Value="1,1,1,0" />
+            <Setter Property="CornerRadius" Value="0" />
+            <Setter Property="Padding" Value="10,5" />
+        </Style>
+        <Style x:Key="SectionLastRow"
+               TargetType="Border">
+            <Setter Property="Background" Value="White" />
+            <Setter Property="BorderBrush" Value="#33808080" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="0,0,4,4" />
+            <Setter Property="Padding" Value="10,5" />
+        </Style>
+        <Style x:Key="SectionHeaderTitle"
+               TargetType="TextBlock">
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style x:Key="SectionHeaderSubtitle"
+               TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,4,0,4" />
+            <Setter Property="Opacity" Value="0.75" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <Style x:Key="SectionRowTechnique"
+               TargetType="TextBlock">
+            <Setter Property="Opacity" Value="0.7" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="SectionRowResultTitle"
+               TargetType="TextBlock">
+            <Setter Property="Opacity" Value="0.7" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="SectionRowResultValue"
+               TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,5,0,0" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+        </Style>
+        <Style x:Key="SectionRowSyntax"
+               TargetType="controls:SyntaxTextBlock">
+            <Setter Property="FontFamily" Value="Consolas, Cascadia Mono, Menlo, Monaco, monospace" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,5,0,0" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+    </Window.Resources>
+
+    <DockPanel>
+
+        <!--  =========================== Header: title + live language switcher ===========================  -->
+        <Border Padding="24,18"
+                Background="#0F808080"
+                BorderBrush="#33808080"
+                BorderThickness="0,0,0,1"
+                DockPanel.Dock="Top">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0"
+                            Orientation="Horizontal">
+                    <Image Width="32"
+                           Height="32"
+                           Source="../Assets/logo-128.png" />
+                    <StackPanel Margin="8,0,0,0"
+                                VerticalAlignment="Center">
+                        <!--  Window heading and product name, both via the typed-key path.  -->
+                        <TextBlock FontSize="22"
+                                   FontWeight="Bold"
+                                   Text="{l:Localize {x:Static res:ApplicationStringsKeys.WindowTitle}}" />
+                        <TextBlock Margin="0,2,0,0"
+                                   Opacity="0.7"
+                                   Text="{l:Localize {x:Static res:BrandingStringsKeys.ProductName}}" />
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal">
+                    <TextBlock Margin="0,0,10,0"
+                               VerticalAlignment="Center"
+                               Text="{l:Localize {x:Static res:ApplicationStringsKeys.LanguageSelectorLabel}}" />
+                    <ComboBox MinWidth="160"
+                              ItemsSource="{Binding SupportedLanguages}"
+                              SelectedItem="{Binding SelectedLanguage}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding NativeName}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!--  =============================== Scrolling body: one card per topic ===============================  -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="24">
+
+                <!--  ===== 1. Typed keys (the recommended approach) =====  -->
+                <StackPanel Margin="0,0,0,16">
+                    <Border Style="{StaticResource SectionHeader}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionHeaderTitle}"
+                                       Text="1.  Typed keys - the recommended approach" />
+                            <TextBlock Style="{StaticResource SectionHeaderSubtitle}"
+                                       Text="The source generator emits one ResourceKey per string entry in each eligible neutral .resx with a sibling classic designer. Each key carries its own ResourceManager, so the lookup is direct and a renamed or deleted resource becomes a compile error." />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource SectionRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="ResourceKey constructor" />
+                                <controls:SyntaxTextBlock Code="{}{l:Localize {x:Static res:ApplicationStringsKeys.Greeting}}"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock Style="{StaticResource SectionRowResultValue}"
+                                           Text="{l:Localize {x:Static res:ApplicationStringsKeys.Greeting}}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource SectionRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="ResourceKey property" />
+                                <controls:SyntaxTextBlock Code="{}{l:Localize ResourceKey={x:Static res:ApplicationStringsKeys.Greeting}}"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock Style="{StaticResource SectionRowResultValue}"
+                                           Text="{l:Localize ResourceKey={x:Static res:ApplicationStringsKeys.Greeting}}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource SectionLastRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="Internal resx typed key" />
+                                <controls:SyntaxTextBlock Code="{}{l:Localize {x:Static res:BrandingStringsKeys.PoweredBy}}"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock Style="{StaticResource SectionRowResultValue}"
+                                           Text="{l:Localize {x:Static res:BrandingStringsKeys.PoweredBy}}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <!--  ===== 2. Key-only lookup (search-all) =====  -->
+                <StackPanel Margin="0,0,0,16">
+                    <Border Style="{StaticResource SectionHeader}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionHeaderTitle}"
+                                       Text="2.  Key-only lookup (search-all)" />
+                            <TextBlock Style="{StaticResource SectionHeaderSubtitle}"
+                                       Text="Give just a key name and the engine searches every registered ResourceManager in registration order, returning the first match. Convenient when a key is unique across your files." />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource SectionRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="String constructor" />
+                                <controls:SyntaxTextBlock Code="{}{l:Localize Greeting}"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock Style="{StaticResource SectionRowResultValue}"
+                                           Text="{l:Localize Greeting}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource SectionRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="Key property (SortingStrings)" />
+                                <controls:SyntaxTextBlock Code="{}{l:Localize Key=SortingHint}"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock Style="{StaticResource SectionRowResultValue}"
+                                           Text="{l:Localize Key=SortingHint}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource SectionLastRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="Registered internal resx" />
+                                <controls:SyntaxTextBlock Code="{}{l:Localize Key=PoweredBy}"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock Style="{StaticResource SectionRowResultValue}"
+                                           Text="{l:Localize Key=PoweredBy}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <!--  ===== 3. Scoped lookup (pin a key to one file) =====  -->
+                <StackPanel Margin="0,0,0,16">
+                    <Border Style="{StaticResource SectionHeader}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionHeaderTitle}"
+                                       Text="3.  Scoped lookup - pin a key to one file" />
+                            <TextBlock Style="{StaticResource SectionHeaderSubtitle}"
+                                       Text="Pass a ResourceManager alongside the key to read from exactly one file, bypassing the search. The named accessor must be public for XAML to reference it via x:Static; internal files are scoped from code-behind instead (see section 6)." />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource SectionRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="Scoped to ApplicationStrings" />
+                                <controls:SyntaxTextBlock Code="{}{l:Localize Greeting, ResourceManager={x:Static res:ApplicationStrings.ResourceManager}}"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock Style="{StaticResource SectionRowResultValue}"
+                                           Text="{l:Localize Greeting,
+                                                             ResourceManager={x:Static res:ApplicationStrings.ResourceManager}}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource SectionLastRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="Scoped to SortingStrings" />
+                                <controls:SyntaxTextBlock Code="{}{l:Localize Key=SortingHint, ResourceManager={x:Static res:SortingStrings.ResourceManager}}"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock Style="{StaticResource SectionRowResultValue}"
+                                           Text="{l:Localize Key=SortingHint,
+                                                             ResourceManager={x:Static res:SortingStrings.ResourceManager}}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <!--  ===== 4. Localizing enum values in item templates (LocalizeEnumExtension) =====  -->
+                <StackPanel Margin="0,0,0,16">
+                    <Border Style="{StaticResource SectionHeader}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionHeaderTitle}"
+                                       Text="4.  Enum values in templates - {l:LocalizeEnum}" />
+                            <TextBlock Style="{StaticResource SectionHeaderSubtitle}"
+                                       Text="In an item template each item is the DataContext, so {l:LocalizeEnum} localizes it directly. The two combo boxes below show the very same FileSortOrder values with two different label sets, chosen by KeyPrefix." />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource SectionRow}">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0"
+                                            Margin="0,0,8,0">
+                                    <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                               Text="Enum_ prefix" />
+                                    <controls:SyntaxTextBlock Code="{}{l:LocalizeEnum}"
+                                                              Style="{StaticResource SectionRowSyntax}" />
+                                    <ComboBox Margin="0,5,0,0"
+                                              HorizontalAlignment="Stretch"
+                                              ItemsSource="{Binding FileSortOrders}"
+                                              SelectedItem="{Binding SelectedFileSortOrder}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{l:LocalizeEnum}" />
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1"
+                                            Margin="8,0,0,0">
+                                    <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                               Text="Display_ prefix" />
+                                    <controls:SyntaxTextBlock Code="{}{l:LocalizeEnum KeyPrefix=Display_}"
+                                                              Style="{StaticResource SectionRowSyntax}" />
+                                    <ComboBox Margin="0,5,0,0"
+                                              HorizontalAlignment="Stretch"
+                                              ItemsSource="{Binding FileSortOrders}"
+                                              SelectedItem="{Binding SelectedFileSortOrder}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{l:LocalizeEnum KeyPrefix=Display_}" />
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock Margin="0,12,0,0"
+                                       Style="{StaticResource SectionRowTechnique}"
+                                       Text="Selected value in all enum lookup modes:" />
+                        </StackPanel>
+                    </Border>
+
+                    <!--  Each read-out sets its DataContext to the selected enum so {l:LocalizeEnum} can localize it.  -->
+                    <Border Style="{StaticResource SectionRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="Enum_ + search-all" />
+                                <controls:SyntaxTextBlock Code="{}{l:LocalizeEnum}"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock DataContext="{Binding SelectedFileSortOrder}"
+                                           Style="{StaticResource SectionRowResultValue}"
+                                           Text="{l:LocalizeEnum}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource SectionRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="Display_ + search-all" />
+                                <controls:SyntaxTextBlock Code="{}{l:LocalizeEnum KeyPrefix=Display_}"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock DataContext="{Binding SelectedFileSortOrder}"
+                                           Style="{StaticResource SectionRowResultValue}"
+                                           Text="{l:LocalizeEnum KeyPrefix=Display_}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource SectionRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="Enum_ + ApplicationStrings" />
+                                <controls:SyntaxTextBlock Code="{}{l:LocalizeEnum ResourceManager={x:Static res:ApplicationStrings.ResourceManager}}"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock DataContext="{Binding SelectedFileSortOrder}"
+                                           Style="{StaticResource SectionRowResultValue}"
+                                           Text="{l:LocalizeEnum ResourceManager={x:Static res:ApplicationStrings.ResourceManager}}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource SectionLastRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="Display_ + SortingStrings" />
+                                <controls:SyntaxTextBlock Code="{}{l:LocalizeEnum KeyPrefix=Display_, ResourceManager={x:Static res:SortingStrings.ResourceManager}}"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock DataContext="{Binding SelectedFileSortOrder}"
+                                           Style="{StaticResource SectionRowResultValue}"
+                                           Text="{l:LocalizeEnum KeyPrefix=Display_,
+                                                                 ResourceManager={x:Static res:SortingStrings.ResourceManager}}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <!--  ===== 5. Localizing enum values bound as data (LocalizeEnumConverter) =====  -->
+                <StackPanel Margin="0,0,0,16">
+                    <Border Style="{StaticResource SectionHeader}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionHeaderTitle}"
+                                       Text="5.  Enum values bound as data - LocalizeEnumConverter" />
+                            <TextBlock Style="{StaticResource SectionHeaderSubtitle}"
+                                       Text="When the enum is a real bound value rather than the DataContext, use LocalizeEnumConverter inside a MultiBinding [enumValue, currentCulture]. The culture child re-triggers the conversion on every language switch." />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource SectionRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="Default converter" />
+                                <controls:SyntaxTextBlock Code="Converter={x:Static l:LocalizeEnumConverter.Default}"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock Style="{StaticResource SectionRowResultValue}">
+                                    <TextBlock.Text>
+                                        <MultiBinding Converter="{x:Static l:LocalizeEnumConverter.Default}">
+                                            <Binding Path="SelectedFileSortOrder" />
+                                            <Binding Path="CurrentCulture"
+                                                     Source="{x:Static core:Localizer.Current}" />
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource SectionRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="Display_ converter" />
+                                <controls:SyntaxTextBlock Code="Converter={StaticResource EnumConverterCustomPrefixSearchAll}"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                                <controls:SyntaxTextBlock Code="&lt;l:LocalizeEnumConverter x:Key=&quot;EnumConverterCustomPrefixSearchAll&quot; KeyPrefix=&quot;Display_&quot; /&gt;"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock Style="{StaticResource SectionRowResultValue}">
+                                    <TextBlock.Text>
+                                        <MultiBinding Converter="{StaticResource EnumConverterCustomPrefixSearchAll}">
+                                            <Binding Path="SelectedFileSortOrder" />
+                                            <Binding Path="CurrentCulture"
+                                                     Source="{x:Static core:Localizer.Current}" />
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource SectionRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="ApplicationStrings converter" />
+                                <controls:SyntaxTextBlock Code="Converter={StaticResource EnumConverterScopedDefaultPrefix}"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                                <controls:SyntaxTextBlock Code="&lt;l:LocalizeEnumConverter x:Key=&quot;EnumConverterScopedDefaultPrefix&quot; ResourceManager=&quot;{x:Static res:ApplicationStrings.ResourceManager}&quot; /&gt;"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock Style="{StaticResource SectionRowResultValue}">
+                                    <TextBlock.Text>
+                                        <MultiBinding Converter="{StaticResource EnumConverterScopedDefaultPrefix}">
+                                            <Binding Path="SelectedFileSortOrder" />
+                                            <Binding Path="CurrentCulture"
+                                                     Source="{x:Static core:Localizer.Current}" />
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource SectionLastRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="SortingStrings converter" />
+                                <controls:SyntaxTextBlock Code="Converter={StaticResource EnumConverterScopedCustomPrefix}"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                                <controls:SyntaxTextBlock Code="&lt;l:LocalizeEnumConverter x:Key=&quot;EnumConverterScopedCustomPrefix&quot; KeyPrefix=&quot;Display_&quot; ResourceManager=&quot;{x:Static res:SortingStrings.ResourceManager}&quot; /&gt;"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock Style="{StaticResource SectionRowResultValue}">
+                                    <TextBlock.Text>
+                                        <MultiBinding Converter="{StaticResource EnumConverterScopedCustomPrefix}">
+                                            <Binding Path="SelectedFileSortOrder" />
+                                            <Binding Path="CurrentCulture"
+                                                     Source="{x:Static core:Localizer.Current}" />
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <!--  ===== 6. Code-behind API (ILocalizer.Get + indexer) =====  -->
+                <StackPanel>
+                    <Border Style="{StaticResource SectionHeader}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionHeaderTitle}"
+                                       Text="6.  Code-behind API - ILocalizer.Get and the indexer" />
+                            <TextBlock Style="{StaticResource SectionHeaderSubtitle}"
+                                       Text="Outside XAML, resolve strings with the ILocalizer methods. The view model below computes each value once per language switch; binding to those properties is what makes this section update live. Every Get overload and the indexer are shown." />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource SectionRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="Localizer.Get(string)" />
+                                <controls:SyntaxTextBlock Code="localizer.Get(&quot;Greeting&quot;)"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock Style="{StaticResource SectionRowResultValue}"
+                                           Text="{Binding GreetingViaSearchAll}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource SectionRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="[key]" />
+                                <controls:SyntaxTextBlock Code="localizer[&quot;Greeting&quot;]"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock Style="{StaticResource SectionRowResultValue}"
+                                           Text="{Binding GreetingViaIndexer}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource SectionRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="Get(ResourceKey)" />
+                                <controls:SyntaxTextBlock Code="localizer.Get(ApplicationStringsKeys.Greeting)"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock Style="{StaticResource SectionRowResultValue}"
+                                           Text="{Binding GreetingViaTypedKey}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource SectionRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="Get(string, ResourceManager)" />
+                                <controls:SyntaxTextBlock Code="localizer.Get(&quot;Greeting&quot;, ApplicationStrings.ResourceManager)"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock Style="{StaticResource SectionRowResultValue}"
+                                           Text="{Binding GreetingViaScopedManager}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource SectionRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="Internal file: typed key" />
+                                <controls:SyntaxTextBlock Code="localizer.Get(BrandingStringsKeys.PoweredBy)"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock Style="{StaticResource SectionRowResultValue}"
+                                           Text="{Binding PoweredByViaTypedKey}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource SectionRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="Internal file: scoped Get" />
+                                <controls:SyntaxTextBlock Code="localizer.Get(&quot;PoweredBy&quot;, BrandingStrings.ResourceManager)"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock Style="{StaticResource SectionRowResultValue}"
+                                           Text="{Binding PoweredByViaScopedInternalManager}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource SectionRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="Get(Enum)" />
+                                <controls:SyntaxTextBlock Code="localizer.Get(selectedSortOrder)"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock Style="{StaticResource SectionRowResultValue}"
+                                           Text="{Binding SortOrderViaSearchAllDefaultPrefix}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource SectionRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="Get(Enum, keyPrefix)" />
+                                <controls:SyntaxTextBlock Code="localizer.Get(selectedSortOrder, &quot;Display_&quot;)"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock Style="{StaticResource SectionRowResultValue}"
+                                           Text="{Binding SortOrderViaSearchAllCustomPrefix}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource SectionRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="Get(Enum, ResourceManager)" />
+                                <controls:SyntaxTextBlock Code="localizer.Get(selectedSortOrder, ApplicationStrings.ResourceManager)"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock Style="{StaticResource SectionRowResultValue}"
+                                           Text="{Binding SortOrderViaScopedDefaultPrefix}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource SectionRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="Get(Enum, ResourceManager, keyPrefix)" />
+                                <controls:SyntaxTextBlock Code="localizer.Get(selectedSortOrder, SortingStrings.ResourceManager, &quot;Display_&quot;)"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock Style="{StaticResource SectionRowResultValue}"
+                                           Text="{Binding SortOrderViaScopedCustomPrefix}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource SectionLastRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="Missing key marker" />
+                                <controls:SyntaxTextBlock Code="localizer.Get(&quot;ThisKeyDoesNotExist&quot;)"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock Style="{StaticResource SectionRowResultValue}"
+                                           Text="{Binding MissingKeyExample}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+            </StackPanel>
+        </ScrollViewer>
+
+    </DockPanel>
+</Window>

@@ -1,0 +1,70 @@
+#nullable enable
+RentADeveloper.ResXLocalization.CultureChangedEventArgs
+RentADeveloper.ResXLocalization.CultureChangedEventArgs.CultureChangedEventArgs(System.Globalization.CultureInfo! oldCulture, System.Globalization.CultureInfo! newCulture) -> void
+RentADeveloper.ResXLocalization.CultureChangedEventArgs.NewCulture.get -> System.Globalization.CultureInfo!
+RentADeveloper.ResXLocalization.CultureChangedEventArgs.OldCulture.get -> System.Globalization.CultureInfo!
+RentADeveloper.ResXLocalization.ILocalizer
+RentADeveloper.ResXLocalization.ILocalizer.ClearResourceManagers() -> void
+RentADeveloper.ResXLocalization.ILocalizer.CultureChanged -> System.EventHandler<RentADeveloper.ResXLocalization.CultureChangedEventArgs!>!
+RentADeveloper.ResXLocalization.ILocalizer.CurrentCulture.get -> System.Globalization.CultureInfo!
+RentADeveloper.ResXLocalization.ILocalizer.CurrentCulture.set -> void
+RentADeveloper.ResXLocalization.ILocalizer.Get(RentADeveloper.ResXLocalization.ResourceKey key) -> string!
+RentADeveloper.ResXLocalization.ILocalizer.Get(RentADeveloper.ResXLocalization.ResourceKey key, params object?[]! arguments) -> string!
+RentADeveloper.ResXLocalization.ILocalizer.Get(System.Enum! value, System.Resources.ResourceManager! resourceManager, string! keyPrefix = "Enum_") -> string!
+RentADeveloper.ResXLocalization.ILocalizer.Get(System.Enum! value, string! keyPrefix = "Enum_") -> string!
+RentADeveloper.ResXLocalization.ILocalizer.Get(string! key) -> string!
+RentADeveloper.ResXLocalization.ILocalizer.Get(string! key, System.Resources.ResourceManager! resourceManager) -> string!
+RentADeveloper.ResXLocalization.ILocalizer.Get(string! key, System.Resources.ResourceManager! resourceManager, params object?[]! arguments) -> string!
+RentADeveloper.ResXLocalization.ILocalizer.Get(string! key, params object?[]! arguments) -> string!
+RentADeveloper.ResXLocalization.ILocalizer.GetAvailableCultures() -> System.Collections.Generic.IReadOnlyList<System.Globalization.CultureInfo!>!
+RentADeveloper.ResXLocalization.ILocalizer.GetAvailableCultures(System.Resources.ResourceManager! resourceManager) -> System.Collections.Generic.IReadOnlyList<System.Globalization.CultureInfo!>!
+RentADeveloper.ResXLocalization.ILocalizer.MissingTranslationFormat.get -> string!
+RentADeveloper.ResXLocalization.ILocalizer.MissingTranslationFormat.set -> void
+RentADeveloper.ResXLocalization.ILocalizer.RegisterResourceManager(System.Resources.ResourceManager! resourceManager) -> void
+RentADeveloper.ResXLocalization.ILocalizer.TranslationNotFound -> System.EventHandler<RentADeveloper.ResXLocalization.TranslationNotFoundEventArgs!>!
+RentADeveloper.ResXLocalization.ILocalizer.UnregisterResourceManager(System.Resources.ResourceManager! resourceManager) -> bool
+RentADeveloper.ResXLocalization.ILocalizer.this[string! key].get -> string!
+RentADeveloper.ResXLocalization.Localizer
+RentADeveloper.ResXLocalization.Localizer.ClearResourceManagers() -> void
+RentADeveloper.ResXLocalization.Localizer.CultureChanged -> System.EventHandler<RentADeveloper.ResXLocalization.CultureChangedEventArgs!>?
+RentADeveloper.ResXLocalization.Localizer.CurrentCulture.get -> System.Globalization.CultureInfo!
+RentADeveloper.ResXLocalization.Localizer.CurrentCulture.set -> void
+RentADeveloper.ResXLocalization.Localizer.Get(RentADeveloper.ResXLocalization.ResourceKey key) -> string!
+RentADeveloper.ResXLocalization.Localizer.Get(RentADeveloper.ResXLocalization.ResourceKey key, params object?[]! arguments) -> string!
+RentADeveloper.ResXLocalization.Localizer.Get(System.Enum! value, System.Resources.ResourceManager! resourceManager, string! keyPrefix = "Enum_") -> string!
+RentADeveloper.ResXLocalization.Localizer.Get(System.Enum! value, string! keyPrefix = "Enum_") -> string!
+RentADeveloper.ResXLocalization.Localizer.Get(string! key) -> string!
+RentADeveloper.ResXLocalization.Localizer.Get(string! key, System.Resources.ResourceManager! resourceManager) -> string!
+RentADeveloper.ResXLocalization.Localizer.Get(string! key, System.Resources.ResourceManager! resourceManager, params object?[]! arguments) -> string!
+RentADeveloper.ResXLocalization.Localizer.Get(string! key, params object?[]! arguments) -> string!
+RentADeveloper.ResXLocalization.Localizer.GetAvailableCultures() -> System.Collections.Generic.IReadOnlyList<System.Globalization.CultureInfo!>!
+RentADeveloper.ResXLocalization.Localizer.GetAvailableCultures(System.Resources.ResourceManager! resourceManager) -> System.Collections.Generic.IReadOnlyList<System.Globalization.CultureInfo!>!
+RentADeveloper.ResXLocalization.Localizer.Localizer() -> void
+RentADeveloper.ResXLocalization.Localizer.MissingTranslationFormat.get -> string!
+RentADeveloper.ResXLocalization.Localizer.MissingTranslationFormat.set -> void
+RentADeveloper.ResXLocalization.Localizer.PropertyChanged -> System.ComponentModel.PropertyChangedEventHandler?
+RentADeveloper.ResXLocalization.Localizer.RegisterResourceManager(System.Resources.ResourceManager! resourceManager) -> void
+RentADeveloper.ResXLocalization.Localizer.TranslationNotFound -> System.EventHandler<RentADeveloper.ResXLocalization.TranslationNotFoundEventArgs!>?
+RentADeveloper.ResXLocalization.Localizer.UnregisterResourceManager(System.Resources.ResourceManager! resourceManager) -> bool
+RentADeveloper.ResXLocalization.Localizer.this[string! key].get -> string!
+RentADeveloper.ResXLocalization.ResourceKey
+RentADeveloper.ResXLocalization.ResourceKey.Deconstruct(out string! Name, out System.Resources.ResourceManager! Manager) -> void
+RentADeveloper.ResXLocalization.ResourceKey.Equals(RentADeveloper.ResXLocalization.ResourceKey other) -> bool
+RentADeveloper.ResXLocalization.ResourceKey.Manager.get -> System.Resources.ResourceManager!
+RentADeveloper.ResXLocalization.ResourceKey.Manager.init -> void
+RentADeveloper.ResXLocalization.ResourceKey.Name.get -> string!
+RentADeveloper.ResXLocalization.ResourceKey.Name.init -> void
+RentADeveloper.ResXLocalization.ResourceKey.ResourceKey() -> void
+RentADeveloper.ResXLocalization.ResourceKey.ResourceKey(string! Name, System.Resources.ResourceManager! Manager) -> void
+RentADeveloper.ResXLocalization.TranslationNotFoundEventArgs
+RentADeveloper.ResXLocalization.TranslationNotFoundEventArgs.Culture.get -> System.Globalization.CultureInfo!
+RentADeveloper.ResXLocalization.TranslationNotFoundEventArgs.Key.get -> string!
+RentADeveloper.ResXLocalization.TranslationNotFoundEventArgs.ResourceManager.get -> System.Resources.ResourceManager?
+RentADeveloper.ResXLocalization.TranslationNotFoundEventArgs.TranslationNotFoundEventArgs(string! key, System.Globalization.CultureInfo! culture, System.Resources.ResourceManager? resourceManager) -> void
+override RentADeveloper.ResXLocalization.ResourceKey.GetHashCode() -> int
+static RentADeveloper.ResXLocalization.Localizer.Current.get -> RentADeveloper.ResXLocalization.ILocalizer!
+static RentADeveloper.ResXLocalization.Localizer.Current.set -> void
+static RentADeveloper.ResXLocalization.ResourceKey.operator !=(RentADeveloper.ResXLocalization.ResourceKey left, RentADeveloper.ResXLocalization.ResourceKey right) -> bool
+static RentADeveloper.ResXLocalization.ResourceKey.operator ==(RentADeveloper.ResXLocalization.ResourceKey left, RentADeveloper.ResXLocalization.ResourceKey right) -> bool
+~override RentADeveloper.ResXLocalization.ResourceKey.Equals(object obj) -> bool
+~override RentADeveloper.ResXLocalization.ResourceKey.ToString() -> string

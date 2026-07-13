@@ -1,0 +1,14 @@
+{
+  "solution": {
+    "path": "ResXLocalization.slnx",
+    "projects": [
+      "src\\ResXLocalization.Core\\ResXLocalization.Core.csproj",
+      "src\\ResXLocalization.SourceGenerators\\ResXLocalization.SourceGenerators.csproj",
+      "src\\ResXLocalization.Avalonia\\ResXLocalization.Avalonia.csproj",
+      "samples\\ResXLocalization.Avalonia.Sample\\ResXLocalization.Avalonia.Sample.csproj",
+      "tests\\ResXLocalization.Avalonia.Sample.Tests\\ResXLocalization.Avalonia.Sample.Tests.csproj",
+      "tests\\ResXLocalization.Core.Tests\\ResXLocalization.Core.Tests.csproj",
+      "tests\\ResXLocalization.SourceGenerators.Tests\\ResXLocalization.SourceGenerators.Tests.csproj"
+    ]
+  }
+}

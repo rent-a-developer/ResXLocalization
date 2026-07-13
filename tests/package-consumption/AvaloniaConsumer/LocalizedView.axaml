@@ -1,0 +1,7 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:RentADeveloper.ResXLocalization.Avalonia"
+             xmlns:resources="using:AvaloniaConsumer.Resources"
+             x:Class="AvaloniaConsumer.LocalizedView">
+    <TextBlock Text="{l:Localize {x:Static resources:StringsKeys.Greeting}}" />
+</UserControl>

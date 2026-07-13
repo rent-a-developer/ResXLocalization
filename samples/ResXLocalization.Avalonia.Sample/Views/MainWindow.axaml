@@ -1,0 +1,800 @@
+﻿<Window x:Class="RentADeveloper.ResXLocalization.Avalonia.Sample.Views.MainWindow"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:RentADeveloper.ResXLocalization.Avalonia.Sample.Controls"
+        xmlns:core="clr-namespace:RentADeveloper.ResXLocalization;assembly=ResXLocalization.Core"
+        xmlns:glob="clr-namespace:System.Globalization;assembly=System.Runtime"
+        xmlns:l="clr-namespace:RentADeveloper.ResXLocalization.Avalonia;assembly=ResXLocalization.Avalonia"
+        xmlns:models="clr-namespace:RentADeveloper.ResXLocalization.Avalonia.Sample.Models"
+        xmlns:res="clr-namespace:RentADeveloper.ResXLocalization.Avalonia.Sample.Resources"
+        xmlns:vm="clr-namespace:RentADeveloper.ResXLocalization.Avalonia.Sample.ViewModels"
+        Title="{l:Localize {x:Static res:ApplicationStringsKeys.WindowTitle}}"
+        Width="900"
+        Height="820"
+        x:CompileBindings="True"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/logo.ico"
+        WindowStartupLocation="CenterScreen">
+
+    <!--
+        This window is a guided tour of every feature of RentADeveloper.ResXLocalization.Avalonia, ordered
+        from the simplest, recommended usage to the most advanced. Pick a different language at the top and
+        watch every demonstrated value update live, with no view reload. The section headers are intentionally
+        left in English: they are documentation for you, the reader, not part of the localized content.
+    -->
+
+    <Window.Resources>
+        <!--
+            Four LocalizeEnumConverter configurations for the "enum bound as a value" section. The converter is
+            used in a MultiBinding [enumValue, currentCulture]; the culture child only exists to re-trigger the
+            conversion on a language switch.
+        -->
+        <l:LocalizeEnumConverter x:Key="EnumConverterCustomPrefixSearchAll"
+                                 KeyPrefix="Display_" />
+        <l:LocalizeEnumConverter x:Key="EnumConverterScopedDefaultPrefix"
+                                 ResourceManager="{x:Static res:ApplicationStrings.ResourceManager}" />
+        <l:LocalizeEnumConverter x:Key="EnumConverterScopedCustomPrefix"
+                                 KeyPrefix="Display_"
+                                 ResourceManager="{x:Static res:SortingStrings.ResourceManager}" />
+    </Window.Resources>
+
+    <Window.Styles>
+        <Style Selector="Border.sectionHeader">
+            <Setter Property="Background" Value="#0A808080" />
+            <Setter Property="BorderBrush" Value="#33808080" />
+            <Setter Property="BorderThickness" Value="1,1,1,0" />
+            <Setter Property="CornerRadius" Value="4,4,0,0" />
+            <Setter Property="Padding" Value="10" />
+        </Style>
+        <Style Selector="Border.sectionRow">
+            <Setter Property="Background" Value="White" />
+            <Setter Property="BorderBrush" Value="#33808080" />
+            <Setter Property="BorderThickness" Value="1,1,1,0" />
+            <Setter Property="CornerRadius" Value="0" />
+            <Setter Property="Padding" Value="10,5" />
+        </Style>
+        <Style Selector="Border.sectionLastRow">
+            <Setter Property="Background" Value="White" />
+            <Setter Property="BorderBrush" Value="#33808080" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="0,0,4,4" />
+            <Setter Property="Padding" Value="10,5" />
+        </Style>
+        <Style Selector="TextBlock.sectionHeaderTitle">
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="TextBlock.sectionHeaderSubtitle">
+            <Setter Property="Opacity" Value="0.75" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="0,4,0,4" />
+        </Style>
+        <Style Selector="TextBlock.sectionRowTechnique">
+            <Setter Property="Opacity" Value="0.7" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <Style Selector="controls|SyntaxTextBlock.sectionRowSyntax">
+            <Setter Property="FontFamily" Value="monospace, Cascadia Mono, Consolas, Menlo, Monaco, DejaVu Sans Mono, Liberation Mono" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="0,5,0,0" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="TextBlock.sectionRowResultTitle">
+            <Setter Property="Opacity" Value="0.7" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <Style Selector="TextBlock.sectionRowResultValue">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="0,5,0,0" />
+        </Style>
+        <Style Selector="Grid.row">
+            <Setter Property="Margin" Value="0,8" />
+        </Style>
+    </Window.Styles>
+
+    <DockPanel>
+
+        <!--  =========================== Header: title + live language switcher ===========================  -->
+        <Border Padding="24,18"
+                Background="#0F808080"
+                BorderBrush="#33808080"
+                BorderThickness="0,0,0,1"
+                DockPanel.Dock="Top">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0"
+                            Orientation="Horizontal">
+                    <Image Width="32"
+                           Height="32"
+                           Source="/Assets/logo-128.png" />
+                    <StackPanel Margin="8,0,0,0"
+                                VerticalAlignment="Center"
+                                Spacing="2">
+                        <!--  Window heading and product name, both via the typed-key path.  -->
+                        <TextBlock FontSize="22"
+                                   FontWeight="Bold"
+                                   Text="{l:Localize {x:Static res:ApplicationStringsKeys.WindowTitle}}" />
+                        <TextBlock Opacity="0.7"
+                                   Text="{l:Localize {x:Static res:BrandingStringsKeys.ProductName}}" />
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal"
+                            Spacing="10">
+                    <TextBlock VerticalAlignment="Center"
+                               Text="{l:Localize {x:Static res:ApplicationStringsKeys.LanguageSelectorLabel}}" />
+                    <ComboBox MinWidth="160"
+                              ItemsSource="{Binding SupportedLanguages}"
+                              SelectedItem="{Binding SelectedLanguage}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="glob:CultureInfo">
+                                <TextBlock Text="{Binding NativeName}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!--  =============================== Scrolling body: one card per topic ===============================  -->
+        <ScrollViewer>
+            <StackPanel Margin="24"
+                        Spacing="16">
+
+                <!--  ===== 1. Typed keys (the recommended approach) =====  -->
+                <StackPanel>
+                    <Border Classes="sectionHeader">
+                        <StackPanel>
+                            <TextBlock Classes="sectionHeaderTitle"
+                                       Text="1.  Typed keys - the recommended approach" />
+                            <TextBlock Classes="sectionHeaderSubtitle"
+                                       Text="The source generator emits one ResourceKey per string entry in each eligible neutral .resx with a sibling classic designer. Each key carries its own ResourceManager, so the lookup is direct and a renamed or deleted resource becomes a compile error." />
+                        </StackPanel>
+                    </Border>
+                    <Border Classes="sectionRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="ResourceKey constructor" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="{}{l:Localize {x:Static res:ApplicationStringsKeys.Greeting}}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue"
+                                           Text="{l:Localize {x:Static res:ApplicationStringsKeys.Greeting}}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="sectionRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="ResourceKey property" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="{}{l:Localize ResourceKey={x:Static res:ApplicationStringsKeys.Greeting}}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue"
+                                           Text="{l:Localize ResourceKey={x:Static res:ApplicationStringsKeys.Greeting}}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="sectionLastRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="Internal resx typed key" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="{}{l:Localize {x:Static res:BrandingStringsKeys.PoweredBy}}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue"
+                                           Text="{l:Localize {x:Static res:BrandingStringsKeys.PoweredBy}}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <!--  ===== 2. Key-only lookup (search-all) =====  -->
+                <StackPanel>
+                    <Border Classes="sectionHeader">
+                        <StackPanel>
+                            <TextBlock Classes="sectionHeaderTitle"
+                                       Text="2.  Key-only lookup (search-all)" />
+                            <TextBlock Classes="sectionHeaderSubtitle"
+                                       Text="Give just a key name and the engine searches every registered ResourceManager in registration order, returning the first match. Convenient when a key is unique across your files." />
+                        </StackPanel>
+                    </Border>
+                    <Border Classes="sectionRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="String constructor" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="{}{l:Localize Greeting}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue"
+                                           Text="{l:Localize Greeting}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="sectionRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="Key property (SortingStrings)" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="{}{l:Localize Key=SortingHint}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue"
+                                           Text="{l:Localize Key=SortingHint}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="sectionLastRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="Registered internal resx" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="{}{l:Localize Key=PoweredBy}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue"
+                                           Text="{l:Localize Key=PoweredBy}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <!--  ===== 3. Scoped lookup (pin a key to one file) =====  -->
+                <StackPanel>
+                    <Border Classes="sectionHeader">
+                        <StackPanel>
+                            <TextBlock Classes="sectionHeaderTitle"
+                                       Text="3.  Scoped lookup - pin a key to one file" />
+                            <TextBlock Classes="sectionHeaderSubtitle"
+                                       Text="Pass a ResourceManager alongside the key to read from exactly one file, bypassing the search. The named accessor must be public for XAML to reference it via x:Static; internal files are scoped from code-behind instead (see section 6)." />
+                        </StackPanel>
+                    </Border>
+                    <Border Classes="sectionRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="Scoped to ApplicationStrings" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="{}{l:Localize Greeting, ResourceManager={x:Static res:ApplicationStrings.ResourceManager}}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue"
+                                           Text="{l:Localize Greeting,
+                                                             ResourceManager={x:Static res:ApplicationStrings.ResourceManager}}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="sectionLastRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="Scoped to SortingStrings" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="{}{l:Localize Key=SortingHint, ResourceManager={x:Static res:SortingStrings.ResourceManager}}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue"
+                                           Text="{l:Localize Key=SortingHint,
+                                                             ResourceManager={x:Static res:SortingStrings.ResourceManager}}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <!--  ===== 4. Localizing enum values in item templates (LocalizeEnumExtension) =====  -->
+                <StackPanel>
+                    <Border Classes="sectionHeader">
+                        <StackPanel>
+                            <TextBlock Classes="sectionHeaderTitle"
+                                       Text="4.  Enum values in templates - {l:LocalizeEnum}" />
+                            <TextBlock Classes="sectionHeaderSubtitle"
+                                       Text="In an item template each item is the DataContext, so {l:LocalizeEnum} localizes it directly. The two combo boxes below show the very same FileSortOrder values with two different label sets, chosen by KeyPrefix." />
+                        </StackPanel>
+                    </Border>
+                    <Border Classes="sectionRow">
+                        <StackPanel>
+                            <Grid ColumnDefinitions="*,*">
+                                <StackPanel Grid.Column="0"
+                                            Margin="0,0,8,0"
+                                            Spacing="4">
+                                    <TextBlock Classes="sectionRowTechnique"
+                                               Text="Enum_ prefix" />
+                                    <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                              Code="{}{l:LocalizeEnum}" />
+                                    <ComboBox Margin="0,5,0,0"
+                                              HorizontalAlignment="Stretch"
+                                              ItemsSource="{Binding FileSortOrders}"
+                                              SelectedItem="{Binding SelectedFileSortOrder}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate x:DataType="models:FileSortOrder">
+                                                <TextBlock Text="{l:LocalizeEnum}" />
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1"
+                                            Margin="8,0,0,0"
+                                            Spacing="4">
+                                    <TextBlock Classes="sectionRowTechnique"
+                                               Text="Display_ prefix" />
+                                    <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                              Code="{}{l:LocalizeEnum KeyPrefix=Display_}" />
+                                    <ComboBox Margin="0,5,0,0"
+                                              HorizontalAlignment="Stretch"
+                                              ItemsSource="{Binding FileSortOrders}"
+                                              SelectedItem="{Binding SelectedFileSortOrder}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate x:DataType="models:FileSortOrder">
+                                                <TextBlock Text="{l:LocalizeEnum KeyPrefix=Display_}" />
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock Margin="0,12,0,0"
+                                       Classes="sectionRowTechnique"
+                                       Text="Selected value in all enum lookup modes:" />
+                        </StackPanel>
+                    </Border>
+
+                    <!--  Each read-out sets its DataContext to the selected enum so {l:LocalizeEnum} can localize it.  -->
+                    <Border Classes="sectionRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="Enum_ + search-all" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="{}{l:LocalizeEnum}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue"
+                                           DataContext="{Binding SelectedFileSortOrder}"
+                                           Text="{l:LocalizeEnum}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="sectionRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="Display_ + search-all" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="{}{l:LocalizeEnum KeyPrefix=Display_}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue"
+                                           DataContext="{Binding SelectedFileSortOrder}"
+                                           Text="{l:LocalizeEnum KeyPrefix=Display_}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="sectionRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="Enum_ + ApplicationStrings" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="{}{l:LocalizeEnum ResourceManager={x:Static res:ApplicationStrings.ResourceManager}}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue"
+                                           DataContext="{Binding SelectedFileSortOrder}"
+                                           Text="{l:LocalizeEnum ResourceManager={x:Static res:ApplicationStrings.ResourceManager}}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="sectionLastRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="Display_ + SortingStrings" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="{}{l:LocalizeEnum KeyPrefix=Display_, ResourceManager={x:Static res:SortingStrings.ResourceManager}}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue"
+                                           DataContext="{Binding SelectedFileSortOrder}"
+                                           Text="{l:LocalizeEnum KeyPrefix=Display_,
+                                                                 ResourceManager={x:Static res:SortingStrings.ResourceManager}}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <!--  ===== 5. Localizing enum values bound as data (LocalizeEnumConverter) =====  -->
+                <StackPanel>
+                    <Border Classes="sectionHeader">
+                        <StackPanel>
+                            <TextBlock Classes="sectionHeaderTitle"
+                                       Text="5.  Enum values bound as data - LocalizeEnumConverter" />
+                            <TextBlock Classes="sectionHeaderSubtitle"
+                                       Text="When the enum is a real bound value rather than the DataContext, use LocalizeEnumConverter inside a MultiBinding [enumValue, currentCulture]. The culture child re-triggers the conversion on every language switch." />
+                        </StackPanel>
+                    </Border>
+                    <Border Classes="sectionRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="Default converter" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="Converter={x:Static l:LocalizeEnumConverter.Default}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue">
+                                    <TextBlock.Text>
+                                        <MultiBinding Converter="{x:Static l:LocalizeEnumConverter.Default}">
+                                            <Binding Path="SelectedFileSortOrder" />
+                                            <Binding Path="CurrentCulture"
+                                                     Source="{x:Static core:Localizer.Current}" />
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="sectionRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="Display_ converter" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="Converter={StaticResource EnumConverterCustomPrefixSearchAll}" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="&lt;l:LocalizeEnumConverter x:Key=&quot;EnumConverterCustomPrefixSearchAll&quot; KeyPrefix=&quot;Display_&quot; /&gt;" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue">
+                                    <TextBlock.Text>
+                                        <MultiBinding Converter="{StaticResource EnumConverterCustomPrefixSearchAll}">
+                                            <Binding Path="SelectedFileSortOrder" />
+                                            <Binding Path="CurrentCulture"
+                                                     Source="{x:Static core:Localizer.Current}" />
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="sectionRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="ApplicationStrings converter" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="Converter={StaticResource EnumConverterScopedDefaultPrefix}" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="&lt;l:LocalizeEnumConverter x:Key=&quot;EnumConverterScopedDefaultPrefix&quot; ResourceManager=&quot;{x:Static res:ApplicationStrings.ResourceManager}&quot; /&gt;" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue">
+                                    <TextBlock.Text>
+                                        <MultiBinding Converter="{StaticResource EnumConverterScopedDefaultPrefix}">
+                                            <Binding Path="SelectedFileSortOrder" />
+                                            <Binding Path="CurrentCulture"
+                                                     Source="{x:Static core:Localizer.Current}" />
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="sectionLastRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="SortingStrings converter" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="Converter={StaticResource EnumConverterScopedCustomPrefix}" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="&lt;l:LocalizeEnumConverter x:Key=&quot;EnumConverterScopedCustomPrefix&quot; KeyPrefix=&quot;Display_&quot; ResourceManager=&quot;{x:Static res:SortingStrings.ResourceManager}&quot; /&gt;" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue">
+                                    <TextBlock.Text>
+                                        <MultiBinding Converter="{StaticResource EnumConverterScopedCustomPrefix}">
+                                            <Binding Path="SelectedFileSortOrder" />
+                                            <Binding Path="CurrentCulture"
+                                                     Source="{x:Static core:Localizer.Current}" />
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <!--  ===== 6. Code-behind API (ILocalizer.Get + indexer) =====  -->
+                <StackPanel>
+                    <Border Classes="sectionHeader">
+                        <StackPanel>
+                            <TextBlock Classes="sectionHeaderTitle"
+                                       Text="6.  Code-behind API - ILocalizer.Get and the indexer" />
+                            <TextBlock Classes="sectionHeaderSubtitle"
+                                       Text="Outside XAML, resolve strings with the ILocalizer methods. The view model below computes each value once per language switch; binding to those properties is what makes this section update live. Every Get overload and the indexer are shown." />
+                        </StackPanel>
+                    </Border>
+                    <Border Classes="sectionRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="Localizer.Get(string)" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="localizer.Get(&quot;Greeting&quot;)" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue"
+                                           Text="{Binding GreetingViaSearchAll}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="sectionRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="[key]" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="localizer[&quot;Greeting&quot;]" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue"
+                                           Text="{Binding GreetingViaIndexer}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="sectionRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="Get(ResourceKey)" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="localizer.Get(ApplicationStringsKeys.Greeting)" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue"
+                                           Text="{Binding GreetingViaTypedKey}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="sectionRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="Get(string, ResourceManager)" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="localizer.Get(&quot;Greeting&quot;, ApplicationStrings.ResourceManager)" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue"
+                                           Text="{Binding GreetingViaScopedManager}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="sectionRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="Internal file: typed key" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="localizer.Get(BrandingStringsKeys.PoweredBy)" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue"
+                                           Text="{Binding PoweredByViaTypedKey}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="sectionRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="Internal file: scoped Get" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="localizer.Get(&quot;PoweredBy&quot;, BrandingStrings.ResourceManager)" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue"
+                                           Text="{Binding PoweredByViaScopedInternalManager}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="sectionRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="Get(Enum)" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="localizer.Get(selectedSortOrder)" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue"
+                                           Text="{Binding SortOrderViaSearchAllDefaultPrefix}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="sectionRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="Get(Enum, keyPrefix)" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="localizer.Get(selectedSortOrder, &quot;Display_&quot;)" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue"
+                                           Text="{Binding SortOrderViaSearchAllCustomPrefix}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="sectionRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="Get(Enum, ResourceManager)" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="localizer.Get(selectedSortOrder, ApplicationStrings.ResourceManager)" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue"
+                                           Text="{Binding SortOrderViaScopedDefaultPrefix}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="sectionRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="Get(Enum, ResourceManager, keyPrefix)" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="localizer.Get(selectedSortOrder, SortingStrings.ResourceManager, &quot;Display_&quot;)" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue"
+                                           Text="{Binding SortOrderViaScopedCustomPrefix}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="sectionLastRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="Missing key marker" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="localizer.Get(&quot;ThisKeyDoesNotExist&quot;)" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue"
+                                           Text="{Binding MissingKeyExample}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+            </StackPanel>
+        </ScrollViewer>
+
+    </DockPanel>
+</Window>

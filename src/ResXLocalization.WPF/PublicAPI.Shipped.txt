@@ -1,0 +1,27 @@
+#nullable enable
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter.Convert(object?[]! values, System.Type! targetType, object? parameter, System.Globalization.CultureInfo! culture) -> object!
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter.ConvertBack(object? value, System.Type![]! targetTypes, object? parameter, System.Globalization.CultureInfo! culture) -> object![]!
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter.KeyPrefix.get -> string!
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter.KeyPrefix.set -> void
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter.LocalizeEnumConverter() -> void
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter.ResourceManager.get -> System.Resources.ResourceManager?
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter.ResourceManager.set -> void
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumExtension
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumExtension.KeyPrefix.get -> string!
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumExtension.KeyPrefix.set -> void
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumExtension.LocalizeEnumExtension() -> void
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumExtension.ResourceManager.get -> System.Resources.ResourceManager?
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumExtension.ResourceManager.set -> void
+RentADeveloper.ResXLocalization.WPF.LocalizeExtension
+RentADeveloper.ResXLocalization.WPF.LocalizeExtension.Key.get -> string!
+RentADeveloper.ResXLocalization.WPF.LocalizeExtension.Key.set -> void
+RentADeveloper.ResXLocalization.WPF.LocalizeExtension.LocalizeExtension() -> void
+RentADeveloper.ResXLocalization.WPF.LocalizeExtension.LocalizeExtension(object! key) -> void
+RentADeveloper.ResXLocalization.WPF.LocalizeExtension.ResourceKey.get -> RentADeveloper.ResXLocalization.ResourceKey?
+RentADeveloper.ResXLocalization.WPF.LocalizeExtension.ResourceKey.set -> void
+RentADeveloper.ResXLocalization.WPF.LocalizeExtension.ResourceManager.get -> System.Resources.ResourceManager?
+RentADeveloper.ResXLocalization.WPF.LocalizeExtension.ResourceManager.set -> void
+override RentADeveloper.ResXLocalization.WPF.LocalizeEnumExtension.ProvideValue(System.IServiceProvider! serviceProvider) -> object!
+override RentADeveloper.ResXLocalization.WPF.LocalizeExtension.ProvideValue(System.IServiceProvider! serviceProvider) -> object!
+static RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter.Default.get -> RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter!

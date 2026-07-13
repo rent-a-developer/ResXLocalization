@@ -1,0 +1,103 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <ApplicationIcon>..\..\assets\logo.ico</ApplicationIcon>
+        <ApplicationManifest>app.manifest</ApplicationManifest>
+        <!-- Compiled bindings everywhere: no ReflectionBinding, AOT-friendly. -->
+        <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+        <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+        <!-- AOT / trim analyzers on so IL2026/IL3050 surface during a normal build. -->
+        <IsAotCompatible>true</IsAotCompatible>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>$(CurrentTargetFramework)</TargetFramework>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <!-- Write the source-generator output under obj/generated so it can be inspected. -->
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <!-- Ship only the satellite cultures the app actually translates into. -->
+        <SatelliteResourceLanguages>en;de</SatelliteResourceLanguages>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia" />
+        <PackageReference Include="Avalonia.Desktop" />
+        <PackageReference Include="Avalonia.Fonts.Inter" />
+        <PackageReference Include="Avalonia.Themes.Fluent" />
+        <PackageReference Include="CommunityToolkit.Mvvm" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\ResXLocalization.Avalonia\ResXLocalization.Avalonia.csproj" />
+        <!-- Core is referenced privately by the Avalonia engine, so reference it directly here for the typed
+             keys and the code-behind ILocalizer API. -->
+        <ProjectReference Include="..\..\src\ResXLocalization.Core\ResXLocalization.Core.csproj" />
+        <!-- Source generator that turns each .resx into its typed <Name>Keys class (analyzer, not a runtime
+             reference). UndefineProperties stops publish-time properties (PublishAot/RID/…) from flowing into
+             the netstandard2.0 generator project, which would otherwise fail with NETSDK1207. -->
+        <ProjectReference Include="..\..\src\ResXLocalization.SourceGenerators\ResXLocalization.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" UndefineProperties="PublishAot;RuntimeIdentifier;SelfContained;PublishTrimmed" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- The test project drives this app and needs to register the internal BrandingStrings file the
+             same way Program.Main does. -->
+        <InternalsVisibleTo Include="ResXLocalization.Avalonia.Sample.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Remove="Assets\logo-128.png" />
+        <None Remove="Assets\logo.ico" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <AvaloniaResource Include="Assets\logo-128.png" />
+        <AvaloniaResource Include="Assets\logo.ico" />
+    </ItemGroup>
+
+    <!-- ResX wiring: the neutral (English) file embeds into the main assembly; each .de file builds a
+         satellite assembly. The <Name>.Designer.cs accessors are hand-authored to mirror exactly what
+         PublicResXFileCodeGenerator emits (that generator only runs inside Visual Studio). The resx +
+         *.Designer.cs files are handed to the typed-key generator by the repo-level
+         Directory.Build.targets - no per-project AdditionalFiles glob. -->
+    <ItemGroup>
+        <EmbeddedResource Update="Resources\ApplicationStrings.resx">
+            <Generator>PublicResXFileCodeGenerator</Generator>
+            <LastGenOutput>ApplicationStrings.Designer.cs</LastGenOutput>
+        </EmbeddedResource>
+        <EmbeddedResource Update="Resources\ApplicationStrings.de.resx">
+            <DependentUpon>ApplicationStrings.resx</DependentUpon>
+        </EmbeddedResource>
+        <Compile Update="Resources\ApplicationStrings.Designer.cs">
+            <DependentUpon>ApplicationStrings.resx</DependentUpon>
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
+        </Compile>
+
+        <EmbeddedResource Update="Resources\BrandingStrings.resx">
+            <Generator>ResXFileCodeGenerator</Generator>
+            <LastGenOutput>BrandingStrings.Designer.cs</LastGenOutput>
+        </EmbeddedResource>
+        <EmbeddedResource Update="Resources\BrandingStrings.de.resx">
+            <DependentUpon>BrandingStrings.resx</DependentUpon>
+        </EmbeddedResource>
+        <Compile Update="Resources\BrandingStrings.Designer.cs">
+            <DependentUpon>BrandingStrings.resx</DependentUpon>
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
+        </Compile>
+
+        <EmbeddedResource Update="Resources\SortingStrings.resx">
+            <Generator>PublicResXFileCodeGenerator</Generator>
+            <LastGenOutput>SortingStrings.Designer.cs</LastGenOutput>
+        </EmbeddedResource>
+        <EmbeddedResource Update="Resources\SortingStrings.de.resx">
+            <DependentUpon>SortingStrings.resx</DependentUpon>
+        </EmbeddedResource>
+        <Compile Update="Resources\SortingStrings.Designer.cs">
+            <DependentUpon>SortingStrings.resx</DependentUpon>
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
+        </Compile>
+    </ItemGroup>
+
+</Project>

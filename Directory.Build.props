@@ -1,0 +1,125 @@
+<Project>
+    <!-- NuGet metadata shared by every packable project. Packing is opt-in: only the three shipped
+       packages (Core, Avalonia, WPF) set IsPackable=true; Description and PackageTags stay per-package. -->
+    <PropertyGroup>
+        <!-- Single source of truth for the version of both NuGet packages. The CI publish job
+             verifies that the pushed v* tag matches this value before anything reaches NuGet.org. -->
+        <Version>1.0.0</Version>
+
+        <Authors>David Liebeherr, rent-a-developer</Authors>
+        <Copyright>© David Liebeherr, rent-a-developer</Copyright>
+        <!-- SourceLink: also embed files that are not committed (e.g. generated sources), so
+             stepping into the packaged assemblies always finds the code. -->
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <!-- Validates the packages on pack (multi-TFM consistency; baseline checks in later versions). -->
+        <EnablePackageValidation>true</EnablePackageValidation>
+        <IncludeSymbols>true</IncludeSymbols>
+        <IsPackable>false</IsPackable>
+        <PackageIcon>logo-128.png</PackageIcon>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/rent-a-developer/ResXLocalization</PackageProjectUrl>
+        <PackageReadmeFile>PACKAGE_README.md</PackageReadmeFile>
+        <PackageReleaseNotes>$(PackageProjectUrl)/blob/main/CHANGELOG.md</PackageReleaseNotes>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>$(PackageProjectUrl).git</RepositoryUrl>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    </PropertyGroup>
+
+    <!-- Package-specific catalog metadata is kept together so all NuGet listing text can be reviewed
+         and changed in one place. The projects themselves still opt in to packing explicitly. -->
+    <PropertyGroup Condition="'$(MSBuildProjectName)' == 'ResXLocalization.Core'">
+        <Description>The shared, UI-agnostic runtime engine for ResXLocalization, with live culture switching, multiple resource managers, typed resource keys, and Native AOT support.</Description>
+        <PackageTags>localization;resx;i18n;l10n;aot</PackageTags>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(MSBuildProjectName)' == 'ResXLocalization.Avalonia'">
+        <Description>AOT-safe ResX localization for Avalonia with live language switching and multiple-.resx support. Includes a typed-key source generator and MSBuild wiring; depends transitively on the shared ResXLocalization.Core package.</Description>
+        <PackageTags>avalonia;localization;resx;i18n;l10n;aot;source-generator;mvvm</PackageTags>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(MSBuildProjectName)' == 'ResXLocalization.WPF'">
+        <Description>ResX localization for WPF with live language switching and multiple-.resx support. Includes a typed-key source generator and MSBuild wiring; depends transitively on the shared ResXLocalization.Core package. Windows-only; Native AOT is not supported for WPF.</Description>
+        <PackageTags>wpf;localization;resx;i18n;l10n;source-generator;mvvm</PackageTags>
+    </PropertyGroup>
+
+    <!-- Framework families used by the shipped libraries, current samples/tests, and minimum-version
+         package consumers. Keeping the roles distinct prevents a routine SDK update from silently
+         raising the packages' compatibility floor. -->
+    <PropertyGroup>
+        <CurrentTargetFramework>net10.0</CurrentTargetFramework>
+        <CurrentWindowsTargetFramework>net10.0-windows</CurrentWindowsTargetFramework>
+        <LibraryTargetFrameworks>net8.0;net10.0</LibraryTargetFrameworks>
+        <WindowsLibraryTargetFrameworks>net8.0-windows;net10.0-windows</WindowsLibraryTargetFrameworks>
+    </PropertyGroup>
+
+    <!-- Compiler and code-quality defaults for every project in the repo. -->
+    <PropertyGroup>
+        <AnalysisLevel>latest</AnalysisLevel>
+        <AnalysisMode>All</AnalysisMode>
+        <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    </PropertyGroup>
+
+    <!-- Naming conventions: every assembly is named after its project file; every namespace lives under
+       the RentADeveloper vendor prefix (ResXLocalization.Core overrides RootNamespace because its
+       types sit directly in RentADeveloper.ResXLocalization).
+       WPF's markup compiler builds a temporary copy of the project under a randomized
+       <Name>_<random>_wpftmp name; _TargetAssemblyProjectName then carries the real project name,
+       so prefer it to keep AssemblyName/RootNamespace stable during that pass. -->
+    <PropertyGroup>
+        <_ConventionProjectName>$(MSBuildProjectName)</_ConventionProjectName>
+        <_ConventionProjectName Condition="'$(_TargetAssemblyProjectName)' != ''">$(_TargetAssemblyProjectName)</_ConventionProjectName>
+        <AssemblyName>$(_ConventionProjectName)</AssemblyName>
+        <RootNamespace>RentADeveloper.$(_ConventionProjectName)</RootNamespace>
+    </PropertyGroup>
+
+    <!-- Application defaults. -->
+    <PropertyGroup>
+        <NeutralLanguage>en</NeutralLanguage>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(NoBuild)' == 'true'">
+        <!-- `dotnet pack` with the no-build switch sets NoBuild=true as a global property. The packable
+         projects run ResolveReferences while packing (see _AddAnalyzersToPackage), which would otherwise
+         invoke the Build target on their ProjectReferences and fail with NETSDK1085. Everything is
+         already built, so just stop project references from building again. -->
+        <BuildProjectReferences>false</BuildProjectReferences>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(IsPackable)' == 'true'">
+        <None Include="$(MSBuildThisFileDirectory)assets\logo-128.png"
+              Link="logo-128.png"
+              Pack="true"
+              PackagePath="\" />
+        <None Include="$(MSBuildThisFileDirectory)PACKAGE_README.md"
+              Link="PACKAGE_README.md"
+              Pack="true"
+              PackagePath="\" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json" Link="stylecop.json" />
+    </ItemGroup>
+
+    <!-- The analyzer set every project builds with (build-time only, never a runtime dependency).
+         Versions live in Directory.Packages.props. -->
+    <ItemGroup>
+        <PackageReference Include="ErrorProne.NET.CoreAnalyzers" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+        <PackageReference Include="Roslynator.Analyzers" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+        <PackageReference Include="StyleCop.Analyzers" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+    </ItemGroup>
+
+    <!-- Every test project can collect coverage (the "XPlat Code Coverage" collector) and log to
+         GitHub Actions job summaries (the "GitHubActions" logger); CI passes the matching switches. -->
+    <ItemGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
+        <PackageReference Include="AwesomeAssertions" />
+        <PackageReference Include="coverlet.collector" PrivateAssets="all" />
+        <PackageReference Include="GitHubActionsTestLogger" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+        <PackageReference Include="xunit.v3" />
+    </ItemGroup>
+
+</Project>

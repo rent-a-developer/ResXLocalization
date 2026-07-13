@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <!-- net8.0-windows deliberately exercises the package's LTS target; UseWPF resolves the
+             WPF reference assemblies the markup extensions build against. -->
+        <TargetFramework>net8.0-windows</TargetFramework>
+        <UseWPF>true</UseWPF>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <SatelliteResourceLanguages>en;de</SatelliteResourceLanguages>
+        <!-- CI overrides this with the version it just packed. -->
+        <ResXLocalizationVersion Condition="'$(ResXLocalizationVersion)' == ''">1.0.0</ResXLocalizationVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- THE reference under test: engine + source generator + MSBuild wiring must all arrive
+             through this single package. -->
+        <PackageReference Include="ResXLocalization.WPF" Version="$(ResXLocalizationVersion)" />
+    </ItemGroup>
+
+</Project>

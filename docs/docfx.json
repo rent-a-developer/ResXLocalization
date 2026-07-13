@@ -1,0 +1,48 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
+  "metadata": [
+    {
+      "src": [
+        {
+          "src": "../src",
+          "files": [
+            "**/*.csproj"
+          ],
+          "exclude": [
+            "**/ResXLocalization.SourceGenerators.csproj"
+          ]
+        }
+      ],
+      "dest": "api",
+      "noRestore": true
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": [
+          "**/*.{md,yml}"
+        ],
+        "exclude": [
+          "_site/**"
+        ]
+      }
+    ],
+    "resource": [
+      {
+        "files": [
+          "assets/**"
+        ]
+      }
+    ],
+    "output": "_site",
+    "template": ["default", "modern"],
+    "globalMetadata": {
+      "_appName": "ResXLocalization API Documentation",
+      "_appTitle": "ResXLocalization API Documentation",
+      "_appLogoPath": "assets/logo.svg",
+      "_appFaviconPath": "assets/favicon.ico",
+      "_enableSearch": true
+    }
+  }
+}

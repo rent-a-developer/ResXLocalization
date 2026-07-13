@@ -1,0 +1,9 @@
+global using System.Collections.Immutable;
+global using System.Globalization;
+global using System.Security;
+global using System.Text;
+global using AwesomeAssertions;
+global using Microsoft.CodeAnalysis;
+global using Microsoft.CodeAnalysis.CSharp;
+global using Microsoft.CodeAnalysis.Text;
+global using Xunit;

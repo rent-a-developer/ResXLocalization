@@ -1,0 +1,7 @@
+<Project>
+    <PropertyGroup>
+        <!-- The consumers pin explicit package versions exactly like real consumers do; opt out of
+             the repository's Central Package Management. -->
+        <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    </PropertyGroup>
+</Project>

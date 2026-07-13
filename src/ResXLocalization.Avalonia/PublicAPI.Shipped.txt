@@ -1,0 +1,26 @@
+#nullable enable
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter.Convert(System.Collections.Generic.IList<object?>! values, System.Type! targetType, object? parameter, System.Globalization.CultureInfo! culture) -> object!
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter.KeyPrefix.get -> string!
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter.KeyPrefix.set -> void
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter.LocalizeEnumConverter() -> void
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter.ResourceManager.get -> System.Resources.ResourceManager?
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter.ResourceManager.set -> void
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension.KeyPrefix.get -> string!
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension.KeyPrefix.set -> void
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension.LocalizeEnumExtension() -> void
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension.ResourceManager.get -> System.Resources.ResourceManager?
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension.ResourceManager.set -> void
+RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension
+RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension.Key.get -> string!
+RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension.Key.set -> void
+RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension.LocalizeExtension() -> void
+RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension.LocalizeExtension(object! key) -> void
+RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension.ResourceKey.get -> RentADeveloper.ResXLocalization.ResourceKey?
+RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension.ResourceKey.set -> void
+RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension.ResourceManager.get -> System.Resources.ResourceManager?
+RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension.ResourceManager.set -> void
+override RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension.ProvideValue(System.IServiceProvider! serviceProvider) -> object!
+override RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension.ProvideValue(System.IServiceProvider! serviceProvider) -> object!
+static RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter.Default.get -> RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter!

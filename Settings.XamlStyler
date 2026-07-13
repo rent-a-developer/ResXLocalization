@@ -1,0 +1,10 @@
+{
+  "KeepFirstAttributeOnSameLine": true,
+  "MaxAttributesPerLine": 1,
+  "AttributesTolerance": 1,
+  "AttributeIndentationStyle": 1,
+  "SeparateByGroups": true,
+  "ReorderGridChildren": true,
+  "ReorderCanvasChildren": true,
+  "ReorderSetters": 3
+}

@@ -1,0 +1,58 @@
+name: Bug report
+description: Something does not work as documented.
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      description: Which package is affected?
+      options:
+        - ResXLocalization.Avalonia
+        - ResXLocalization.WPF
+        - Both / not sure
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: lookup-mode
+    attributes:
+      label: Lookup mode
+      description: Which lookup path shows the problem (if applicable)?
+      options:
+        - Typed key ({l:Localize {x:Static …Keys.…}})
+        - Scoped (Key + ResourceManager)
+        - Search-all (key only)
+        - Enum ({l:LocalizeEnum} / LocalizeEnumConverter)
+        - Source generator / build
+        - Other / not applicable
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: >
+        The smallest snippet that shows the problem - usually a .resx entry, the XAML or C# lookup,
+        and the culture you switched to. A link to a minimal repository works too.
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: ".NET 10.0.x, Avalonia 12.1.0 / WPF, Windows 11 / Ubuntu 24.04, Native AOT yes/no"
+    validations:
+      required: true

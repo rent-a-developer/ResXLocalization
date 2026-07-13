@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <!-- The engine multi-targets net8.0;net10.0, so its contract is verified on both. -->
+        <TargetFrameworks>$(LibraryTargetFrameworks)</TargetFrameworks>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\ResXLocalization.Core\ResXLocalization.Core.csproj" />
+    </ItemGroup>
+
+</Project>

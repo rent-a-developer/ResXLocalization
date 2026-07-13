@@ -1,0 +1,21 @@
+# Codecov configuration. Keeps PR comments and the badge predictable instead of relying on defaults.
+# https://docs.codecov.com/docs/codecovyml-reference
+coverage:
+  status:
+    project:
+      default:
+        target: 85%
+        threshold: 2%
+    patch:
+      default:
+        # Informational: a PR is never blocked on patch coverage, but the delta is reported.
+        informational: true
+
+# The sample apps are demonstrations, not part of the shipped surface, so they do not count.
+ignore:
+  - "samples"
+  - "tests"
+
+comment:
+  layout: "reach, diff, flags, files"
+  require_changes: false

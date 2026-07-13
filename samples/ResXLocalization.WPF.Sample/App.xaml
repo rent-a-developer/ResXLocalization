@@ -1,0 +1,17 @@
+﻿<Application x:Class="RentADeveloper.ResXLocalization.WPF.Sample.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!--
+                    The showcase window uses a hardcoded light palette (white cards, dark syntax
+                    colors), so pin the light Fluent dictionary instead of following the OS theme:
+                    with the OS in dark mode the theme's white foreground text would be unreadable
+                    on the white cards.
+                -->
+                <ResourceDictionary Source="pack://application:,,,/PresentationFramework.Fluent;component/Themes/Fluent.Light.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

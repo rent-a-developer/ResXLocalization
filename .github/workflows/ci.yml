@@ -1,0 +1,549 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+    # Version tags (v1.2.3) run the full pipeline and then publish the packages to NuGet.org.
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  AOT_OUTPUT: artifacts/package-aot
+  AVALONIA_CONSUMER_PROJECT: tests/package-consumption/AvaloniaConsumer/AvaloniaConsumer.csproj
+  COMBINED_CONSUMER_PROJECT: tests/package-consumption/CombinedConsumer/CombinedConsumer.csproj
+  CONFIGURATION: Release
+  CONSUMER_DIRECTORY: tests/package-consumption
+  DOCFX_CONFIG: docs/docfx.json
+  DOCS_SITE: docs/_site
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+  NUGET_CONFIG: NuGet.config
+  PACKAGE_OUTPUT: artifacts/packages
+  RELEASE_NOTES_FILE: release-notes.md
+  RELEASE_NOTES_SCRIPT: scripts/extract-release-notes.sh
+  SOLUTION: ResXLocalization.slnx
+  SOLUTION_FILTER_NON_WINDOWS: ResXLocalization.NonWindows.slnf
+  SAMPLES_DIRECTORY: samples
+  SOURCE_DIRECTORY: src
+  TEST_RESULTS: artifacts/test-results
+  WPF_CONSUMER_PROJECT: tests/package-consumption/WpfConsumer/WpfConsumer.csproj
+  WPF_TEST_PROJECT: tests/ResXLocalization.WPF.Sample.Tests/ResXLocalization.WPF.Sample.Tests.csproj
+
+jobs:
+  # Enforce the formatting the repo ships tooling for (dotnet format + XamlStyler): a style rule that
+  # is not enforced in CI drifts with the first external pull request.
+  # Windows runner: XamlStyler always writes the host OS's newline and has no line-ending setting,
+  # and .gitattributes checks the XAML files out as CRLF everywhere — so the passive check can only
+  # pass on Windows.
+  lint:
+    name: Lint
+    runs-on: windows-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+          dotnet-quality: ga
+
+      - name: Cache NuGet packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ${{ env.NUGET_PACKAGES }}
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.props', '**/*.targets', '**/*.slnx', '.config/dotnet-tools.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore tools
+        run: dotnet tool restore --configfile ${{ env.NUGET_CONFIG }}
+
+      - name: Restore
+        run: dotnet restore ${{ env.SOLUTION_FILTER_NON_WINDOWS }} --configfile ${{ env.NUGET_CONFIG }}
+
+      # Whitespace only: the semantic style and analyzer rules are already enforced by the build
+      # itself (EnforceCodeStyleInBuild + TreatWarningsAsErrors) in the verify jobs.
+      - name: Verify C# formatting (dotnet format)
+        run: dotnet format whitespace ${{ env.SOLUTION_FILTER_NON_WINDOWS }} --no-restore --verify-no-changes
+
+      - name: Verify XAML formatting (XamlStyler)
+        shell: bash
+        # xstyler's passive mode exits non-zero when files fail the check; "|| true" keeps the
+        # step alive under "bash -e" so the output and the actionable error below still print.
+        # The grep on the output is what decides pass/fail.
+        run: |
+          output="$(dotnet xstyler --passive --recursive --directory "${SOURCE_DIRECTORY}" || true; dotnet xstyler --passive --recursive --directory "${SAMPLES_DIRECTORY}" || true)"
+          echo "${output}"
+          if grep -q "FAIL" <<< "${output}"; then
+            echo "::error title=XAML formatting::Run scripts/formatCode (dotnet xstyler --recursive --directory src && dotnet xstyler --recursive --directory samples) and commit the result."
+            exit 1
+          fi
+
+  # Cross-platform: build and test the shared Core, the source generator, and the Avalonia stack. These
+  # projects target net8.0/net10.0 and build/test identically on Linux and Windows. The WPF projects are
+  # Windows-only and are intentionally excluded here so Ubuntu never tries to build them.
+  verify-avalonia:
+    name: Verify Avalonia (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          # The 8.0 runtime executes the net8.0 test target of the multi-targeted Core tests.
+          dotnet-version: |
+            8.0.x
+            10.0.x
+          dotnet-quality: ga
+
+      - name: Cache NuGet packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ${{ env.NUGET_PACKAGES }}
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.props', '**/*.targets', '**/*.slnx', '.config/dotnet-tools.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore ${{ env.SOLUTION_FILTER_NON_WINDOWS }} --configfile ${{ env.NUGET_CONFIG }}
+
+      - name: Build
+        run: dotnet build ${{ env.SOLUTION_FILTER_NON_WINDOWS }} --configuration ${{ env.CONFIGURATION }} --no-restore /p:ContinuousIntegrationBuild=true
+
+      # The solution filter is the source of truth for the cross-platform project set. dotnet test
+      # discovers its test projects and runs every target framework automatically.
+      - name: Test
+        run: dotnet test ${{ env.SOLUTION_FILTER_NON_WINDOWS }} --configuration ${{ env.CONFIGURATION }} --no-build --logger GitHubActions --logger trx --collect:"XPlat Code Coverage" --results-directory "${{ env.TEST_RESULTS }}"
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        with:
+          flags: avalonia-${{ matrix.os }}
+          # Fork PRs may not receive CODECOV_TOKEN; protected main pushes must surface upload failures.
+          fail_ci_if_error: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: test-results-avalonia-${{ matrix.os }}
+          path: ${{ env.TEST_RESULTS }}
+          if-no-files-found: warn
+          retention-days: 14
+
+  # Windows-only: build and test the WPF stack (net10.0-windows, UseWPF). WPF is not available on Linux, so
+  # this job runs on windows-latest only.
+  verify-wpf:
+    name: Verify WPF (windows-latest)
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+          dotnet-quality: ga
+
+      - name: Cache NuGet packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ${{ env.NUGET_PACKAGES }}
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.props', '**/*.targets', '**/*.slnx', '.config/dotnet-tools.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore ${{ env.WPF_TEST_PROJECT }} --configfile ${{ env.NUGET_CONFIG }}
+
+      - name: Build
+        run: dotnet build ${{ env.WPF_TEST_PROJECT }} --configuration ${{ env.CONFIGURATION }} --no-restore /p:ContinuousIntegrationBuild=true
+
+      - name: Test
+        run: dotnet test ${{ env.WPF_TEST_PROJECT }} --configuration ${{ env.CONFIGURATION }} --no-build --logger GitHubActions --logger "trx;LogFileName=wpf-test-results.trx" --collect:"XPlat Code Coverage" --results-directory "${{ env.TEST_RESULTS }}"
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        with:
+          flags: wpf-windows-latest
+          fail_ci_if_error: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: test-results-wpf-windows-latest
+          path: ${{ env.TEST_RESULTS }}
+          if-no-files-found: warn
+          retention-days: 14
+
+  # Windows-only: build the whole solution (Avalonia + WPF), generate DocFX documentation for all three
+  # runtime assemblies, and pack all three NuGet packages. Runs on Windows because the WPF assemblies must build
+  # for both the DocFX metadata and the WPF package.
+  package-and-docs:
+    name: Package and docs
+    runs-on: windows-latest
+    timeout-minutes: 30
+    needs:
+      - lint
+      - verify-avalonia
+      - verify-wpf
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+          dotnet-quality: ga
+
+      - name: Cache NuGet packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ${{ env.NUGET_PACKAGES }}
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.props', '**/*.targets', '**/*.slnx', '.config/dotnet-tools.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore tools
+        run: dotnet tool restore --configfile ${{ env.NUGET_CONFIG }}
+
+      - name: Restore
+        run: dotnet restore ${{ env.SOLUTION }} --configfile ${{ env.NUGET_CONFIG }}
+
+      - name: Build
+        run: dotnet build ${{ env.SOLUTION }} --configuration ${{ env.CONFIGURATION }} --no-restore /p:ContinuousIntegrationBuild=true
+
+      - name: Build DocFX metadata
+        run: dotnet tool run docfx metadata ${{ env.DOCFX_CONFIG }}
+
+      - name: Build DocFX site
+        run: dotnet tool run docfx build ${{ env.DOCFX_CONFIG }}
+
+      # IsPackable in the project files is the source of truth for which projects ship as packages.
+      - name: Pack NuGet packages
+        run: dotnet pack ${{ env.SOLUTION }} --configuration ${{ env.CONFIGURATION }} --no-build --output ${{ env.PACKAGE_OUTPUT }} /p:ContinuousIntegrationBuild=true
+
+      - name: Determine packed version
+        id: version
+        shell: bash
+        run: |
+          nupkg="$(ls "${PACKAGE_OUTPUT}"/ResXLocalization.Avalonia.*.nupkg)"
+          version="$(basename "${nupkg}" .nupkg | sed 's/^ResXLocalization\.Avalonia\.//')"
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+          echo "Packed version ${version}"
+
+      - name: Upload documentation site
+        # The Pages artifact is only consumed by deploy-docs (pushes to main); skip the upload on PRs.
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
+        with:
+          path: ${{ env.DOCS_SITE }}
+
+      - name: Upload NuGet packages
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: nuget-packages
+          path: |
+            ${{ env.PACKAGE_OUTPUT }}/*.nupkg
+            ${{ env.PACKAGE_OUTPUT }}/*.snupkg
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
+  # Prove the source generator's Roslyn floor forever: consume the packed packages with ONLY the .NET 8
+  # SDK. A generator compiled against a newer Roslyn than the .NET 8 compiler would emit CS9057, skip
+  # generation, and fail the consumer build on the missing …Keys types. The temporary global.json pins
+  # the 8.0 SDK for the consumer subtree only and is never committed.
+  verify-net8-consumers:
+    name: Consume packages on .NET 8 SDK (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    needs: package-and-docs
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup .NET 8 SDK only
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          dotnet-version: 8.0.x
+          dotnet-quality: ga
+
+      - name: Download NuGet packages
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: nuget-packages
+          path: ${{ env.PACKAGE_OUTPUT }}
+
+      - name: Pin the .NET 8 SDK for the consumers (CI only, not committed)
+        shell: bash
+        run: |
+          cat > "${CONSUMER_DIRECTORY}/global.json" <<'JSON'
+          {
+            "sdk": {
+              "version": "8.0.100",
+              "rollForward": "latestFeature"
+            }
+          }
+          JSON
+
+      - name: Confirm the active SDK is 8.0
+        shell: bash
+        working-directory: ${{ env.CONSUMER_DIRECTORY }}
+        run: dotnet --version
+
+      - name: Run Avalonia package consumer (net8.0 SDK)
+        run: dotnet run --project ${{ env.AVALONIA_CONSUMER_PROJECT }} --configuration ${{ env.CONFIGURATION }} -p:ResXLocalizationVersion=${{ needs.package-and-docs.outputs.version }}
+
+      - name: Run WPF package consumer (net8.0 SDK)
+        if: runner.os == 'Windows'
+        run: dotnet run --project ${{ env.WPF_CONSUMER_PROJECT }} --configuration ${{ env.CONFIGURATION }} -p:ResXLocalizationVersion=${{ needs.package-and-docs.outputs.version }}
+
+      - name: Run combined Avalonia and WPF package consumer (net8.0 SDK)
+        if: runner.os == 'Windows'
+        run: dotnet run --project ${{ env.COMBINED_CONSUMER_PROJECT }} --configuration ${{ env.CONFIGURATION }} -p:ResXLocalizationVersion=${{ needs.package-and-docs.outputs.version }}
+
+  verify-package-aot:
+    name: Verify packed-package Native AOT (${{ matrix.runtime }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    needs: package-and-docs
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            runtime: linux-x64
+            executable: AvaloniaConsumer
+          - os: windows-latest
+            runtime: win-x64
+            executable: AvaloniaConsumer.exe
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          dotnet-version: 10.0.x
+          dotnet-quality: ga
+
+      - name: Download exact packages to be published
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: nuget-packages
+          path: ${{ env.PACKAGE_OUTPUT }}
+
+      - name: Native AOT publish package-only consumer
+        run: dotnet publish ${{ env.AVALONIA_CONSUMER_PROJECT }} --configuration ${{ env.CONFIGURATION }} -r ${{ matrix.runtime }} --self-contained true -p:PublishAot=true -p:ResXLocalizationVersion=${{ needs.package-and-docs.outputs.version }} --output ${{ env.AOT_OUTPUT }}/${{ matrix.runtime }}
+
+      - name: Assert native binary and German satellite
+        shell: bash
+        run: |
+          test -f "${AOT_OUTPUT}/${{ matrix.runtime }}/${{ matrix.executable }}"
+          test -f "${AOT_OUTPUT}/${{ matrix.runtime }}/de/AvaloniaConsumer.resources.dll"
+
+  # Publish the DocFX site to GitHub Pages on every push to main (requires Pages to be set to
+  # "GitHub Actions" as the source in the repository settings).
+  deploy-docs:
+    name: Deploy docs to GitHub Pages
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: package-and-docs
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5
+
+  # Publishing is deliberate, not automatic: it runs only when a version tag (v1.2.3) is pushed, never
+  # on regular pushes to main.
+  publish-nuget:
+    name: Publish to NuGet.org
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs:
+      - package-and-docs
+      # Nothing reaches NuGet.org that a real consumer could not install and run.
+      - verify-package-aot
+      - verify-net8-consumers
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    environment: nuget
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      NUGET_USER: ${{ secrets.NUGET_USER }}
+
+    steps:
+      - name: Checkout release metadata
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          dotnet-version: 10.0.x
+          dotnet-quality: ga
+
+      - name: Download NuGet packages
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: nuget-packages
+          path: ${{ env.PACKAGE_OUTPUT }}
+
+      - name: Validate release changelog before publication
+        run: ${{ env.RELEASE_NOTES_SCRIPT }} "${GITHUB_REF_NAME#v}"
+
+      - name: Verify the tag matches the packed version
+        shell: bash
+        # The Version property in Directory.Build.props is the single source of truth; tagging a
+        # different version would otherwise publish stale packages (or silently publish nothing,
+        # thanks to --skip-duplicate).
+        run: |
+          tag_version="${GITHUB_REF_NAME#v}"
+          status=0
+          for id in ResXLocalization.Core ResXLocalization.Avalonia ResXLocalization.WPF; do
+            if [[ ! -f "${PACKAGE_OUTPUT}/${id}.${tag_version}.nupkg" ]]; then
+              echo "::error title=Tag/version mismatch::Tag ${GITHUB_REF_NAME} expects ${id}.${tag_version}.nupkg, but the build produced:"
+              ls -1 "${PACKAGE_OUTPUT}"
+              status=1
+            fi
+          done
+          exit "${status}"
+
+      - name: Select publish mode
+        id: publish-mode
+        shell: bash
+        run: |
+          if [[ -n "${NUGET_USER}" ]]; then
+            echo "mode=trusted" >> "${GITHUB_OUTPUT}"
+          elif [[ -n "${NUGET_API_KEY}" ]]; then
+            echo "mode=api-key" >> "${GITHUB_OUTPUT}"
+          else
+            echo "::error title=NuGet credentials missing::Configure Trusted Publishing with NUGET_USER or add NUGET_API_KEY."
+            exit 1
+          fi
+
+      - name: NuGet login
+        id: nuget-login
+        if: steps.publish-mode.outputs.mode == 'trusted'
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
+        with:
+          user: ${{ env.NUGET_USER }}
+
+      - name: Publish packages with Trusted Publishing
+        if: steps.publish-mode.outputs.mode == 'trusted'
+        run: dotnet nuget push "${{ env.PACKAGE_OUTPUT }}/*.nupkg" --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" --source nuget.org --skip-duplicate
+
+      - name: Publish packages with API key
+        if: steps.publish-mode.outputs.mode == 'api-key'
+        run: dotnet nuget push "${{ env.PACKAGE_OUTPUT }}/*.nupkg" --api-key "${{ env.NUGET_API_KEY }}" --source nuget.org --skip-duplicate
+
+  # Turn the tag into a GitHub Release: the matching CHANGELOG section becomes the notes and the
+  # packages are attached, so a release is browsable without leaving GitHub.
+  github-release:
+    name: Create GitHub release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: publish-nuget
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: Download NuGet packages
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: nuget-packages
+          path: ${{ env.PACKAGE_OUTPUT }}
+
+      - name: Extract the changelog section for this version
+        run: ${{ env.RELEASE_NOTES_SCRIPT }} "${GITHUB_REF_NAME#v}"
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "ResXLocalization ${GITHUB_REF_NAME}" \
+            --notes-file "${RELEASE_NOTES_FILE}" \
+            --verify-tag \
+            "${PACKAGE_OUTPUT}"/*.nupkg "${PACKAGE_OUTPUT}"/*.snupkg

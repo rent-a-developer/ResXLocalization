@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+        <TargetFramework>$(CurrentTargetFramework)</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia.Headless.XUnit" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\samples\ResXLocalization.Avalonia.Sample\ResXLocalization.Avalonia.Sample.csproj" />
+        <ProjectReference Include="..\..\src\ResXLocalization.Core\ResXLocalization.Core.csproj" />
+    </ItemGroup>
+
+</Project>

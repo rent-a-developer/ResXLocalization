@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <IsRoslynComponent>true</IsRoslynComponent>
+        <!-- Roslyn source generators must target netstandard2.0 so the compiler can load them. -->
+        <TargetFramework>netstandard2.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Pin the SHIPPED analyzer to the lowest Roslyn that carries the APIs it uses
+             (IIncrementalGenerator, AdditionalTextsProvider, SymbolDisplay.FormatLiteral - all
+             present since 4.8). A generator built against a newer Roslyn only loads in compilers of
+             that version or later, so a consumer on the .NET 8 or 9 SDK would get CS9057 and no
+             generated keys. 4.8.0 == VS 2022 17.8 / the .NET 8 SDK baseline. The test project drives
+             the generator with the repo's newer central version; only this reference sets the floor. -->
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" VersionOverride="4.8.0" PrivateAssets="all" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
+        <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+    </ItemGroup>
+
+    <!-- This is a build-time analyzer (netstandard2.0), never published or AOT-compiled. When the
+         consuming app runs `dotnet publish /p:PublishAot=true`, that global property flows into this
+         project's build and trips NETSDK1207. Reassigning it inside a target overrides the global
+         property (target-time assignments win), so framework-reference resolution sees PublishAot=false. -->
+    <Target Name="_DisableAotForAnalyzer" BeforeTargets="ProcessFrameworkReferences">
+        <PropertyGroup>
+            <PublishAot>false</PublishAot>
+            <PublishTrimmed>false</PublishTrimmed>
+            <SelfContained>false</SelfContained>
+            <!-- The consumer's publish also passes /p:IsAotCompatible=true as a global property, which flows
+                 in here and (with the IsTrimmable it derives) trips NETSDK1210/NETSDK1212 on netstandard2.0.
+                 Neutralize the AOT and trimming switches the same way. -->
+            <IsAotCompatible>false</IsAotCompatible>
+            <EnableAotAnalyzer>false</EnableAotAnalyzer>
+            <IsTrimmable>false</IsTrimmable>
+            <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+        </PropertyGroup>
+    </Target>
+
+</Project>

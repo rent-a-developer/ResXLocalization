@@ -1,0 +1,33 @@
+<Project>
+
+    <!-- Shared NuGet packaging machinery for the two UI packages (ResXLocalization.Avalonia,
+         ResXLocalization.WPF): pack the source generator as an analyzer and pack the resx wiring to
+         buildTransitive. Imported at the bottom of each UI csproj so both pack identically. -->
+
+    <ItemGroup>
+        <!-- Resx -> @(AdditionalFiles) wiring. Packed to buildTransitive (not build) so it flows to
+             transitive consumers too; the file MUST be named <PackageId>.targets for NuGet to auto-import
+             it. Same file the in-repo Directory.Build.targets imports (one source of truth). -->
+        <None Include="$(MSBuildThisFileDirectory)ResXLocalization.Resx.targets" Pack="true" PackagePath="buildTransitive\$(PackageId).targets" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <!-- Pack the generator dll into analyzers/dotnet/cs. @(Analyzer) is the resolved generator output
+             from the ProjectReference; filter by file name so no other analyzer (e.g. ones Avalonia
+             brings in) gets packed. -->
+        <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_AddAnalyzersToPackage</TargetsForTfmSpecificContentInPackage>
+    </PropertyGroup>
+
+    <Target Name="_AddAnalyzersToPackage" DependsOnTargets="ResolveReferences">
+        <!-- This target runs once per TargetFramework, but the analyzer is TFM-agnostic
+             (netstandard2.0) and must land in the package exactly once (NU5118), so only the first
+             TFM contributes it. -->
+        <PropertyGroup>
+            <_FirstTargetFramework>$(TargetFrameworks.Split(';')[0])</_FirstTargetFramework>
+        </PropertyGroup>
+        <ItemGroup Condition="'$(TargetFramework)' == '$(_FirstTargetFramework)'">
+            <TfmSpecificPackageFile Include="@(Analyzer)" Condition="'%(Analyzer.Filename)' == 'ResXLocalization.SourceGenerators'" PackagePath="analyzers/dotnet/cs" />
+        </ItemGroup>
+    </Target>
+
+</Project>

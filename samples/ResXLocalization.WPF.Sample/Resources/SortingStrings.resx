@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    A second, independent resource file owned by the "sorting" feature. It demonstrates two things:
+      * scoping a lookup to one specific file (its accessor is public, so XAML can name its ResourceManager), and
+      * a custom KeyPrefix: the Display_FileSortOrder_* keys give the FileSortOrder enum a friendlier set
+        of labels than the default Enum_FileSortOrder_* keys in ApplicationStrings.resx.
+  -->
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="SortingHint" xml:space="preserve">
+    <value>Choose how documents are ordered.</value>
+  </data>
+  <data name="Display_FileSortOrder_Unsorted" xml:space="preserve">
+    <value>No ordering</value>
+  </data>
+  <data name="Display_FileSortOrder_Ascending" xml:space="preserve">
+    <value>A to Z</value>
+  </data>
+  <data name="Display_FileSortOrder_Descending" xml:space="preserve">
+    <value>Z to A</value>
+  </data>
+</root>

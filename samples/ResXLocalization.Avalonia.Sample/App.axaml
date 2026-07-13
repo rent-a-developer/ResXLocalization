@@ -1,0 +1,15 @@
+﻿<!--
+    The showcase window uses a hardcoded light palette (white cards, dark syntax colors), so pin
+    the light variant instead of following the OS theme: with the OS in dark mode the theme's
+    white foreground text would be unreadable on the white cards.
+-->
+<Application x:Class="RentADeveloper.ResXLocalization.Avalonia.Sample.App"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             RequestedThemeVariant="Light">
+
+    <Application.Styles>
+        <FluentTheme />
+    </Application.Styles>
+
+</Application>

@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <IsAotCompatible>true</IsAotCompatible>
+        <IsPackable>true</IsPackable>
+        <!-- net8.0 (LTS) keeps the library usable for the large installed base; net10.0 is current. -->
+        <TargetFrameworks>$(LibraryTargetFrameworks)</TargetFrameworks>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <!-- Deviates from the repo-wide RentADeveloper.$(MSBuildProjectName) convention: Core's types
+             sit directly in RentADeveloper.ResXLocalization (no .Core suffix). -->
+        <RootNamespace>RentADeveloper.ResXLocalization</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- The UI-specific engines need the shared internal helpers (EnumKeyConvention, …). -->
+        <InternalsVisibleTo Include="ResXLocalization.Avalonia" />
+        <InternalsVisibleTo Include="ResXLocalization.WPF" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Tracks the declared public API surface (PublicAPI.Shipped.txt / PublicAPI.Unshipped.txt):
+             an unreviewed public API change fails the build (RS0016/RS0017). -->
+        <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+    </ItemGroup>
+
+</Project>

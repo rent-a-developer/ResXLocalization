@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <!-- WPF is Windows-only and does not support Native AOT.
+             net8.0 (LTS) keeps the library usable for the large installed base; net10.0 is current. -->
+        <TargetFrameworks>$(WindowsLibraryTargetFrameworks)</TargetFrameworks>
+        <UseWPF>true</UseWPF>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <IsPackable>true</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Packs as a normal transitive dependency so Avalonia and WPF consumers resolve one
+             deterministic Core version, including projects that use both UI frameworks. -->
+        <ProjectReference Include="..\ResXLocalization.Core\ResXLocalization.Core.csproj" />
+
+        <!-- The source generator ships as an analyzer, not a lib. PrivateAssets="all" keeps both the
+             generator project AND its Microsoft.CodeAnalysis.CSharp reference out of the package's
+             dependency list; ReferenceOutputAssembly="false" keeps the generator dll out of lib/. The
+             imported packaging targets pack it to analyzers/dotnet/cs instead. -->
+        <ProjectReference Include="..\ResXLocalization.SourceGenerators\ResXLocalization.SourceGenerators.csproj" OutputItemType="Analyzer" PrivateAssets="all" ReferenceOutputAssembly="false" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Tracks the declared public API surface (PublicAPI.Shipped.txt / PublicAPI.Unshipped.txt):
+             an unreviewed public API change fails the build (RS0016/RS0017). -->
+        <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+    </ItemGroup>
+
+    <!-- Shared analyzer + buildTransitive packaging (mirrored by ResXLocalization.Avalonia). -->
+    <Import Project="..\..\build\ResXLocalization.Packaging.targets" />
+
+</Project>
