@@ -4,7 +4,7 @@
 
 # ResXLocalization
 
-**Type-safe `.resx` localization for [Avalonia](https://avaloniaui.net/) and [WPF](https://learn.microsoft.com/dotnet/desktop/wpf/) - switch language _live_, write _zero_ csproj boilerplate.**
+**Type-safe `.resx` localization for [Avalonia](https://avaloniaui.net/) and [WPF](https://learn.microsoft.com/dotnet/desktop/wpf/) - switch language _live_, no reload, no restart.**
 
 [![CI](https://github.com/rent-a-developer/ResXLocalization/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/rent-a-developer/ResXLocalization/actions/workflows/ci.yml)
 [![Coverage](https://codecov.io/gh/rent-a-developer/ResXLocalization/branch/main/graph/badge.svg)](https://codecov.io/gh/rent-a-developer/ResXLocalization)
@@ -19,12 +19,11 @@
 
 ---
 
-ResXLocalization gives **Avalonia** and **WPF** apps **type-checked** `.resx` localization that
-switches language **instantly** - no window reloads, no reflection.
-
-It takes the `.resx` files you already know and adds **compile-checked keys**, **live language
-switching**, and **first-class support for multiple resource files**. One `<PackageReference>`
-brings everything: the shared Core engine, the Roslyn source generator, and the MSBuild wiring.
+Localizing a XAML app with plain `.resx` usually means string-typed keys that break silently at
+runtime, and a language change that only takes effect after a restart or window reload.
+ResXLocalization fixes both: you keep the `.resx` files and editors you already use, and get
+**compile-checked keys** (a renamed or deleted resource becomes a build error, not a runtime
+surprise) and **instant, in-place language switching** - in **Avalonia** and **WPF** alike.
 
 ```xml
 <!-- Strongly-typed key, generated from your .resx, updates live on every culture switch. -->
@@ -45,39 +44,16 @@ Localizer.Current.CurrentCulture = new CultureInfo("de");
 ## Highlights
 
 - ⚡ **Live, no-reload language switching** - set one property and every bound string updates in place. No window reload, no view rebuild, no restart.
-- 🔒 **Type-safe, compile-checked keys** - a Roslyn source generator turns every `.resx` into strongly-typed keys, so a renamed or deleted resource becomes a **compile error**, not a runtime surprise. Full IntelliSense, too.
-- 🧱 **One shared engine, two UIs** - the lookup, culture-switching, and typed-key logic live in a UI-agnostic Core assembly used identically by Avalonia and WPF.
-- 🚀 **Native AOT & trim clean (Avalonia)** - zero `IL2026`/`IL3050`, zero reflection over your resources. Publishes with `PublishAot=true` out of the box. *(WPF is Windows-only and does not support Native AOT.)*
-- 🗂️ **First-class multiple `.resx`** - register as many resource files as you like; look up by **typed key**, **scope** to one file, or **search across all** with a defined first-match-wins order. Unregister when a plugin unloads.
-- 🔤 **Enum localization built in** - localize enum members by convention, both inside `ItemsControl` templates and as bound values.
+- 🔒 **Type-safe, compile-checked keys** - a source generator turns every `.resx` into strongly-typed keys with full IntelliSense.
+- 📦 **Zero configuration** - install one NuGet package and build; typed keys are generated automatically, nothing else to set up.
+- 🚀 **Native AOT & trim clean (Avalonia)** - no reflection over your resources; publishes with `PublishAot=true` out of the box. *(WPF is Windows-only and does not support Native AOT.)*
+- 🗂️ **First-class multiple `.resx`** - look up by **typed key**, **scope** to one file, or **search across all** registered files in a defined order.
+- 🔤 **Enum localization built in** - localize enum members by naming convention, in item templates and as bound values. See [Localizing enums](#localizing-enums).
 - 🧮 **Format arguments** - `Get(key, args…)` formats the translation in the active culture.
 - 🩺 **Missing-translation diagnostics** - a visible `!key!` sentinel (configurable) plus a `TranslationNotFound` event for logging and coverage reports.
 - 🌐 **Language-picker ready** - `GetAvailableCultures()` discovers the cultures your app actually ships.
-- 📦 **One package, zero csproj boilerplate** - engine + generator + MSBuild targets ship together. No per-file metadata. Targets **.NET 8 (LTS)** and **.NET 10**.
 - 🧩 **MVVM-friendly** - an injectable `ILocalizer` service with `INotifyPropertyChanged`, markup extensions for XAML, and a clean code-behind API.
 - 🪶 **Leak-safe** - discarded controls stay collectable (Avalonia uses weak events; WPF binds to the singleton through WPF's own weak binding-target references).
-
-## Two packages, one engine
-
-Install the package for your UI framework. Both share the same UI-agnostic **Core** engine, the same source generator, and the same `.resx` MSBuild wiring - only the XAML markup extensions and binding glue differ.
-
-|                  | **ResXLocalization.Avalonia**                                                           | **ResXLocalization.WPF**                                                      |
-| ---------------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| **Install for**  | Avalonia apps                                                                           | WPF apps                                                                      |
-| **Package**      | [`ResXLocalization.Avalonia`](https://www.nuget.org/packages/ResXLocalization.Avalonia) | [`ResXLocalization.WPF`](https://www.nuget.org/packages/ResXLocalization.WPF) |
-| **Targets**      | `net8.0` · `net10.0`                                                                    | `net8.0-windows` · `net10.0-windows`                                          |
-| **UI framework** | Avalonia 12 (12.0.5 floor; tested against 12.1.0)                               | WPF (.NET 8+)                                                                 |
-| **Dependencies** | Avalonia + `ResXLocalization.Core`                                                     | `ResXLocalization.Core`                                                       |
-| **Native AOT**   | ✅ Fully supported                                                                       | ❌ Not supported (WPF limitation)                                              |
-| **Platforms**    | cross-platform                                                                          | Windows only                                                                  |
-
-Each package bundles three cooperating pieces - there is nothing else to wire up:
-
-| Piece                | What it does                                                                                                                                                                                   |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Runtime engine**   | The shared `ResXLocalization.Core` (`ILocalizer` / `Localizer.Current`, `ResourceKey`) plus the framework's `{l:Localize}` / `{l:LocalizeEnum}` markup extensions and `LocalizeEnumConverter`. |
-| **Source generator** | A Roslyn incremental generator that emits a typed `…Keys` class for every `.resx` (ships as an analyzer; not a runtime dependency).                                                            |
-| **MSBuild targets**  | Convention-over-configuration wiring that hands your `.resx` + `.Designer.cs` files to the generator - **no per-file metadata, no manual `AdditionalFiles`**.                                  |
 
 ---
 
@@ -85,12 +61,12 @@ Each package bundles three cooperating pieces - there is nothing else to wire up
 
 - [Requirements](#requirements)
 - [Installation](#installation)
-- [Namespaces](#namespaces)
 - [Quick start](#quick-start)
+- [Localizing enums](#localizing-enums)
 - [Guides and API reference](#guides-and-api-reference)
+- [Troubleshooting](#troubleshooting)
 - [The sample applications](#the-sample-applications)
 - [Building from source](#building-from-source)
-- [Repository structure](#repository-structure)
 - [Versioning](#versioning)
 - [Contributing](#contributing)
 - [License](#license)
@@ -100,16 +76,11 @@ Each package bundles three cooperating pieces - there is nothing else to wire up
 
 ## Requirements
 
-- An app targeting **.NET 8** or later (the packages ship `net8.0` and `net10.0` builds).
-- The **.NET 8 SDK or later** to build it. The bundled source generator is built against Roslyn 4.8
-  (the .NET 8 SDK compiler); see [Production and troubleshooting](#production-and-troubleshooting)
-  for `CS9057` and generator troubleshooting.
-- For **Avalonia**: **Avalonia 12**. The package keeps a **12.0.5 dependency floor** so XAML still
-  compiles under the .NET 8 SDK; samples and tests resolve and verify **12.1.0** on the current SDK.
-- For **WPF**: **Windows** (the package targets `net8.0-windows` / `net10.0-windows` with `<UseWPF>true</UseWPF>`).
-- A project that uses **`.resx`** resource files with the standard sibling `*.Designer.cs` accessor,
-  as generated by Visual Studio's or Rider's classic resx tooling. SDK-only `GenerateResxSource`
-  accessors are not eligible; see [Production and troubleshooting](#production-and-troubleshooting).
+- An app targeting **.NET 8** or later, built with the **.NET 8 SDK or later**.
+- For **Avalonia**: **Avalonia 12**. For **WPF**: **Windows**.
+- **`.resx`** resource files with the standard sibling `*.Designer.cs` accessor, as generated by
+  Visual Studio's or Rider's classic resx tooling. SDK-only `GenerateResxSource` accessors are not
+  eligible; see [Troubleshooting](#troubleshooting).
 
 ## Installation
 
@@ -123,17 +94,14 @@ dotnet add package ResXLocalization.Avalonia
 dotnet add package ResXLocalization.WPF
 ```
 
-…or add the reference directly to your `.csproj`:
+|                | [`ResXLocalization.Avalonia`](https://www.nuget.org/packages/ResXLocalization.Avalonia) | [`ResXLocalization.WPF`](https://www.nuget.org/packages/ResXLocalization.WPF) |
+| -------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| **Targets**    | `net8.0` · `net10.0`                                                                     | `net8.0-windows` · `net10.0-windows`                                           |
+| **Platforms**  | cross-platform (Avalonia 12)                                                             | Windows only                                                                   |
+| **Native AOT** | ✅ Fully supported                                                                        | ❌ Not supported (WPF limitation)                                               |
 
-```xml
-<!-- Avalonia -->
-<PackageReference Include="ResXLocalization.Avalonia" />
-
-<!-- WPF -->
-<PackageReference Include="ResXLocalization.WPF" />
-```
-
-That single reference brings in the **shared runtime engine** (`ResXLocalization.Core`), the **source generator**, and the **MSBuild wiring** that feeds your `.resx` files to the generator. There is nothing else to configure.
+That's it - the source generator and the build wiring for your `.resx` files are included; there is
+nothing else to configure.
 
 A few project properties are recommended. For **Avalonia** (required if you publish with Native AOT):
 
@@ -157,23 +125,6 @@ For **WPF**, only the cultures you ship are worth declaring (WPF does not suppor
   <SatelliteResourceLanguages>en;de</SatelliteResourceLanguages>
 </PropertyGroup>
 ```
-
-## Namespaces
-
-The API is split across three namespaces. In C# you almost always need only the first one:
-
-| Namespace                                  | Assembly                    | Contains                                                                       |
-| ------------------------------------------ | --------------------------- | ------------------------------------------------------------------------------ |
-| `RentADeveloper.ResXLocalization`          | `ResXLocalization.Core`     | `ILocalizer`, `Localizer`, `ResourceKey` - the shared engine                   |
-| `RentADeveloper.ResXLocalization.Avalonia` | `ResXLocalization.Avalonia` | Avalonia `LocalizeExtension`, `LocalizeEnumExtension`, `LocalizeEnumConverter` |
-| `RentADeveloper.ResXLocalization.WPF`      | `ResXLocalization.WPF`      | WPF `LocalizeExtension`, `LocalizeEnumExtension`, `LocalizeEnumConverter`      |
-
-```csharp
-using RentADeveloper.ResXLocalization;   // ILocalizer, Localizer.Current, ResourceKey
-```
-
-> [!NOTE]
-> The shared types `ILocalizer`, `Localizer`, and `ResourceKey` live in **`RentADeveloper.ResXLocalization`** (the Core assembly), so both the Avalonia and WPF packages share exactly one engine. The framework-specific markup extensions and the converter stay in the `…Avalonia` / `…WPF` namespaces.
 
 ## Quick start
 
@@ -202,7 +153,7 @@ public static partial class AppStringsKeys
 }
 ```
 
-Each `ResourceKey` (from `RentADeveloper.ResXLocalization`) carries **both** the key name and the `ResourceManager` it belongs to - that is what makes typed lookups direct and collision-free.
+Each `ResourceKey` carries **both** the key name and the `ResourceManager` it belongs to - that is what makes typed lookups direct and collision-free.
 
 > [!NOTE]
 > Only **string** entries become keys. Binary resources, images, colors, and any entry carrying a `type`/`mimetype` are skipped, and resource names that aren't valid C# identifiers are sanitized into valid member names.
@@ -278,7 +229,7 @@ Add the namespaces and bind with the `{l:Localize}` markup extension.
 </Window>
 ```
 
-- `xmlns:l` points at the **framework engine** (Avalonia: `assembly=ResXLocalization.Avalonia`; WPF: `assembly=ResXLocalization.WPF`).
+- `xmlns:l` points at the **framework package** (Avalonia: `assembly=ResXLocalization.Avalonia`; WPF: `assembly=ResXLocalization.WPF`).
 - `xmlns:res` points at the namespace of **your** generated keys / resource accessors.
 
 ### 5. Switch language - live
@@ -289,12 +240,101 @@ Localizer.Current.CurrentCulture = new CultureInfo("de");
 
 Every `{l:Localize}` binding re-resolves **immediately**. No reload, no flicker.
 
+## Localizing enums
+
+Enum members are localized **by naming convention**: add one string entry per member to any of your
+`.resx` files, named `Enum_<EnumTypeName>_<MemberName>`. No attributes on the enum, no extra code.
+
+```csharp
+public enum FileSortOrder { Unsorted, Ascending, Descending }
+```
+
+| Key                            | `AppStrings.resx` (English) | `AppStrings.de.resx` (German) |
+| ------------------------------ | --------------------------- | ----------------------------- |
+| `Enum_FileSortOrder_Unsorted`  | `Unsorted`                  | `Unsortiert`                  |
+| `Enum_FileSortOrder_Ascending` | `Ascending (A-Z)`           | `Aufsteigend (A-Z)`           |
+| `Enum_FileSortOrder_Descending`| `Descending (Z-A)`          | `Absteigend (Z-A)`            |
+
+Like every other lookup, enum labels update live when the culture changes. The same three usages
+work identically in Avalonia and WPF:
+
+### In item templates: `{l:LocalizeEnum}`
+
+Inside a `ComboBox`/`ListBox` item template each item *is* the enum value (the `DataContext`), so
+`{l:LocalizeEnum}` localizes it directly:
+
+```xml
+<ComboBox ItemsSource="{Binding FileSortOrders}"
+          SelectedItem="{Binding SelectedFileSortOrder}">
+  <ComboBox.ItemTemplate>
+    <DataTemplate>
+      <TextBlock Text="{l:LocalizeEnum}" />
+    </DataTemplate>
+  </ComboBox.ItemTemplate>
+</ComboBox>
+```
+
+### As a bound value: `LocalizeEnumConverter`
+
+When the enum is a bound property rather than the `DataContext`, use `LocalizeEnumConverter` in a
+`MultiBinding`. The second binding - to the current culture - re-triggers the conversion on every
+language switch:
+
+```xml
+<!-- xmlns:core="clr-namespace:RentADeveloper.ResXLocalization;assembly=ResXLocalization.Core" -->
+<TextBlock>
+  <TextBlock.Text>
+    <MultiBinding Converter="{x:Static l:LocalizeEnumConverter.Default}">
+      <Binding Path="SelectedFileSortOrder" />
+      <Binding Path="CurrentCulture" Source="{x:Static core:Localizer.Current}" />
+    </MultiBinding>
+  </TextBlock.Text>
+</TextBlock>
+```
+
+### In code
+
+```csharp
+Localizer.Current.Get(FileSortOrder.Ascending);   // "Ascending (A-Z)" / "Aufsteigend (A-Z)"
+```
+
+### Custom prefix and scoping
+
+The markup extension, the converter, and the code API all accept a **`KeyPrefix`** (default
+`Enum_`) and an optional **`ResourceManager`** that scopes the lookup to one `.resx` file - useful
+for giving the same enum different label sets, or for keeping enum labels in their own file:
+
+```xml
+<TextBlock Text="{l:LocalizeEnum KeyPrefix=Display_,
+                                 ResourceManager={x:Static res:SortingStrings.ResourceManager}}" />
+```
+
+```csharp
+Localizer.Current.Get(FileSortOrder.Ascending, SortingStrings.ResourceManager, "Display_");
+```
+
+To customize the converter, declare your own instance in resources
+(`LocalizeEnumConverter.Default` is read-only):
+
+```xml
+<l:LocalizeEnumConverter x:Key="DisplayEnumConverter" KeyPrefix="Display_" />
+```
+
 ---
 
 ## Guides and API reference
 
-The [generated API reference](https://rent-a-developer.github.io/ResXLocalization/) documents every public type and member. The sections below cover the operational details that go beyond the
-quick start.
+The [API reference](https://rent-a-developer.github.io/ResXLocalization/) documents every public type and member. The sections below cover the operational details that go beyond the quick start.
+
+### Namespaces
+
+In C# you almost always need only the first namespace:
+
+| Namespace                                  | Contains                                                                       |
+| ------------------------------------------ | ------------------------------------------------------------------------------ |
+| `RentADeveloper.ResXLocalization`          | `ILocalizer`, `Localizer`, `ResourceKey` - the shared engine                   |
+| `RentADeveloper.ResXLocalization.Avalonia` | Avalonia `LocalizeExtension`, `LocalizeEnumExtension`, `LocalizeEnumConverter` |
+| `RentADeveloper.ResXLocalization.WPF`      | WPF `LocalizeExtension`, `LocalizeEnumExtension`, `LocalizeEnumConverter`      |
 
 ### Dependency injection
 
@@ -311,8 +351,7 @@ property rejects `null`, and the markup extensions always use its current value.
 
 Prefer generated `ResourceKey` values: they bind a compile-checked name directly to its resource
 manager. Scoped string lookups accept a key and manager, while search-all lookups inspect registered
-managers in registration order. Enum lookups map values to `Enum_Type_Value` by default and accept a
-custom prefix.
+managers in registration order.
 
 Normal .NET `ResourceManager` fallback applies:
 
@@ -323,8 +362,8 @@ Normal .NET `ResourceManager` fallback applies:
 | Missing in satellite, exists in neutral resources | Neutral value | No |
 | Missing across the complete fallback chain | `!key!` by default | Yes |
 
-`MissingTranslationFormat` changes the sentinel. Because fallback runs first, a key that resolves
-from a parent or neutral value does not count as missing - the sentinel and `TranslationNotFound`
+`Localizer.MissingTranslationFormat` changes the sentinel. Because fallback runs first, a key that resolves
+from a parent or neutral value does not count as missing - the sentinel and `Localizer.TranslationNotFound`
 report unresolvable keys, not incomplete per-language coverage.
 
 Formatting overloads (`Get(key, args…)`) pass the resolved text and arguments to `String.Format`
@@ -334,29 +373,29 @@ using the localizer's current culture.
 subscriber alive. Short-lived subscribers - a view model owned by a window, for example - should
 unsubscribe when they are disposed (the sample view models show the pattern).
 
-### Production and troubleshooting
+## Troubleshooting
 
-**Native AOT.** Avalonia and Core are Native AOT compatible; WPF does not support Native AOT. Publish
-the consuming application with `PublishAot=true` and list shipped cultures in
-`SatelliteResourceLanguages` so satellites are retained.
+**A string shows up as `!key!`.** The key could not be resolved in the current culture's complete
+fallback chain. Check that the key exists in the neutral `.resx`, and - for search-all lookups like
+`{l:Localize Greeting}` or `{l:LocalizeEnum}` - that the resource manager was registered via
+`RegisterResourceManager`. Subscribe to `TranslationNotFound` to log every miss.
 
-**Avalonia version floor.** The Avalonia package declares 12.0.5 as its minimum while repository
-samples and tests use 12.1.0. Avalonia 12.1's XAML generator requires Roslyn 4.14 and cannot load in
-the .NET 8 SDK compiler; retaining the lower dependency floor preserves the advertised .NET 8 SDK
-consumer path. Applications building with a current SDK resolve Avalonia 12.1 normally.
-
-**Missing generated keys.**
+**No typed `…Keys` class is generated.**
 
 - Ensure the neutral filename is dot-free and a same-folder classic `.Designer.cs` exists.
-- Use the .NET 8 SDK or later. An older compiler may reject the Roslyn 4.8 generator with `CS9057`.
+- Use the .NET 8 SDK or later. An older compiler may reject the generator with `CS9057`.
 - SDK `GenerateResxSource` output lives under `obj` and does not qualify; use
   `PublicResXFileCodeGenerator` or `ResXFileCodeGenerator`.
 - `RXLGEN001` identifies malformed eligible `.resx` XML and points at the source file.
 - `RXLGEN002` identifies a missing or unrecognized same-folder classic accessor.
 
-**Package topology.** Both UI packages depend on the `ResXLocalization.Core` NuGet package.
-Referencing Avalonia and WPF together therefore resolves one deterministic Core version rather than two
-embedded copies.
+**Native AOT publishing (Avalonia).** Publish with `PublishAot=true` and list the shipped cultures
+in `SatelliteResourceLanguages` so the satellite assemblies are retained. WPF does not support
+Native AOT.
+
+**Avalonia version resolution.** The Avalonia package declares 12.0.5 as its minimum so it still
+builds under the .NET 8 SDK; applications building with a current SDK resolve Avalonia 12.1+
+normally.
 
 ## The sample applications
 
@@ -364,8 +403,6 @@ Two complete, runnable showcases exercise **every** feature and combination - a 
 
 - **Avalonia:** [`samples/ResXLocalization.Avalonia.Sample`](samples/ResXLocalization.Avalonia.Sample)
 - **WPF:** [`samples/ResXLocalization.WPF.Sample`](samples/ResXLocalization.WPF.Sample)
-
-Both demonstrate typed keys (including an internal-accessor file), search-all lookups, scoped lookups, `{l:LocalizeEnum}` in templates (default and custom prefixes, across files), `LocalizeEnumConverter` for bound enum values, and the full code-behind `ILocalizer` API including the `!key!` miss marker.
 
 Run them:
 
@@ -385,39 +422,6 @@ dotnet build ResXLocalization.NonWindows.slnf -c Release     # Linux/macOS (skip
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for running the test suites, packing the NuGet packages, and formatting the code before committing.
-
-## Repository structure
-
-```text
-src/
-  ResXLocalization.Core/            # shared UI-agnostic engine and transitive NuGet package
-  ResXLocalization.SourceGenerators/# the Roslyn key generator (shipped as an analyzer)
-  ResXLocalization.Avalonia/        # the Avalonia engine (packable: ResXLocalization.Avalonia)
-  ResXLocalization.WPF/             # the WPF engine (packable: ResXLocalization.WPF)
-samples/
-  ResXLocalization.Avalonia.Sample/ # the Avalonia demo app
-  ResXLocalization.WPF.Sample/      # the WPF demo app
-tests/
-  ResXLocalization.Core.Tests/      # UI-free engine tests, run on net8.0 and net10.0
-  ResXLocalization.SourceGenerators.Tests/ # in-memory unit tests for the resx key generator
-  ResXLocalization.Avalonia.Sample.Tests/  # headless Avalonia UI tests
-  ResXLocalization.WPF.Sample.Tests/       # STA/Dispatcher WPF UI tests
-  package-consumption/              # consumers that install the packed .nupkg end to end (CI)
-build/
-  ResXLocalization.Resx.targets     # the resx -> generator MSBuild wiring (packed per package)
-docs/
-  docfx.json, index.md, toc.yml     # the DocFX API-reference site (built and deployed by CI)
-.github/
-  workflows/                        # CI (lint/test/pack/docs/publish/release), CodeQL, dependency review
-scripts/
-  clean, formatCode, extract-release-notes  # repo maintenance scripts (Windows + POSIX)
-Directory.Packages.props            # Central Package Management: every package version lives here
-PACKAGE_README.md                   # the short readme shipped inside the NuGet packages
-```
-
-`ResXLocalization.Core` is published as the shared transitive dependency of both UI packages. Most
-applications install only their UI package; NuGet resolves one Core version even when both UI
-packages are referenced.
 
 ## Versioning
 

@@ -28,15 +28,15 @@
     <!-- Package-specific catalog metadata is kept together so all NuGet listing text can be reviewed
          and changed in one place. The projects themselves still opt in to packing explicitly. -->
     <PropertyGroup Condition="'$(MSBuildProjectName)' == 'ResXLocalization.Core'">
-        <Description>The shared, UI-agnostic runtime engine for ResXLocalization, with live culture switching, multiple resource managers, typed resource keys, and Native AOT support.</Description>
+        <Description>The shared, UI-agnostic runtime engine for ResXLocalization, with live culture switching, multiple resource managers, typed resource keys, and Native AOT support. Installed automatically as a dependency of ResXLocalization.Avalonia and ResXLocalization.WPF - most applications should install one of those packages instead.</Description>
         <PackageTags>localization;resx;i18n;l10n;aot</PackageTags>
     </PropertyGroup>
     <PropertyGroup Condition="'$(MSBuildProjectName)' == 'ResXLocalization.Avalonia'">
-        <Description>AOT-safe ResX localization for Avalonia with live language switching and multiple-.resx support. Includes a typed-key source generator and MSBuild wiring; depends transitively on the shared ResXLocalization.Core package.</Description>
+        <Description>Type-safe .resx localization for Avalonia: compile-checked resource keys generated from your .resx files, live language switching without reloads, enum localization, and multiple-.resx support. Fully Native AOT and trimming compatible.</Description>
         <PackageTags>avalonia;localization;resx;i18n;l10n;aot;source-generator;mvvm</PackageTags>
     </PropertyGroup>
     <PropertyGroup Condition="'$(MSBuildProjectName)' == 'ResXLocalization.WPF'">
-        <Description>ResX localization for WPF with live language switching and multiple-.resx support. Includes a typed-key source generator and MSBuild wiring; depends transitively on the shared ResXLocalization.Core package. Windows-only; Native AOT is not supported for WPF.</Description>
+        <Description>Type-safe .resx localization for WPF: compile-checked resource keys generated from your .resx files, live language switching without reloads, enum localization, and multiple-.resx support. Windows-only; Native AOT is not supported for WPF.</Description>
         <PackageTags>wpf;localization;resx;i18n;l10n;source-generator;mvvm</PackageTags>
     </PropertyGroup>
 

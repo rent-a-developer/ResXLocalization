@@ -1,8 +1,8 @@
 # ResXLocalization API Documentation
 
 Type-safe `.resx` localization for [Avalonia](https://avaloniaui.net/) and
-[WPF](https://learn.microsoft.com/dotnet/desktop/wpf/) - switch language **live**, write **zero**
-csproj boilerplate.
+[WPF](https://learn.microsoft.com/dotnet/desktop/wpf/) - switch language **live**, no reload,
+no restart.
 
 This site hosts the generated **[API reference](xref:RentADeveloper.ResXLocalization)** for the
 three runtime assemblies:
@@ -14,4 +14,5 @@ three runtime assemblies:
 | [`RentADeveloper.ResXLocalization.WPF`](xref:RentADeveloper.ResXLocalization.WPF) | `ResXLocalization.WPF` | The WPF markup extensions and converter |
 
 See the [project README](https://github.com/rent-a-developer/ResXLocalization#readme) for
-installation, quick start, lookup modes, fallback behavior, Native AOT, and troubleshooting.
+installation, quick start, enum localization, lookup modes, fallback behavior, Native AOT, and
+troubleshooting.
