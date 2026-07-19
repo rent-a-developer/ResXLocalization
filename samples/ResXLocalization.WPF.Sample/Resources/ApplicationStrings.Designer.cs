@@ -104,7 +104,16 @@ namespace RentADeveloper.ResXLocalization.WPF.Sample.Resources {
                 return ResourceManager.GetString("LanguageSelectorLabel", resourceCulture);
             }
         }
-        
+
+        /// <summary>
+        ///   Looks up a localized string similar to {0} people invited.
+        /// </summary>
+        public static string PeopleInvited {
+            get {
+                return ResourceManager.GetString("PeopleInvited", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Looks up a localized string similar to ResXLocalization Showcase.
         /// </summary>

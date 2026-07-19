@@ -6,7 +6,8 @@ namespace RentADeveloper.ResXLocalization.WPF;
 /// <c>{l:Localize {x:Static res:StringsKeys.Greeting}}</c> for a typed key,
 /// <c>{l:Localize SomeKey}</c> for a key-only lookup across all registered resource managers, or
 /// <c>{l:Localize Key=SomeKey, ResourceManager={x:Static res:Strings.ResourceManager}}</c> to scope
-/// the lookup to one file.
+/// the lookup to one file. When the resource value is a composite format string, supply its
+/// arguments by binding the <see cref="LocalizeArgs" /> attached properties on the target element.
 /// </summary>
 [MarkupExtensionReturnType(typeof(String))]
 public sealed class LocalizeExtension : MarkupExtension
@@ -58,42 +59,61 @@ public sealed class LocalizeExtension : MarkupExtension
     public ResourceManager? ResourceManager { get; set; }
 
     /// <summary>
-    /// Provides the value supplied to the target property: a binding whose value is the localized
-    /// string for the configured key, updated live on every culture change.
+    /// Provides the value supplied to the target property: a multi-binding whose value is the
+    /// localized string for the configured key, updated live on every culture change and on every
+    /// change of the target element's <see cref="LocalizeArgs" /> arguments.
     /// </summary>
     /// <param name="serviceProvider">The service provider supplied by the XAML loader.</param>
-    /// <returns>A WPF binding that yields the localized string.</returns>
+    /// <returns>A WPF multi-binding that yields the localized string.</returns>
     public override Object ProvideValue(IServiceProvider serviceProvider)
     {
-        Func<String> valueFactory;
+        Func<String> resolve;
+        Func<Object?[], String> resolveFormatted;
 
         if (this.ResourceKey.HasValue)
         {
             var resourceKey = this.ResourceKey.Value;
-            valueFactory = () => Localizer.Current.Get(resourceKey);
+            resolve = () => Localizer.Current.Get(resourceKey);
+            resolveFormatted = arguments => Localizer.Current.Get(resourceKey, arguments);
         }
         else if (this.ResourceManager is not null)
         {
             var key = this.Key;
             var resourceManager = this.ResourceManager;
-            valueFactory = () => Localizer.Current.Get(key, resourceManager);
+            resolve = () => Localizer.Current.Get(key, resourceManager);
+            resolveFormatted = arguments => Localizer.Current.Get(key, resourceManager, arguments);
         }
         else
         {
             var key = this.Key;
-            valueFactory = () => Localizer.Current.Get(key);
+            resolve = () => Localizer.Current.Get(key);
+            resolveFormatted = arguments => Localizer.Current.Get(key, arguments);
         }
 
-        // Bind to the ambient localizer's CurrentCulture so WPF re-evaluates on every switch; the converter
-        // ignores the culture value and returns the freshly resolved string. Because the source is the
-        // process-wide singleton (an INotifyPropertyChanged), WPF keeps the binding target only weakly.
-        var binding = new Binding(nameof(ILocalizer.CurrentCulture))
+        // Three constant children, regardless of how many arguments are used:
+        // 1. The ambient localizer's CurrentCulture re-triggers the conversion on every language switch.
+        //    Because that source is the process-wide singleton (an INotifyPropertyChanged), WPF keeps the
+        //    binding target only weakly.
+        // 2. The element's LocalizeArgs args-version re-triggers the conversion whenever any argument
+        //    changes - crucial because ProvideValue runs during XAML instantiation, before argument
+        //    bindings deliver values, so the arguments must be re-read later, not captured here.
+        // 3. The target element itself, from which the converter reads the current arguments.
+        // RelativeSource.Self resolves per applied instance, so the extension also works inside
+        // deferred item and data templates.
+        var multiBinding = new MultiBinding
         {
-            Source = Localizer.Current,
-            Mode = BindingMode.OneWay,
-            Converter = new LocalizedStringConverter(valueFactory)
+            Converter = new LocalizedFormattedStringConverter(resolve, resolveFormatted),
+            Mode = BindingMode.OneWay
         };
+        multiBinding.Bindings.Add(new Binding(nameof(ILocalizer.CurrentCulture)) { Source = Localizer.Current });
+        multiBinding.Bindings.Add(new Binding
+        {
+            RelativeSource = RelativeSource.Self,
+            Path = new PropertyPath(LocalizeArgs.ArgsVersionProperty)
+        }
+        );
+        multiBinding.Bindings.Add(new Binding { RelativeSource = RelativeSource.Self });
 
-        return binding.ProvideValue(serviceProvider);
+        return multiBinding.ProvideValue(serviceProvider);
     }
 }

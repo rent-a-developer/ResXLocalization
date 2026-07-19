@@ -126,6 +126,9 @@
   <data name="LanguageSelectorLabel" xml:space="preserve">
     <value>Display language:</value>
   </data>
+  <data name="PeopleInvited" xml:space="preserve">
+    <value>{0} people invited</value>
+  </data>
   <data name="Enum_FileSortOrder_Unsorted" xml:space="preserve">
     <value>Unsorted</value>
   </data>

@@ -76,6 +76,17 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     /// </summary>
     public String PoweredByViaTypedKey => this.localizer.Get(BrandingStringsKeys.PoweredBy);
 
+    /// <summary>
+    /// The people count formatted into the <c>PeopleInvited</c> resource by the dynamic
+    /// format-arguments demo: the view binds it to <c>LocalizeArgs.Arg0</c>, so every change
+    /// re-formats the localized text live.
+    /// </summary>
+    [ObservableProperty]
+    public partial Int32 PeopleCount { get; set; } = 5;
+
+    /// <summary>Gets the choices offered for <see cref="PeopleCount" /> in the format-arguments demo.</summary>
+    public Int32[] PeopleCountOptions { get; } = [0, 1, 2, 5, 10];
+
     /// <summary>The selected sort order. Changing it refreshes the four enum read-outs below.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SortOrderViaSearchAllDefaultPrefix))]

@@ -323,7 +323,7 @@
                             <TextBlock Style="{StaticResource SectionHeaderTitle}"
                                        Text="3.  Scoped lookup - pin a key to one file" />
                             <TextBlock Style="{StaticResource SectionHeaderSubtitle}"
-                                       Text="Pass a ResourceManager alongside the key to read from exactly one file, bypassing the search. The named accessor must be public for XAML to reference it via x:Static; internal files are scoped from code-behind instead (see section 6)." />
+                                       Text="Pass a ResourceManager alongside the key to read from exactly one file, bypassing the search. The named accessor must be public for XAML to reference it via x:Static; internal files are scoped from code-behind instead (see section 7)." />
                         </StackPanel>
                     </Border>
                     <Border Style="{StaticResource SectionRow}">
@@ -662,12 +662,58 @@
                     </Border>
                 </StackPanel>
 
-                <!--  ===== 6. Code-behind API (ILocalizer.Get + indexer) =====  -->
+                <!--  ===== 6. Dynamic format arguments (LocalizeArgs) =====  -->
+                <StackPanel Margin="0,0,0,16">
+                    <Border Style="{StaticResource SectionHeader}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionHeaderTitle}"
+                                       Text="6.  Dynamic format arguments - LocalizeArgs" />
+                            <TextBlock Style="{StaticResource SectionHeaderSubtitle}"
+                                       Text="A resource value can be a composite format string - here PeopleInvited is '{0} people invited'. Bind the LocalizeArgs.Arg0…Arg8 attached properties on the element to supply the arguments; the text re-formats live when a bound argument or the language changes." />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource SectionRow}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                       Text="People count (the view-model property bound to LocalizeArgs.Arg0):" />
+                            <ComboBox Width="160"
+                                      Margin="0,5,0,0"
+                                      HorizontalAlignment="Left"
+                                      ItemsSource="{Binding PeopleCountOptions}"
+                                      SelectedItem="{Binding PeopleCount}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource SectionLastRow}">
+                        <Grid Margin="0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="550" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionRowTechnique}"
+                                           Text="Arg0 bound to a view-model property" />
+                                <controls:SyntaxTextBlock Code="&lt;TextBlock l:LocalizeArgs.Arg0=&quot;{Binding PeopleCount}&quot; Text=&quot;{l:Localize {x:Static res:ApplicationStringsKeys.PeopleInvited}}&quot; /&gt;"
+                                                          Style="{StaticResource SectionRowSyntax}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionRowResultTitle}"
+                                           Text="Result" />
+                                <TextBlock l:LocalizeArgs.Arg0="{Binding PeopleCount}"
+                                           Style="{StaticResource SectionRowResultValue}"
+                                           Text="{l:Localize {x:Static res:ApplicationStringsKeys.PeopleInvited}}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <!--  ===== 7. Code-behind API (ILocalizer.Get + indexer) =====  -->
                 <StackPanel>
                     <Border Style="{StaticResource SectionHeader}">
                         <StackPanel>
                             <TextBlock Style="{StaticResource SectionHeaderTitle}"
-                                       Text="6.  Code-behind API - ILocalizer.Get and the indexer" />
+                                       Text="7.  Code-behind API - ILocalizer.Get and the indexer" />
                             <TextBlock Style="{StaticResource SectionHeaderSubtitle}"
                                        Text="Outside XAML, resolve strings with the ILocalizer methods. The view model below computes each value once per language switch; binding to those properties is what makes this section update live. Every Get overload and the indexer are shown." />
                         </StackPanel>

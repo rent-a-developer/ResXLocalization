@@ -44,6 +44,23 @@ internal static class TestSupport
         return textBlock;
     }
 
+    /// <summary>
+    /// Binds a <see cref="LocalizeExtension" /> to a fresh text block's Text, supplying the text block
+    /// as the extension's target - mirroring real XAML usage - so the produced binding can read the
+    /// <see cref="LocalizeArgs" /> arguments set on it.
+    /// </summary>
+    /// <param name="extension">The markup extension that creates the localization binding.</param>
+    /// <returns>The bound text block.</returns>
+    public static TextBlock BindLocalizedTextWithTarget(LocalizeExtension extension)
+    {
+        var textBlock = new TextBlock();
+        var binding = (BindingBase)extension.ProvideValue(
+            new SimpleServiceProvider(new SimpleProvideValueTarget(textBlock))
+        );
+        textBlock.Bind(TextBlock.TextProperty, binding);
+        return textBlock;
+    }
+
     /// <summary>Pumps queued UI work so that bindings settle before assertions.</summary>
     public static void PumpUi() =>
         Dispatcher.UIThread.RunJobs(DispatcherPriority.Loaded);

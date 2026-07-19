@@ -49,7 +49,7 @@ Localizer.Current.CurrentCulture = new CultureInfo("de");
 - 🚀 **Native AOT & trim clean (Avalonia)** - no reflection over your resources; publishes with `PublishAot=true` out of the box. *(WPF is Windows-only and does not support Native AOT.)*
 - 🗂️ **First-class multiple `.resx`** - look up by **typed key**, **scope** to one file, or **search across all** registered files in a defined order.
 - 🔤 **Enum localization built in** - localize enum members by naming convention, in item templates and as bound values. See [Localizing enums](#localizing-enums).
-- 🧮 **Format arguments** - `Get(key, args…)` formats the translation in the active culture.
+- 🧮 **Format arguments** - `Get(key, args…)` formats the translation in the active culture; in XAML, bind the `LocalizeArgs.Arg0`…`Arg8` attached properties. See [Dynamic format arguments](#dynamic-format-arguments).
 - 🩺 **Missing-translation diagnostics** - a visible `!key!` sentinel (configurable) plus a `TranslationNotFound` event for logging and coverage reports.
 - 🌐 **Language-picker ready** - `GetAvailableCultures()` discovers the cultures your app actually ships.
 - 🧩 **MVVM-friendly** - an injectable `ILocalizer` service with `INotifyPropertyChanged`, markup extensions for XAML, and a clean code-behind API.
@@ -63,6 +63,7 @@ Localizer.Current.CurrentCulture = new CultureInfo("de");
 - [Installation](#installation)
 - [Quick start](#quick-start)
 - [Localizing enums](#localizing-enums)
+- [Dynamic format arguments](#dynamic-format-arguments)
 - [Guides and API reference](#guides-and-api-reference)
 - [Troubleshooting](#troubleshooting)
 - [The sample applications](#the-sample-applications)
@@ -319,6 +320,45 @@ To customize the converter, declare your own instance in resources
 ```xml
 <l:LocalizeEnumConverter x:Key="DisplayEnumConverter" KeyPrefix="Display_" />
 ```
+
+## Dynamic format arguments
+
+A resource value can be a composite format string, and the arguments can come straight from your
+view model. Add the entry as usual:
+
+| Key             | `AppStrings.resx` (English) | `AppStrings.de.resx` (German) |
+| --------------- | --------------------------- | ----------------------------- |
+| `PeopleInvited` | `{0} people invited`        | `{0} Personen eingeladen`     |
+
+Then bind the **`LocalizeArgs.Arg0`…`Arg8` attached properties** on the element that carries the
+localized property - the same XAML in Avalonia and WPF:
+
+```xml
+<TextBlock l:LocalizeArgs.Arg0="{Binding PeopleCount}"
+           Text="{l:Localize {x:Static res:AppStringsKeys.PeopleInvited}}" />
+```
+
+The rendered text re-formats **live** whenever a bound argument changes *and* whenever the language
+switches - `PeopleCount = 5` renders `5 people invited`, and switching to German re-renders it as
+`5 Personen eingeladen` in place.
+
+Worth knowing:
+
+- **Nine slots, `Arg0` through `Arg8`.** Arguments above the highest set slot are trimmed; a set
+  slot with unset slots below it (say, only `Arg2`) formats the gaps as `null`, which renders empty.
+- **Arguments are per element.** Two localized properties on the same element - for example a
+  localized `Text` and a localized `ToolTip` - share the one argument set. Give each its own
+  element when they need different arguments.
+- **Per-argument format specifiers belong in the resource string** - e.g.
+  `{0:N0} people invited` - where translators can adjust them per language. Formatting runs in
+  the active culture via `String.Format`.
+- **No arguments set - no formatting.** An element without any `ArgN` resolves exactly as before,
+  so existing resource values containing literal `{` or `}` keep working without `{{` escaping.
+  The missing-key sentinel (`!key!`) is likewise never formatted.
+- **Keep it simple.** For very complex strings, compose the text in your view model with
+  `Get(key, args…)` instead of wiring many argument slots. And composite formatting does not handle
+  pluralization - `1 people invited` is on the resource author; use separate singular/plural
+  resources when it matters.
 
 ---
 
