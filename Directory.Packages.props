@@ -25,7 +25,7 @@
 
         <!-- Test stack (coverlet + the logger are referenced centrally for every test project). -->
         <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.1.0" />
-        <PackageVersion Include="AwesomeAssertions" Version="9.4.0" />
+        <PackageVersion Include="AwesomeAssertions" Version="9.5.0" />
         <PackageVersion Include="coverlet.collector" Version="10.0.1" />
         <!-- 2.x is the VSTest logger; 3.x targets Microsoft.Testing.Platform, which xunit.v3 under
              Microsoft.NET.Test.Sdk does not use here. -->
