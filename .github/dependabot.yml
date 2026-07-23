@@ -3,7 +3,7 @@ updates:
   - package-ecosystem: nuget
     directory: "/"
     schedule:
-      interval: weekly
+      interval: quarterly
     groups:
       # Avalonia packages are version-locked to each other; update them together.
       avalonia:
@@ -18,4 +18,4 @@ updates:
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
-      interval: weekly
+      interval: quarterly
