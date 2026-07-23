@@ -19,3 +19,8 @@ updates:
     directory: "/"
     schedule:
       interval: quarterly
+    groups:
+      # Keep CodeQL action variants in sync since they're released together
+      codeql:
+        patterns:
+          - "github/codeql-action/*"
