@@ -36,8 +36,36 @@ dotnet test tests/ResXLocalization.WPF.Sample.Tests/ResXLocalization.WPF.Sample.
 Format the code before committing - CI enforces it:
 
 ```shell
-scripts\formatCode.cmd    # Windows
-scripts/formatCode.sh     # Linux/macOS
+pwsh -File scripts/tidy-code.ps1
+```
+
+## Line endings
+
+Every text file is LF, in the repository and in the working tree, on every OS. `.gitattributes`
+enforces this whatever your `core.autocrlf` is set to, so there is nothing to configure, and CI fails
+if a wrongly stored file lands anyway.
+
+`.editorconfig` also asks editors and formatters to write LF. XamlStyler cannot: it always writes the
+host OS newline, so `scripts/tidy-code.ps1` rewrites the XAML back to LF after running it. If some
+other tool writes CRLF, git still stores LF, but `git status` lists the file as modified while
+`git diff` shows nothing. Run `pwsh -File scripts/tidy-code.ps1` to fix it, or `git checkout -- <path>`.
+
+If you have set `git config core.safecrlf true`, git refuses to add such a file with "CRLF would be
+replaced by LF". Run the tidy script first, or use `core.safecrlf warn`.
+
+One more one-time step after cloning, so `git blame` skips whole-repository mechanical commits (GitHub
+does this automatically):
+
+```shell
+git config blame.ignoreRevsFile .git-blame-ignore-revs
+```
+
+To refresh a clone made before this policy (commit or stash your changes first - the second command
+discards uncommitted work):
+
+```shell
+git rm -r --cached . -q
+git reset --hard
 ```
 
 ## Pull request checklist

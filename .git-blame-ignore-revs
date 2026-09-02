@@ -1,0 +1,14 @@
+# Commits that rewrote lines across the repository without changing what the code does.
+# `git blame` skips them, so it points at whoever wrote the logic rather than at the tool.
+#
+# GitHub reads this file automatically. Locally you have to opt in, once per clone:
+#
+#     git config blame.ignoreRevsFile .git-blame-ignore-revs
+#
+# The SHAs below are load-bearing, and git does NOT warn about one it cannot resolve: it skips the
+# entry. "Rebase and merge" and "Squash and merge" rewrite every SHA on a branch, so merge a branch
+# that adds an entry here with a MERGE COMMIT. CI's lint job fails if a revision stops resolving.
+
+# style: renormalize line endings to LF
+# Line endings only.
+3c9a8deec2a886ad7c8e5a269c5f8b60b11cc78b
