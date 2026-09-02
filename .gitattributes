@@ -1,31 +1,16 @@
-# Auto-detect text files, normalize to LF in the repo
-* text=auto
+# Every text file is LF, in the repository and in the working tree, on every OS.
+# Git auto-detects text vs. binary; the rules below are the exceptions.
+#
+# The explicit eol= overrides core.autocrlf and core.eol, so a contributor needs no git configuration
+# and a wrong one cannot change what lands in the repository. CI fails if a file is ever stored
+# otherwise.
+* text=auto eol=lf
 
-# Force specific line endings where it matters
-*.cs        text eol=crlf
-*.csproj    text eol=crlf
-*.slnf      text eol=crlf
-*.slnx      text eol=crlf
-*.props     text eol=crlf
-*.targets   text eol=crlf
-*.xaml      text eol=crlf
-*.axaml     text eol=crlf
-*.resx      text eol=crlf
-*.manifest  text eol=crlf
-*.json      text eol=lf
-*.yml       text eol=lf
-*.yaml      text eol=lf
-*.md        text eol=lf
-
-# Windows batch files require CRLF; shell scripts require LF.
-*.cmd       text eol=crlf
-*.bat       text eol=crlf
-*.sh        text eol=lf
-
-# Binary files - never touch
-*.png       binary
-*.jpg       binary
-*.ico       binary
-*.dll       binary
-*.exe       binary
-*.snk       binary
+# Binary files - never convert. text=auto already detects most of these; the list makes it certain.
+*.png   binary
+*.jpg   binary
+*.gif   binary
+*.ico   binary
+*.snk   binary
+*.dll   binary
+*.exe   binary

@@ -34,24 +34,27 @@ env:
   NUGET_CONFIG: NuGet.config
   PACKAGE_OUTPUT: artifacts/packages
   RELEASE_NOTES_FILE: release-notes.md
-  RELEASE_NOTES_SCRIPT: scripts/extract-release-notes.sh
+  RELEASE_NOTES_SCRIPT: scripts/extract-release-notes.ps1
   SOLUTION: ResXLocalization.slnx
   SOLUTION_FILTER_NON_WINDOWS: ResXLocalization.NonWindows.slnf
-  SAMPLES_DIRECTORY: samples
-  SOURCE_DIRECTORY: src
   TEST_RESULTS: artifacts/test-results
   WPF_CONSUMER_PROJECT: tests/package-consumption/WpfConsumer/WpfConsumer.csproj
   WPF_TEST_PROJECT: tests/ResXLocalization.WPF.Sample.Tests/ResXLocalization.WPF.Sample.Tests.csproj
 
 jobs:
-  # Enforce the formatting the repo ships tooling for (dotnet format + XamlStyler): a style rule that
-  # is not enforced in CI drifts with the first external pull request.
-  # Windows runner: XamlStyler always writes the host OS's newline and has no line-ending setting,
-  # and .gitattributes checks the XAML files out as CRLF everywhere — so the passive check can only
-  # pass on Windows.
+  # Enforce the formatting the repo ships tooling for: a rule that is not enforced in CI drifts with
+  # the first external pull request.
+  #
+  # This runs scripts/tidy-code.ps1, the same entry point a developer uses. -Check formats the checkout
+  # for real and then asks whether anything changed: XamlStyler has no usable check mode here, because
+  # it compares against its own CRLF output and so fails on LF files on Windows. Writing to the
+  # checkout is harmless in CI; it is thrown away at the end of the job.
+  #
+  # Ubuntu is a cost and speed choice, not a correctness one: -Check gives the same answer on every OS,
+  # and on Linux the non-Windows solution filter keeps the WPF projects out of the restore.
   lint:
     name: Lint
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
@@ -59,6 +62,60 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+          # Full history, for the .git-blame-ignore-revs check below; at depth 1 no revision it names
+          # would resolve.
+          fetch-depth: 0
+
+      # .gitattributes only applies when a file is ADDED. A file committed past it, or a rule added
+      # after the file, stays wrong forever and nothing complains - and commits created server-side,
+      # such as a bot's, bypass the filter entirely. Renormalizing and asking whether anything changed
+      # is the exact question, and it needs no toolchain.
+      - name: Verify line endings are normalized
+        run: |
+          git add --renormalize .
+          if ! git diff --cached --quiet; then
+            git --no-pager diff --cached --name-only
+            echo "::error title=Line endings::The files above are not stored as .gitattributes requires. Run 'git add --renormalize .' and commit the result."
+            exit 1
+          fi
+
+      # .git-blame-ignore-revs names commits by raw SHA, and git does NOT complain about one it cannot
+      # resolve - it silently skips the entry. A rebase-merge or squash-merge rewrites every SHA on a
+      # branch, which is exactly how that happens. This step is what makes it visible.
+      - name: Verify .git-blame-ignore-revs
+        run: |
+          if [ ! -f .git-blame-ignore-revs ]; then
+            echo "No .git-blame-ignore-revs - nothing to check."
+            exit 0
+          fi
+
+          status=0
+          count=0
+          while read -r revision _ || [ -n "${revision}" ]; do
+            revision="${revision%$'\r'}"
+            case "${revision}" in ''|\#*) continue ;; esac
+            count=$((count + 1))
+
+            if ! git rev-parse --verify --quiet "${revision}^{commit}" > /dev/null; then
+              echo "::error file=.git-blame-ignore-revs::${revision} is not a commit in this repository. If the branch that introduced it was rebased or squash-merged, replace it with the SHA it became."
+              status=1
+            elif ! git merge-base --is-ancestor "${revision}" HEAD; then
+              echo "::error file=.git-blame-ignore-revs::${revision} is a commit, but not an ancestor of HEAD, so blame can never reach it."
+              status=1
+            fi
+          done < .git-blame-ignore-revs
+
+          if [ "${count}" -eq 0 ]; then
+            echo "::error file=.git-blame-ignore-revs::The file lists no revisions. Delete it if it is no longer wanted."
+            exit 1
+          fi
+
+          if [ "${status}" -ne 0 ]; then
+            echo "Checked ${count} revision(s); see the errors above."
+            exit 1
+          fi
+
+          echo "All ${count} revision(s) resolve and are reachable."
 
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -82,23 +139,13 @@ jobs:
       - name: Restore
         run: dotnet restore ${{ env.SOLUTION_FILTER_NON_WINDOWS }} --configfile ${{ env.NUGET_CONFIG }}
 
-      # Whitespace only: the semantic style and analyzer rules are already enforced by the build
-      # itself (EnforceCodeStyleInBuild + TreatWarningsAsErrors) in the verify jobs.
-      - name: Verify C# formatting (dotnet format)
-        run: dotnet format whitespace ${{ env.SOLUTION_FILTER_NON_WINDOWS }} --no-restore --verify-no-changes
+      - name: Verify formatting
+        run: pwsh -NoProfile -NonInteractive -File scripts/tidy-code.ps1 -Check
 
-      - name: Verify XAML formatting (XamlStyler)
-        shell: bash
-        # xstyler's passive mode exits non-zero when files fail the check; "|| true" keeps the
-        # step alive under "bash -e" so the output and the actionable error below still print.
-        # The grep on the output is what decides pass/fail.
-        run: |
-          output="$(dotnet xstyler --passive --recursive --directory "${SOURCE_DIRECTORY}" || true; dotnet xstyler --passive --recursive --directory "${SAMPLES_DIRECTORY}" || true)"
-          echo "${output}"
-          if grep -q "FAIL" <<< "${output}"; then
-            echo "::error title=XAML formatting::Run scripts/formatCode (dotnet xstyler --recursive --directory src && dotnet xstyler --recursive --directory samples) and commit the result."
-            exit 1
-          fi
+      # The check above only says that something is unformatted. This says what.
+      - name: Show the changes that would fix it
+        if: failure()
+        run: git --no-pager diff --stat && git --no-pager diff
 
   # Cross-platform: build and test the shared Core, the source generator, and the Avalonia stack. These
   # projects target net8.0/net10.0 and build/test identically on Linux and Windows. The WPF projects are
@@ -465,7 +512,8 @@ jobs:
           path: ${{ env.PACKAGE_OUTPUT }}
 
       - name: Validate release changelog before publication
-        run: ${{ env.RELEASE_NOTES_SCRIPT }} "${GITHUB_REF_NAME#v}"
+        shell: pwsh
+        run: ./${{ env.RELEASE_NOTES_SCRIPT }} -Version "$($env:GITHUB_REF_NAME -replace '^v', '')"
 
       - name: Verify the tag matches the packed version
         shell: bash
@@ -536,7 +584,8 @@ jobs:
           path: ${{ env.PACKAGE_OUTPUT }}
 
       - name: Extract the changelog section for this version
-        run: ${{ env.RELEASE_NOTES_SCRIPT }} "${GITHUB_REF_NAME#v}"
+        shell: pwsh
+        run: ./${{ env.RELEASE_NOTES_SCRIPT }} -Version "$($env:GITHUB_REF_NAME -replace '^v', '')"
 
       - name: Create the release
         env:

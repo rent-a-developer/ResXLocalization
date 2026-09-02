@@ -19,8 +19,7 @@ dotnet test tests/ResXLocalization.Avalonia.Sample.Tests/ResXLocalization.Avalon
 dotnet test tests/ResXLocalization.WPF.Sample.Tests/ResXLocalization.WPF.Sample.Tests.csproj -c Release   # Windows only
 
 # Format before committing (CI fails otherwise).
-scripts\formatCode.cmd   # Windows
-scripts/formatCode.sh    # Linux/macOS
+pwsh -File scripts/tidy-code.ps1
 ```
 
 ## Conventions the build enforces (get these right or CI fails)
@@ -30,6 +29,9 @@ scripts/formatCode.sh    # Linux/macOS
   to allow it.
 - **Zero warnings.** `TreatWarningsAsErrors` + `AnalysisMode=All` + StyleCop + Roslynator +
   ErrorProne.NET. A warning is a build failure. Match the surrounding style; `.editorconfig` decides.
+- **Line endings are LF everywhere.** `.gitattributes` and `.editorconfig` enforce this and CI verifies
+  it. Never hand-convert line endings, and never compare a multi-line source literal against
+  `Environment.NewLine` - the literal carries the file's bytes, `Environment.NewLine` carries the host's.
 - **Avalonia/WPF symmetry.** `src/ResXLocalization.Avalonia` and `src/ResXLocalization.WPF` mirror
   each other (markup extensions, converters, behaviors). A change to one almost always needs the
   mirrored change in the other, plus mirrored tests.

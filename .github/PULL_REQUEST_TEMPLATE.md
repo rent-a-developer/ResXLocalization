@@ -13,4 +13,4 @@
 - [ ] Public API changes are declared in the affected `PublicAPI.Unshipped.txt`.
 - [ ] XML docs and `README.md` updated for public API changes.
 - [ ] `CHANGELOG.md` updated under *Unreleased*.
-- [ ] Code formatted (`scripts/formatCode.cmd` / `scripts/formatCode.sh`).
+- [ ] Code formatted (`pwsh -File scripts/tidy-code.ps1`).
