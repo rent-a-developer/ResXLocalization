@@ -7,13 +7,13 @@ namespace RentADeveloper.ResXLocalization.WPF;
 /// <c>&lt;TextBlock Text="{l:LocalizeEnum}" /&gt;</c>. The value is mapped to a resource key using the
 /// convention <c>{KeyPrefix}{EnumTypeName}_{Value}</c>.
 /// </summary>
-[MarkupExtensionReturnType(typeof(String))]
+[MarkupExtensionReturnType(typeof(string))]
 public sealed class LocalizeEnumExtension : MarkupExtension
 {
     /// <summary>
     /// Gets or sets the prefix prepended to the generated resource key. Defaults to <c>Enum_</c>.
     /// </summary>
-    public String KeyPrefix { get; set; } = EnumKeyConvention.DefaultEnumKeyPrefix;
+    public string KeyPrefix { get; set; } = EnumKeyConvention.DefaultEnumKeyPrefix;
 
     /// <summary>
     /// Gets or sets the resource manager that scopes the lookup to a single <c>.resx</c> file. When
@@ -28,12 +28,12 @@ public sealed class LocalizeEnumExtension : MarkupExtension
     /// </summary>
     /// <param name="serviceProvider">The service provider supplied by the XAML loader.</param>
     /// <returns>A WPF multi-binding that yields the localized enumeration text.</returns>
-    public override Object ProvideValue(IServiceProvider serviceProvider)
+    public override object ProvideValue(IServiceProvider serviceProvider)
     {
         var converter = new LocalizeEnumConverter
         {
             KeyPrefix = this.KeyPrefix,
-            ResourceManager = this.ResourceManager
+            ResourceManager = this.ResourceManager,
         };
 
         // The empty-path binding reads the target control's DataContext (the enum value); the second

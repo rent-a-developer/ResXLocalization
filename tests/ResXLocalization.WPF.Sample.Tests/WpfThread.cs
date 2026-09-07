@@ -8,10 +8,11 @@ namespace RentADeveloper.ResXLocalization.WPF.Sample.Tests;
 /// </summary>
 internal static class WpfThread
 {
+    private static readonly Dispatcher SharedDispatcher = StartDispatcher();
+
     /// <summary>Runs the supplied action synchronously on the shared WPF dispatcher thread.</summary>
     /// <param name="action">The test body to execute on the WPF thread.</param>
-    public static void Invoke(Action action) =>
-        SharedDispatcher.Invoke(action);
+    public static void Invoke(Action action) => SharedDispatcher.Invoke(action);
 
     private static Dispatcher StartDispatcher()
     {
@@ -19,31 +20,30 @@ internal static class WpfThread
         Dispatcher? dispatcher = null;
 
         var thread = new Thread(() =>
+        {
+            try
             {
-                try
+                // One Application for the whole test run registers the WPF pack:// scheme. The sample's own
+                // pack URIs are assembly-qualified (…;component/…), so they resolve without touching
+                // Application.ResourceAssembly (which the test host has already set and forbids changing).
+                if (Application.Current is null)
                 {
-                    // One Application for the whole test run registers the WPF pack:// scheme. The sample's own
-                    // pack URIs are assembly-qualified (…;component/…), so they resolve without touching
-                    // Application.ResourceAssembly (which the test host has already set and forbids changing).
-                    if (Application.Current is null)
-                    {
-                        _ = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
-                    }
-
-                    dispatcher = Dispatcher.CurrentDispatcher;
-                }
-                finally
-                {
-                    // Always release the starter, even on failure, so the main thread never deadlocks waiting.
-                    ready.Set();
+                    _ = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
                 }
 
-                Dispatcher.Run();
+                dispatcher = Dispatcher.CurrentDispatcher;
             }
-        )
+            finally
+            {
+                // Always release the starter, even on failure, so the main thread never deadlocks waiting.
+                ready.Set();
+            }
+
+            Dispatcher.Run();
+        })
         {
             IsBackground = true,
-            Name = "WpfTestThread"
+            Name = "WpfTestThread",
         };
 
         thread.SetApartmentState(ApartmentState.STA);
@@ -52,6 +52,4 @@ internal static class WpfThread
 
         return dispatcher!;
     }
-
-    private static readonly Dispatcher SharedDispatcher = StartDispatcher();
 }

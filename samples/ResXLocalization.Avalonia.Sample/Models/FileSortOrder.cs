@@ -23,5 +23,5 @@ public enum FileSortOrder
     Ascending = 1,
 
     /// <summary>Files are shown in descending order.</summary>
-    Descending = 2
+    Descending = 2,
 }

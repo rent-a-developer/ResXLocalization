@@ -6,34 +6,7 @@ namespace RentADeveloper.ResXLocalization.Core.Tests;
 /// </summary>
 public class LocalizerLookupTests
 {
-    [Fact]
-    public void SearchAll_ReturnsTheFirstMatch_InRegistrationOrder()
-    {
-        var localizer = this.resources.CreateLocalizer();
-
-        // Catalog is registered before Fallback, so it wins the collision on "Shared".
-        localizer.Get("Shared").Should().Be("CatalogShared");
-    }
-
-    [Fact]
-    public void SearchAll_ReachesKeysUniqueToEachRegisteredFile()
-    {
-        var localizer = this.resources.CreateLocalizer();
-
-        localizer.Get("CatalogOnly").Should().Be("CatalogOnlyValue");
-        localizer.Get("FallbackOnly").Should().Be("FallbackOnlyValue");
-    }
-
-    [Fact]
-    public void SearchAll_SwitchesLive_OnCultureChange()
-    {
-        var localizer = this.resources.CreateLocalizer();
-        localizer.Get("Greeting").Should().Be("Hello and welcome!");
-
-        localizer.CurrentCulture = TestResources.German;
-
-        localizer.Get("Greeting").Should().Be("Hallo und willkommen!");
-    }
+    private readonly TestResources resources = new();
 
     [Fact]
     public void Indexer_IsShorthandForSearchAllGet()
@@ -45,12 +18,41 @@ public class LocalizerLookupTests
     }
 
     [Fact]
+    public void MissingKey_ReturnsTheBangSentinel()
+    {
+        var localizer = this.resources.CreateLocalizer();
+
+        localizer.Get("ThisKeyDoesNotExist").Should().Be("!ThisKeyDoesNotExist!");
+        localizer.Get("ThisKeyDoesNotExist", this.resources.Catalog).Should().Be("!ThisKeyDoesNotExist!");
+    }
+
+    [Fact]
+    public void NullOrEmptyKey_ReturnsEmptyString()
+    {
+        var localizer = this.resources.CreateLocalizer();
+
+        localizer.Get(string.Empty).Should().BeEmpty();
+        localizer.Get((string)null!).Should().BeEmpty();
+        localizer.Get(string.Empty, this.resources.Catalog).Should().BeEmpty();
+    }
+
+    [Fact]
     public void ScopedLookup_ReadsExactlyTheNamedFile_EvenForACollidingKey()
     {
         var localizer = this.resources.CreateLocalizer();
 
         localizer.Get("Shared", this.resources.Catalog).Should().Be("CatalogShared");
         localizer.Get("Shared", this.resources.Fallback).Should().Be("FallbackShared");
+    }
+
+    [Fact]
+    public void ScopedLookup_RejectsNullResourceManager()
+    {
+        var localizer = this.resources.CreateLocalizer();
+
+        var act = () => localizer.Get("Greeting", (ResourceManager)null!);
+
+        act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
@@ -65,42 +67,40 @@ public class LocalizerLookupTests
     }
 
     [Fact]
-    public void TypedResourceKey_ResolvesThroughItsOwnManager()
+    public void SearchAll_ReachesKeysUniqueToEachRegisteredFile()
     {
         var localizer = this.resources.CreateLocalizer();
-        var key = new ResourceKey("Shared", this.resources.Fallback);
 
-        // The key carries its manager, so it reads Fallback even though Catalog is registered first.
-        localizer.Get(key).Should().Be("FallbackShared");
+        localizer.Get("CatalogOnly").Should().Be("CatalogOnlyValue");
+        localizer.Get("FallbackOnly").Should().Be("FallbackOnlyValue");
     }
 
     [Fact]
-    public void NullOrEmptyKey_ReturnsEmptyString()
+    public void SearchAll_ReturnsTheFirstMatch_InRegistrationOrder()
     {
         var localizer = this.resources.CreateLocalizer();
 
-        localizer.Get(String.Empty).Should().BeEmpty();
-        localizer.Get((String)null!).Should().BeEmpty();
-        localizer.Get(String.Empty, this.resources.Catalog).Should().BeEmpty();
+        // Catalog is registered before Fallback, so it wins the collision on "Shared".
+        localizer.Get("Shared").Should().Be("CatalogShared");
     }
 
     [Fact]
-    public void MissingKey_ReturnsTheBangSentinel()
+    public void SearchAll_SwitchesLive_OnCultureChange()
     {
         var localizer = this.resources.CreateLocalizer();
+        localizer.Get("Greeting").Should().Be("Hello and welcome!");
 
-        localizer.Get("ThisKeyDoesNotExist").Should().Be("!ThisKeyDoesNotExist!");
-        localizer.Get("ThisKeyDoesNotExist", this.resources.Catalog).Should().Be("!ThisKeyDoesNotExist!");
+        localizer.CurrentCulture = TestResources.German;
+
+        localizer.Get("Greeting").Should().Be("Hallo und willkommen!");
     }
 
     [Fact]
-    public void ScopedLookup_RejectsNullResourceManager()
+    public void SearchAll_WithNothingRegistered_ReturnsTheSentinel()
     {
-        var localizer = this.resources.CreateLocalizer();
+        var localizer = new Localizer { CurrentCulture = TestResources.English };
 
-        var act = () => localizer.Get("Greeting", (ResourceManager)null!);
-
-        act.Should().Throw<ArgumentNullException>();
+        localizer.Get("Greeting").Should().Be("!Greeting!");
     }
 
     [Fact]
@@ -116,12 +116,12 @@ public class LocalizerLookupTests
     }
 
     [Fact]
-    public void SearchAll_WithNothingRegistered_ReturnsTheSentinel()
+    public void TypedResourceKey_ResolvesThroughItsOwnManager()
     {
-        var localizer = new Localizer { CurrentCulture = TestResources.English };
+        var localizer = this.resources.CreateLocalizer();
+        var key = new ResourceKey("Shared", this.resources.Fallback);
 
-        localizer.Get("Greeting").Should().Be("!Greeting!");
+        // The key carries its manager, so it reads Fallback even though Catalog is registered first.
+        localizer.Get(key).Should().Be("FallbackShared");
     }
-
-    private readonly TestResources resources = new();
 }

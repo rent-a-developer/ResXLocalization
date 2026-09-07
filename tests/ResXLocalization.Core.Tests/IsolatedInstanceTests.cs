@@ -15,6 +15,28 @@ namespace RentADeveloper.ResXLocalization.Core.Tests;
 [Collection(AmbientLocalizerGroup.Name)]
 public class IsolatedInstanceTests
 {
+    private readonly TestResources resources = new();
+
+    [Fact]
+    public void AnIsolatedInstance_SatisfiesTheILocalizerContract() =>
+        this.AssertLocalizerContract(this.resources.CreateLocalizer());
+
+    [Fact]
+    public void CultureChanges_DoNotLeakIntoOtherInstances()
+    {
+        var first = this.resources.CreateLocalizer();
+        var second = this.resources.CreateLocalizer();
+        var secondNotified = false;
+        second.CultureChanged += (_, _) => secondNotified = true;
+
+        first.CurrentCulture = TestResources.German;
+
+        first.Get("Greeting").Should().Be("Hallo und willkommen!");
+        second.Get("Greeting").Should().Be("Hello and welcome!");
+        second.CurrentCulture.Should().Be(TestResources.English);
+        secondNotified.Should().BeFalse();
+    }
+
     [Fact]
     public void Current_CanBeReplaced_AndRejectsNull()
     {
@@ -46,28 +68,6 @@ public class IsolatedInstanceTests
         first.Get("CatalogOnly").Should().Be("CatalogOnlyValue");
         second.Get("CatalogOnly").Should().Be("!CatalogOnly!");
     }
-
-    [Fact]
-    public void CultureChanges_DoNotLeakIntoOtherInstances()
-    {
-        var first = this.resources.CreateLocalizer();
-        var second = this.resources.CreateLocalizer();
-        var secondNotified = false;
-        second.CultureChanged += (_, _) => secondNotified = true;
-
-        first.CurrentCulture = TestResources.German;
-
-        first.Get("Greeting").Should().Be("Hallo und willkommen!");
-        second.Get("Greeting").Should().Be("Hello and welcome!");
-        second.CurrentCulture.Should().Be(TestResources.English);
-        secondNotified.Should().BeFalse();
-    }
-
-    [Fact]
-    public void AnIsolatedInstance_SatisfiesTheILocalizerContract() =>
-        this.AssertLocalizerContract(this.resources.CreateLocalizer());
-
-    private readonly TestResources resources = new();
 
     /// <summary>The typical DI shape: the consumer sees only the interface.</summary>
     /// <param name="localizer">The localizer under test, seen through the interface.</param>

@@ -33,8 +33,8 @@ public class MainWindowViewModelTests
         TestSupport.ResetToEnglishWithTestCatalogs();
         using var viewModel = new MainWindowViewModel(Localizer.Current);
 
-        var changed = new List<String>();
-        viewModel.PropertyChanged += (_, args) => changed.Add(args.PropertyName ?? String.Empty);
+        var changed = new List<string>();
+        viewModel.PropertyChanged += (_, args) => changed.Add(args.PropertyName ?? string.Empty);
 
         viewModel.SelectedLanguage = TestSupport.German;
 
@@ -64,8 +64,8 @@ public class MainWindowViewModelTests
         TestSupport.ResetToEnglishWithTestCatalogs();
         using var viewModel = new MainWindowViewModel(Localizer.Current);
 
-        var changed = new List<String>();
-        viewModel.PropertyChanged += (_, args) => changed.Add(args.PropertyName ?? String.Empty);
+        var changed = new List<string>();
+        viewModel.PropertyChanged += (_, args) => changed.Add(args.PropertyName ?? string.Empty);
 
         viewModel.SelectedFileSortOrder = FileSortOrder.Descending;
 

@@ -15,10 +15,9 @@ public sealed class TestAppBuilder
         Localizer.Current.RegisterResourceManager(SortingStrings.ResourceManager);
         Localizer.Current.RegisterResourceManager(BrandingStrings.ResourceManager);
 
-        return AppBuilder.Configure<App>().UseSkia().UseHeadless(new()
-        {
-            ShouldRenderOnUIThread = true,
-            UseHeadlessDrawing = false
-        });
+        return AppBuilder
+            .Configure<App>()
+            .UseSkia()
+            .UseHeadless(new() { ShouldRenderOnUIThread = true, UseHeadlessDrawing = false });
     }
 }

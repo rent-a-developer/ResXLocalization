@@ -8,4 +8,4 @@ namespace RentADeveloper.ResXLocalization;
 /// </summary>
 /// <param name="Name">The resource key name as it appears in the <c>.resx</c> file.</param>
 /// <param name="Manager">The resource manager that resolves <paramref name="Name" />.</param>
-public readonly record struct ResourceKey(String Name, ResourceManager Manager);
+public readonly record struct ResourceKey(string Name, ResourceManager Manager);

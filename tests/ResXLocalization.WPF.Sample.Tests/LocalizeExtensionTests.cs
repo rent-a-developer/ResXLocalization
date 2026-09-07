@@ -7,7 +7,8 @@ namespace RentADeveloper.ResXLocalization.WPF.Sample.Tests;
 public class LocalizeExtensionTests
 {
     [Fact]
-    public void BoundValue_SwitchesLive_OnCultureChange() => WpfThread.Invoke(() =>
+    public void BoundValue_SwitchesLive_OnCultureChange() =>
+        WpfThread.Invoke(() =>
         {
             TestSupport.ResetToEnglishWithTestCatalogs();
 
@@ -17,22 +18,22 @@ public class LocalizeExtensionTests
             Localizer.Current.CurrentCulture = TestSupport.German;
             TestSupport.Flush();
             textBlock.Text.Should().Be("Hallo und willkommen!");
-        }
-    );
+        });
 
     [Fact]
-    public void KeyProperty_ResolvesViaSearchAll() => WpfThread.Invoke(() =>
+    public void KeyProperty_ResolvesViaSearchAll() =>
+        WpfThread.Invoke(() =>
         {
             TestSupport.ResetToEnglishWithTestCatalogs();
 
             var textBlock = TestSupport.BindLocalizedText(new() { Key = "SortingHint" });
 
             textBlock.Text.Should().Be("Choose how documents are ordered.");
-        }
-    );
+        });
 
     [Fact]
-    public void KeyProperty_WithResourceManager_ResolvesScoped() => WpfThread.Invoke(() =>
+    public void KeyProperty_WithResourceManager_ResolvesScoped() =>
+        WpfThread.Invoke(() =>
         {
             TestSupport.ResetToEnglishWithTestCatalogs();
 
@@ -41,11 +42,33 @@ public class LocalizeExtensionTests
             );
 
             textBlock.Text.Should().Be("Hello and welcome!");
-        }
-    );
+        });
 
     [Fact]
-    public void ResourceKey_TakesPrecedenceOver_KeyAndResourceManager() => WpfThread.Invoke(() =>
+    public void ResourceKeyConstructor_ResolvesViaTypedKey() =>
+        WpfThread.Invoke(() =>
+        {
+            TestSupport.ResetToEnglishWithTestCatalogs();
+
+            var textBlock = TestSupport.BindLocalizedText(new(ApplicationStringsKeys.Greeting));
+
+            textBlock.Text.Should().Be("Hello and welcome!");
+        });
+
+    [Fact]
+    public void ResourceKeyProperty_ResolvesViaTypedKey() =>
+        WpfThread.Invoke(() =>
+        {
+            TestSupport.ResetToEnglishWithTestCatalogs();
+
+            var textBlock = TestSupport.BindLocalizedText(new() { ResourceKey = ApplicationStringsKeys.Greeting });
+
+            textBlock.Text.Should().Be("Hello and welcome!");
+        });
+
+    [Fact]
+    public void ResourceKey_TakesPrecedenceOver_KeyAndResourceManager() =>
+        WpfThread.Invoke(() =>
         {
             TestSupport.ResetToEnglishWithTestCatalogs();
 
@@ -55,51 +78,27 @@ public class LocalizeExtensionTests
                 {
                     ResourceKey = ApplicationStringsKeys.Greeting,
                     Key = "SortingHint",
-                    ResourceManager = SortingStrings.ResourceManager
+                    ResourceManager = SortingStrings.ResourceManager,
                 }
             );
 
             textBlock.Text.Should().Be("Hello and welcome!");
-        }
-    );
+        });
 
     [Fact]
-    public void ResourceKeyConstructor_ResolvesViaTypedKey() => WpfThread.Invoke(() =>
-        {
-            TestSupport.ResetToEnglishWithTestCatalogs();
-
-            var textBlock = TestSupport.BindLocalizedText(new(ApplicationStringsKeys.Greeting));
-
-            textBlock.Text.Should().Be("Hello and welcome!");
-        }
-    );
-
-    [Fact]
-    public void ResourceKeyProperty_ResolvesViaTypedKey() => WpfThread.Invoke(() =>
-        {
-            TestSupport.ResetToEnglishWithTestCatalogs();
-
-            var textBlock = TestSupport.BindLocalizedText(
-                new() { ResourceKey = ApplicationStringsKeys.Greeting }
-            );
-
-            textBlock.Text.Should().Be("Hello and welcome!");
-        }
-    );
-
-    [Fact]
-    public void StringConstructor_ResolvesViaSearchAll() => WpfThread.Invoke(() =>
+    public void StringConstructor_ResolvesViaSearchAll() =>
+        WpfThread.Invoke(() =>
         {
             TestSupport.ResetToEnglishWithTestCatalogs();
 
             var textBlock = TestSupport.BindLocalizedText(new("Greeting"));
 
             textBlock.Text.Should().Be("Hello and welcome!");
-        }
-    );
+        });
 
     [Fact]
-    public void StringConstructor_WithResourceManager_ResolvesScoped() => WpfThread.Invoke(() =>
+    public void StringConstructor_WithResourceManager_ResolvesScoped() =>
+        WpfThread.Invoke(() =>
         {
             TestSupport.ResetToEnglishWithTestCatalogs();
 
@@ -108,6 +107,5 @@ public class LocalizeExtensionTests
             );
 
             textBlock.Text.Should().Be("Choose how documents are ordered.");
-        }
-    );
+        });
 }

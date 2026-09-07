@@ -46,96 +46,6 @@ public static class LocalizeArgs
     /// <summary>Identifies the <c>LocalizeArgs.Arg8</c> attached property: format argument <c>{8}</c>.</summary>
     public static readonly DependencyProperty Arg8Property = RegisterArgument("Arg8");
 
-    /// <summary>Gets the value of the <see cref="Arg0Property" /> attached property.</summary>
-    /// <param name="element">The element holding the argument.</param>
-    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
-    public static Object? GetArg0(DependencyObject element) => GetArgument(element, Arg0Property);
-
-    /// <summary>Gets the value of the <see cref="Arg1Property" /> attached property.</summary>
-    /// <param name="element">The element holding the argument.</param>
-    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
-    public static Object? GetArg1(DependencyObject element) => GetArgument(element, Arg1Property);
-
-    /// <summary>Gets the value of the <see cref="Arg2Property" /> attached property.</summary>
-    /// <param name="element">The element holding the argument.</param>
-    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
-    public static Object? GetArg2(DependencyObject element) => GetArgument(element, Arg2Property);
-
-    /// <summary>Gets the value of the <see cref="Arg3Property" /> attached property.</summary>
-    /// <param name="element">The element holding the argument.</param>
-    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
-    public static Object? GetArg3(DependencyObject element) => GetArgument(element, Arg3Property);
-
-    /// <summary>Gets the value of the <see cref="Arg4Property" /> attached property.</summary>
-    /// <param name="element">The element holding the argument.</param>
-    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
-    public static Object? GetArg4(DependencyObject element) => GetArgument(element, Arg4Property);
-
-    /// <summary>Gets the value of the <see cref="Arg5Property" /> attached property.</summary>
-    /// <param name="element">The element holding the argument.</param>
-    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
-    public static Object? GetArg5(DependencyObject element) => GetArgument(element, Arg5Property);
-
-    /// <summary>Gets the value of the <see cref="Arg6Property" /> attached property.</summary>
-    /// <param name="element">The element holding the argument.</param>
-    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
-    public static Object? GetArg6(DependencyObject element) => GetArgument(element, Arg6Property);
-
-    /// <summary>Gets the value of the <see cref="Arg7Property" /> attached property.</summary>
-    /// <param name="element">The element holding the argument.</param>
-    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
-    public static Object? GetArg7(DependencyObject element) => GetArgument(element, Arg7Property);
-
-    /// <summary>Gets the value of the <see cref="Arg8Property" /> attached property.</summary>
-    /// <param name="element">The element holding the argument.</param>
-    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
-    public static Object? GetArg8(DependencyObject element) => GetArgument(element, Arg8Property);
-
-    /// <summary>Sets the value of the <see cref="Arg0Property" /> attached property.</summary>
-    /// <param name="element">The element to hold the argument.</param>
-    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
-    public static void SetArg0(DependencyObject element, Object? value) => element.SetValue(Arg0Property, value);
-
-    /// <summary>Sets the value of the <see cref="Arg1Property" /> attached property.</summary>
-    /// <param name="element">The element to hold the argument.</param>
-    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
-    public static void SetArg1(DependencyObject element, Object? value) => element.SetValue(Arg1Property, value);
-
-    /// <summary>Sets the value of the <see cref="Arg2Property" /> attached property.</summary>
-    /// <param name="element">The element to hold the argument.</param>
-    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
-    public static void SetArg2(DependencyObject element, Object? value) => element.SetValue(Arg2Property, value);
-
-    /// <summary>Sets the value of the <see cref="Arg3Property" /> attached property.</summary>
-    /// <param name="element">The element to hold the argument.</param>
-    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
-    public static void SetArg3(DependencyObject element, Object? value) => element.SetValue(Arg3Property, value);
-
-    /// <summary>Sets the value of the <see cref="Arg4Property" /> attached property.</summary>
-    /// <param name="element">The element to hold the argument.</param>
-    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
-    public static void SetArg4(DependencyObject element, Object? value) => element.SetValue(Arg4Property, value);
-
-    /// <summary>Sets the value of the <see cref="Arg5Property" /> attached property.</summary>
-    /// <param name="element">The element to hold the argument.</param>
-    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
-    public static void SetArg5(DependencyObject element, Object? value) => element.SetValue(Arg5Property, value);
-
-    /// <summary>Sets the value of the <see cref="Arg6Property" /> attached property.</summary>
-    /// <param name="element">The element to hold the argument.</param>
-    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
-    public static void SetArg6(DependencyObject element, Object? value) => element.SetValue(Arg6Property, value);
-
-    /// <summary>Sets the value of the <see cref="Arg7Property" /> attached property.</summary>
-    /// <param name="element">The element to hold the argument.</param>
-    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
-    public static void SetArg7(DependencyObject element, Object? value) => element.SetValue(Arg7Property, value);
-
-    /// <summary>Sets the value of the <see cref="Arg8Property" /> attached property.</summary>
-    /// <param name="element">The element to hold the argument.</param>
-    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
-    public static void SetArg8(DependencyObject element, Object? value) => element.SetValue(Arg8Property, value);
-
     /// <summary>
     /// The single "arguments changed" signal <see cref="LocalizeExtension" /> subscribes to: every
     /// <c>ArgN</c> change increments this version on the element, so one binding per localized
@@ -143,10 +53,114 @@ public static class LocalizeArgs
     /// </summary>
     internal static readonly DependencyProperty ArgsVersionProperty = DependencyProperty.RegisterAttached(
         "ArgsVersion",
-        typeof(Int32),
+        typeof(int),
         typeof(LocalizeArgs),
         new PropertyMetadata(0)
     );
+
+    /// <summary>The nine argument slots in slot order, for <see cref="GetArguments" />.</summary>
+    private static readonly DependencyProperty[] ArgumentProperties =
+    [
+        Arg0Property,
+        Arg1Property,
+        Arg2Property,
+        Arg3Property,
+        Arg4Property,
+        Arg5Property,
+        Arg6Property,
+        Arg7Property,
+        Arg8Property,
+    ];
+
+    /// <summary>Gets the value of the <see cref="Arg0Property" /> attached property.</summary>
+    /// <param name="element">The element holding the argument.</param>
+    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
+    public static object? GetArg0(DependencyObject element) => GetArgument(element, Arg0Property);
+
+    /// <summary>Gets the value of the <see cref="Arg1Property" /> attached property.</summary>
+    /// <param name="element">The element holding the argument.</param>
+    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
+    public static object? GetArg1(DependencyObject element) => GetArgument(element, Arg1Property);
+
+    /// <summary>Gets the value of the <see cref="Arg2Property" /> attached property.</summary>
+    /// <param name="element">The element holding the argument.</param>
+    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
+    public static object? GetArg2(DependencyObject element) => GetArgument(element, Arg2Property);
+
+    /// <summary>Gets the value of the <see cref="Arg3Property" /> attached property.</summary>
+    /// <param name="element">The element holding the argument.</param>
+    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
+    public static object? GetArg3(DependencyObject element) => GetArgument(element, Arg3Property);
+
+    /// <summary>Gets the value of the <see cref="Arg4Property" /> attached property.</summary>
+    /// <param name="element">The element holding the argument.</param>
+    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
+    public static object? GetArg4(DependencyObject element) => GetArgument(element, Arg4Property);
+
+    /// <summary>Gets the value of the <see cref="Arg5Property" /> attached property.</summary>
+    /// <param name="element">The element holding the argument.</param>
+    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
+    public static object? GetArg5(DependencyObject element) => GetArgument(element, Arg5Property);
+
+    /// <summary>Gets the value of the <see cref="Arg6Property" /> attached property.</summary>
+    /// <param name="element">The element holding the argument.</param>
+    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
+    public static object? GetArg6(DependencyObject element) => GetArgument(element, Arg6Property);
+
+    /// <summary>Gets the value of the <see cref="Arg7Property" /> attached property.</summary>
+    /// <param name="element">The element holding the argument.</param>
+    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
+    public static object? GetArg7(DependencyObject element) => GetArgument(element, Arg7Property);
+
+    /// <summary>Gets the value of the <see cref="Arg8Property" /> attached property.</summary>
+    /// <param name="element">The element holding the argument.</param>
+    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
+    public static object? GetArg8(DependencyObject element) => GetArgument(element, Arg8Property);
+
+    /// <summary>Sets the value of the <see cref="Arg0Property" /> attached property.</summary>
+    /// <param name="element">The element to hold the argument.</param>
+    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
+    public static void SetArg0(DependencyObject element, object? value) => element.SetValue(Arg0Property, value);
+
+    /// <summary>Sets the value of the <see cref="Arg1Property" /> attached property.</summary>
+    /// <param name="element">The element to hold the argument.</param>
+    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
+    public static void SetArg1(DependencyObject element, object? value) => element.SetValue(Arg1Property, value);
+
+    /// <summary>Sets the value of the <see cref="Arg2Property" /> attached property.</summary>
+    /// <param name="element">The element to hold the argument.</param>
+    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
+    public static void SetArg2(DependencyObject element, object? value) => element.SetValue(Arg2Property, value);
+
+    /// <summary>Sets the value of the <see cref="Arg3Property" /> attached property.</summary>
+    /// <param name="element">The element to hold the argument.</param>
+    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
+    public static void SetArg3(DependencyObject element, object? value) => element.SetValue(Arg3Property, value);
+
+    /// <summary>Sets the value of the <see cref="Arg4Property" /> attached property.</summary>
+    /// <param name="element">The element to hold the argument.</param>
+    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
+    public static void SetArg4(DependencyObject element, object? value) => element.SetValue(Arg4Property, value);
+
+    /// <summary>Sets the value of the <see cref="Arg5Property" /> attached property.</summary>
+    /// <param name="element">The element to hold the argument.</param>
+    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
+    public static void SetArg5(DependencyObject element, object? value) => element.SetValue(Arg5Property, value);
+
+    /// <summary>Sets the value of the <see cref="Arg6Property" /> attached property.</summary>
+    /// <param name="element">The element to hold the argument.</param>
+    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
+    public static void SetArg6(DependencyObject element, object? value) => element.SetValue(Arg6Property, value);
+
+    /// <summary>Sets the value of the <see cref="Arg7Property" /> attached property.</summary>
+    /// <param name="element">The element to hold the argument.</param>
+    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
+    public static void SetArg7(DependencyObject element, object? value) => element.SetValue(Arg7Property, value);
+
+    /// <summary>Sets the value of the <see cref="Arg8Property" /> attached property.</summary>
+    /// <param name="element">The element to hold the argument.</param>
+    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
+    public static void SetArg8(DependencyObject element, object? value) => element.SetValue(Arg8Property, value);
 
     /// <summary>
     /// Reads the format arguments currently set on <paramref name="element" />, applying the
@@ -158,7 +172,7 @@ public static class LocalizeArgs
     /// The arguments to format with, or <see langword="null" /> when no argument is set on the
     /// element - the caller must then resolve without composite formatting.
     /// </returns>
-    internal static Object?[]? GetArguments(DependencyObject element)
+    internal static object?[]? GetArguments(DependencyObject element)
     {
         var lastSetIndex = -1;
 
@@ -176,7 +190,7 @@ public static class LocalizeArgs
             return null;
         }
 
-        var arguments = new Object?[lastSetIndex + 1];
+        var arguments = new object?[lastSetIndex + 1];
 
         for (var index = 0; index <= lastSetIndex; index++)
         {
@@ -191,7 +205,7 @@ public static class LocalizeArgs
     /// <param name="element">The element holding the argument.</param>
     /// <param name="property">The argument slot to read.</param>
     /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
-    private static Object? GetArgument(DependencyObject element, DependencyProperty property)
+    private static object? GetArgument(DependencyObject element, DependencyProperty property)
     {
         var value = element.GetValue(property);
         return ReferenceEquals(value, UnsetSentinel.Value) ? null : value;
@@ -204,7 +218,7 @@ public static class LocalizeArgs
     /// <param name="element">The element whose argument changed.</param>
     /// <param name="e">The change data; not used.</param>
     private static void OnArgumentChanged(DependencyObject element, DependencyPropertyChangedEventArgs e) =>
-        element.SetValue(ArgsVersionProperty, (Int32)element.GetValue(ArgsVersionProperty) + 1);
+        element.SetValue(ArgsVersionProperty, (int)element.GetValue(ArgsVersionProperty) + 1);
 
     /// <summary>
     /// Registers one argument slot. The default is a private sentinel (not <see langword="null" />),
@@ -213,27 +227,13 @@ public static class LocalizeArgs
     /// </summary>
     /// <param name="name">The attached property name, <c>Arg0</c>…<c>Arg8</c>.</param>
     /// <returns>The registered attached property.</returns>
-    private static DependencyProperty RegisterArgument(String name) =>
+    private static DependencyProperty RegisterArgument(string name) =>
         DependencyProperty.RegisterAttached(
             name,
-            typeof(Object),
+            typeof(object),
             typeof(LocalizeArgs),
             new PropertyMetadata(UnsetSentinel.Value, OnArgumentChanged)
         );
-
-    /// <summary>The nine argument slots in slot order, for <see cref="GetArguments" />.</summary>
-    private static readonly DependencyProperty[] ArgumentProperties =
-    [
-        Arg0Property,
-        Arg1Property,
-        Arg2Property,
-        Arg3Property,
-        Arg4Property,
-        Arg5Property,
-        Arg6Property,
-        Arg7Property,
-        Arg8Property
-    ];
 
     /// <summary>
     /// Holds the "argument never set" default of the <c>ArgN</c> properties. A nested type keeps the
@@ -242,6 +242,6 @@ public static class LocalizeArgs
     private static class UnsetSentinel
     {
         /// <summary>The sentinel instance; compared by reference.</summary>
-        internal static readonly Object Value = new();
+        internal static readonly object Value = new();
     }
 }

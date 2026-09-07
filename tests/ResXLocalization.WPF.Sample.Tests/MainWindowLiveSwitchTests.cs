@@ -7,7 +7,8 @@ namespace RentADeveloper.ResXLocalization.WPF.Sample.Tests;
 public class MainWindowLiveSwitchTests
 {
     [Fact]
-    public void PlainStrings_SwitchLive() => WpfThread.Invoke(() =>
+    public void PlainStrings_SwitchLive() =>
+        WpfThread.Invoke(() =>
         {
             var (window, viewModel) = CreateWindow();
 
@@ -22,11 +23,11 @@ public class MainWindowLiveSwitchTests
             after.Should().Contain("Hallo und willkommen!");
             after.Should().Contain("Bereitgestellt von rent-a-developer");
             after.Should().NotContain("Hello and welcome!");
-        }
-    );
+        });
 
     [Fact]
-    public void SelectedEnum_SwitchesLive_AndNeverLeaksIntoTheModel() => WpfThread.Invoke(() =>
+    public void SelectedEnum_SwitchesLive_AndNeverLeaksIntoTheModel() =>
+        WpfThread.Invoke(() =>
         {
             var (window, viewModel) = CreateWindow();
             viewModel.SelectedFileSortOrder.Should().Be(FileSortOrder.Ascending);
@@ -41,11 +42,11 @@ public class MainWindowLiveSwitchTests
 
             // The view model still holds a clean enum value; only the rendered text was localized.
             viewModel.SelectedFileSortOrder.Should().Be(FileSortOrder.Ascending);
-        }
-    );
+        });
 
     [Fact]
-    public void SwitchingBackAndForth_IsStable() => WpfThread.Invoke(() =>
+    public void SwitchingBackAndForth_IsStable() =>
+        WpfThread.Invoke(() =>
         {
             var (window, viewModel) = CreateWindow();
 
@@ -56,8 +57,7 @@ public class MainWindowLiveSwitchTests
             viewModel.SelectedLanguage = TestSupport.English;
             TestSupport.Flush();
             TestSupport.AllVisibleText(window).Should().Contain("Hello and welcome!");
-        }
-    );
+        });
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
         "Reliability",

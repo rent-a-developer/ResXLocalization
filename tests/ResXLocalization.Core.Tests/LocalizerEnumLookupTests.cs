@@ -6,6 +6,47 @@ namespace RentADeveloper.ResXLocalization.Core.Tests;
 /// </summary>
 public class LocalizerEnumLookupTests
 {
+    private readonly TestResources resources = new();
+
+    [Fact]
+    public void NullArguments_Throw()
+    {
+        var localizer = this.resources.CreateLocalizer();
+
+        ((Action)(() => localizer.Get((Enum)null!))).Should().Throw<ArgumentNullException>();
+        ((Action)(() => localizer.Get(TestSortOrder.Ascending, (string)null!))).Should().Throw<ArgumentNullException>();
+        ((Action)(() => localizer.Get(TestSortOrder.Ascending, (ResourceManager)null!)))
+            .Should()
+            .Throw<ArgumentNullException>();
+        ((Action)(() => localizer.Get(TestSortOrder.Ascending, this.resources.Catalog, null!)))
+            .Should()
+            .Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void Scoped_CustomPrefix_Resolves()
+    {
+        var localizer = this.resources.CreateLocalizer();
+
+        localizer.Get(TestSortOrder.Ascending, this.resources.Catalog, "Display_").Should().Be("A to Z");
+    }
+
+    [Fact]
+    public void Scoped_DefaultPrefix_Resolves()
+    {
+        var localizer = this.resources.CreateLocalizer();
+
+        localizer.Get(TestSortOrder.Ascending, this.resources.Catalog).Should().Be("Ascending");
+    }
+
+    [Fact]
+    public void SearchAll_CustomPrefix_Resolves()
+    {
+        var localizer = this.resources.CreateLocalizer();
+
+        localizer.Get(TestSortOrder.Ascending, "Display_").Should().Be("A to Z");
+    }
+
     [Fact]
     public void SearchAll_DefaultPrefix_ResolvesAndSwitchesLive()
     {
@@ -18,50 +59,10 @@ public class LocalizerEnumLookupTests
     }
 
     [Fact]
-    public void SearchAll_CustomPrefix_Resolves()
-    {
-        var localizer = this.resources.CreateLocalizer();
-
-        localizer.Get(TestSortOrder.Ascending, "Display_").Should().Be("A to Z");
-    }
-
-    [Fact]
-    public void Scoped_DefaultPrefix_Resolves()
-    {
-        var localizer = this.resources.CreateLocalizer();
-
-        localizer.Get(TestSortOrder.Ascending, this.resources.Catalog).Should().Be("Ascending");
-    }
-
-    [Fact]
-    public void Scoped_CustomPrefix_Resolves()
-    {
-        var localizer = this.resources.CreateLocalizer();
-
-        localizer.Get(TestSortOrder.Ascending, this.resources.Catalog, "Display_").Should().Be("A to Z");
-    }
-
-    [Fact]
     public void UnlocalizedEnumValue_ReturnsTheConventionKeyAsSentinel()
     {
         var localizer = this.resources.CreateLocalizer();
 
         localizer.Get(TestSortOrder.Descending).Should().Be("!Enum_TestSortOrder_Descending!");
     }
-
-    [Fact]
-    public void NullArguments_Throw()
-    {
-        var localizer = this.resources.CreateLocalizer();
-
-        ((Action)(() => localizer.Get((Enum)null!))).Should().Throw<ArgumentNullException>();
-        ((Action)(() => localizer.Get(TestSortOrder.Ascending, (String)null!)))
-            .Should().Throw<ArgumentNullException>();
-        ((Action)(() => localizer.Get(TestSortOrder.Ascending, (ResourceManager)null!)))
-            .Should().Throw<ArgumentNullException>();
-        ((Action)(() => localizer.Get(TestSortOrder.Ascending, this.resources.Catalog, null!)))
-            .Should().Throw<ArgumentNullException>();
-    }
-
-    private readonly TestResources resources = new();
 }

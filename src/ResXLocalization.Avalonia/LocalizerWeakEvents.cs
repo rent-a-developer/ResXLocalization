@@ -8,9 +8,11 @@ namespace RentADeveloper.ResXLocalization.Avalonia;
 internal static class LocalizerWeakEvents
 {
     /// <summary>The weak-event wrapper around <see cref="ILocalizer.CultureChanged" />.</summary>
-    internal static readonly WeakEvent<ILocalizer, CultureChangedEventArgs> CultureChanged =
-        WeakEvent.Register<ILocalizer, CultureChangedEventArgs>(
-            static (localizer, handler) => localizer.CultureChanged += handler,
-            static (localizer, handler) => localizer.CultureChanged -= handler
-        );
+    internal static readonly WeakEvent<ILocalizer, CultureChangedEventArgs> CultureChanged = WeakEvent.Register<
+        ILocalizer,
+        CultureChangedEventArgs
+    >(
+        static (localizer, handler) => localizer.CultureChanged += handler,
+        static (localizer, handler) => localizer.CultureChanged -= handler
+    );
 }

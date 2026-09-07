@@ -14,17 +14,27 @@ namespace RentADeveloper.ResXLocalization.SourceGenerators;
 internal readonly struct EquatableArray<T>(ImmutableArray<T> array) : IEquatable<EquatableArray<T>>, IEnumerable<T>
     where T : IEquatable<T>
 {
+    /// <summary>
+    /// Gets the backing array. Exists because a primary-constructor parameter is only accessible on
+    /// the current instance - <see cref="Equals(EquatableArray{T})" /> needs to read
+    /// <c>other</c>'s array too.
+    /// </summary>
+    private ImmutableArray<T> Items => array;
+
     /// <summary>Determines whether two arrays are sequence-equal.</summary>
     /// <param name="left">The first array to compare.</param>
     /// <param name="right">The second array to compare.</param>
     /// <returns><see langword="true" /> when the arrays contain equal elements in the same order.</returns>
-    public static Boolean operator ==(EquatableArray<T> left, EquatableArray<T> right) => left.Equals(right);
+    public static bool operator ==(EquatableArray<T> left, EquatableArray<T> right) => left.Equals(right);
 
     /// <summary>Determines whether two arrays are not sequence-equal.</summary>
     /// <param name="left">The first array to compare.</param>
     /// <param name="right">The second array to compare.</param>
     /// <returns><see langword="true" /> when the arrays differ in length or in any element.</returns>
-    public static Boolean operator !=(EquatableArray<T> left, EquatableArray<T> right) => !left.Equals(right);
+    public static bool operator !=(EquatableArray<T> left, EquatableArray<T> right) => !left.Equals(right);
+
+    /// <inheritdoc />
+    IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 
     /// <summary>
     /// Determines whether this array and <paramref name="other" /> contain equal elements in the
@@ -33,7 +43,7 @@ internal readonly struct EquatableArray<T>(ImmutableArray<T> array) : IEquatable
     /// </summary>
     /// <param name="other">The array to compare with this one.</param>
     /// <returns><see langword="true" /> when the arrays are sequence-equal.</returns>
-    public Boolean Equals(EquatableArray<T> other)
+    public bool Equals(EquatableArray<T> other)
     {
         var left = this.Items;
         var right = other.Items;
@@ -65,11 +75,16 @@ internal readonly struct EquatableArray<T>(ImmutableArray<T> array) : IEquatable
     /// </summary>
     /// <param name="obj">The object to compare with this array.</param>
     /// <returns><see langword="true" /> when <paramref name="obj" /> is a sequence-equal array.</returns>
-    public override Boolean Equals(Object? obj) => obj is EquatableArray<T> other && this.Equals(other);
+    public override bool Equals(object? obj) => obj is EquatableArray<T> other && this.Equals(other);
+
+    /// <summary>Returns an enumerator over the elements; a default (uninitialized) instance enumerates as empty.</summary>
+    /// <returns>The element enumerator.</returns>
+    public IEnumerator<T> GetEnumerator() =>
+        (array.IsDefault ? ImmutableArray<T>.Empty : array).AsEnumerable().GetEnumerator();
 
     /// <summary>Computes a hash code aggregated over all elements, so sequence-equal arrays hash alike.</summary>
     /// <returns>The aggregated hash code; <c>0</c> for a default (uninitialized) instance.</returns>
-    public override Int32 GetHashCode()
+    public override int GetHashCode()
     {
         if (array.IsDefault)
         {
@@ -85,19 +100,4 @@ internal readonly struct EquatableArray<T>(ImmutableArray<T> array) : IEquatable
 
         return hash;
     }
-
-    /// <summary>Returns an enumerator over the elements; a default (uninitialized) instance enumerates as empty.</summary>
-    /// <returns>The element enumerator.</returns>
-    public IEnumerator<T> GetEnumerator() =>
-        (array.IsDefault ? ImmutableArray<T>.Empty : array).AsEnumerable().GetEnumerator();
-
-    /// <inheritdoc />
-    IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
-
-    /// <summary>
-    /// Gets the backing array. Exists because a primary-constructor parameter is only accessible on
-    /// the current instance - <see cref="Equals(EquatableArray{T})" /> needs to read
-    /// <c>other</c>'s array too.
-    /// </summary>
-    private ImmutableArray<T> Items => array;
 }

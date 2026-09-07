@@ -11,5 +11,5 @@ public enum TestSortOrder
     Ascending = 0,
 
     /// <summary>Deliberately missing from every resource file.</summary>
-    Descending = 1
+    Descending = 1,
 }

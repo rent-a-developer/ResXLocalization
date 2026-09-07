@@ -24,18 +24,10 @@ public class LocalizeEnumConverterTests
         var converter = new LocalizeEnumConverter
         {
             KeyPrefix = "Display_",
-            ResourceManager = SortingStrings.ResourceManager
+            ResourceManager = SortingStrings.ResourceManager,
         };
 
         Convert(converter, FileSortOrder.Ascending).Should().Be("A to Z");
-    }
-
-    [AvaloniaFact]
-    public void Default_NoPrefix_NoManager_ResolvesViaSearchAll()
-    {
-        TestSupport.ResetToEnglishWithTestCatalogs();
-
-        Convert(LocalizeEnumConverter.Default, FileSortOrder.Ascending).Should().Be("Ascending");
     }
 
     [AvaloniaFact]
@@ -46,6 +38,14 @@ public class LocalizeEnumConverterTests
         var converter = new LocalizeEnumConverter { ResourceManager = ApplicationStrings.ResourceManager };
 
         Convert(converter, FileSortOrder.Ascending).Should().Be("Ascending");
+    }
+
+    [AvaloniaFact]
+    public void Default_NoPrefix_NoManager_ResolvesViaSearchAll()
+    {
+        TestSupport.ResetToEnglishWithTestCatalogs();
+
+        Convert(LocalizeEnumConverter.Default, FileSortOrder.Ascending).Should().Be("Ascending");
     }
 
     [AvaloniaFact]
@@ -72,10 +72,11 @@ public class LocalizeEnumConverterTests
     {
         TestSupport.ResetToEnglishWithTestCatalogs();
 
-        Convert(LocalizeEnumConverter.Default).Should().Be(String.Empty);
-        LocalizeEnumConverter.Default.Convert(["not an enum"], typeof(String), null, CultureInfo.InvariantCulture)
+        Convert(LocalizeEnumConverter.Default).Should().Be(string.Empty);
+        LocalizeEnumConverter
+            .Default.Convert(["not an enum"], typeof(string), null, CultureInfo.InvariantCulture)
             .Should()
-            .Be(String.Empty);
+            .Be(string.Empty);
     }
 
     [AvaloniaFact]
@@ -84,16 +85,18 @@ public class LocalizeEnumConverterTests
         // Mutating the process-wide Default would silently reconfigure every default conversion in
         // the app, so it must refuse; a private instance stays fully configurable.
         ((Action)(() => LocalizeEnumConverter.Default.KeyPrefix = "Display_"))
-            .Should().Throw<InvalidOperationException>();
+            .Should()
+            .Throw<InvalidOperationException>();
         ((Action)(() => LocalizeEnumConverter.Default.ResourceManager = ApplicationStrings.ResourceManager))
-            .Should().Throw<InvalidOperationException>();
+            .Should()
+            .Throw<InvalidOperationException>();
 
         var own = new LocalizeEnumConverter { KeyPrefix = "Display_" };
         own.KeyPrefix.Should().Be("Display_");
     }
 
-    private static String Convert(LocalizeEnumConverter converter, params Object?[] values) =>
-        (String)converter.Convert(values, typeof(String), null, CultureInfo.InvariantCulture);
+    private static string Convert(LocalizeEnumConverter converter, params object?[] values) =>
+        (string)converter.Convert(values, typeof(string), null, CultureInfo.InvariantCulture);
 
     private sealed class Marker(FileSortOrder value)
     {

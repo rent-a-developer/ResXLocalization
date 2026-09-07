@@ -9,24 +9,22 @@ namespace RentADeveloper.ResXLocalization.WPF;
 /// the lookup to one file. When the resource value is a composite format string, supply its
 /// arguments by binding the <see cref="LocalizeArgs" /> attached properties on the target element.
 /// </summary>
-[MarkupExtensionReturnType(typeof(String))]
+[MarkupExtensionReturnType(typeof(string))]
 public sealed class LocalizeExtension : MarkupExtension
 {
     /// <summary>Initializes a new instance of the <see cref="LocalizeExtension" /> class.</summary>
-    public LocalizeExtension()
-    {
-    }
+    public LocalizeExtension() { }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LocalizeExtension" /> class from a single positional
     /// argument. A typed <see cref="RentADeveloper.ResXLocalization.ResourceKey" /> (for example from
     /// <c>{x:Static res:StringsKeys.Greeting}</c>) becomes <see cref="ResourceKey" />; a
-    /// <see cref="String" /> becomes <see cref="Key" />; any other value leaves <see cref="Key" /> empty.
+    /// <see cref="string" /> becomes <see cref="Key" />; any other value leaves <see cref="Key" /> empty.
     /// A single object-typed constructor is used instead of overloads so WPF's positional-argument
     /// resolution is never ambiguous.
     /// </summary>
     /// <param name="key">A <see cref="RentADeveloper.ResXLocalization.ResourceKey" /> or a key string.</param>
-    public LocalizeExtension(Object key)
+    public LocalizeExtension(object key)
     {
         if (key is ResourceKey resourceKey)
         {
@@ -34,7 +32,7 @@ public sealed class LocalizeExtension : MarkupExtension
         }
         else
         {
-            this.Key = key as String ?? String.Empty;
+            this.Key = key as string ?? string.Empty;
         }
     }
 
@@ -43,7 +41,7 @@ public sealed class LocalizeExtension : MarkupExtension
     /// <see cref="ResourceManager" /> is also set, the lookup is scoped to that file; otherwise every
     /// registered resource manager is searched.
     /// </summary>
-    public String Key { get; set; } = String.Empty;
+    public string Key { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets a typed, file-scoped key. When set, it takes precedence over <see cref="Key" />
@@ -65,10 +63,10 @@ public sealed class LocalizeExtension : MarkupExtension
     /// </summary>
     /// <param name="serviceProvider">The service provider supplied by the XAML loader.</param>
     /// <returns>A WPF multi-binding that yields the localized string.</returns>
-    public override Object ProvideValue(IServiceProvider serviceProvider)
+    public override object ProvideValue(IServiceProvider serviceProvider)
     {
-        Func<String> resolve;
-        Func<Object?[], String> resolveFormatted;
+        Func<string> resolve;
+        Func<object?[], string> resolveFormatted;
 
         if (this.ResourceKey.HasValue)
         {
@@ -103,14 +101,15 @@ public sealed class LocalizeExtension : MarkupExtension
         var multiBinding = new MultiBinding
         {
             Converter = new LocalizedFormattedStringConverter(resolve, resolveFormatted),
-            Mode = BindingMode.OneWay
+            Mode = BindingMode.OneWay,
         };
         multiBinding.Bindings.Add(new Binding(nameof(ILocalizer.CurrentCulture)) { Source = Localizer.Current });
-        multiBinding.Bindings.Add(new Binding
-        {
-            RelativeSource = RelativeSource.Self,
-            Path = new PropertyPath(LocalizeArgs.ArgsVersionProperty)
-        }
+        multiBinding.Bindings.Add(
+            new Binding
+            {
+                RelativeSource = RelativeSource.Self,
+                Path = new PropertyPath(LocalizeArgs.ArgsVersionProperty),
+            }
         );
         multiBinding.Bindings.Add(new Binding { RelativeSource = RelativeSource.Self });
 

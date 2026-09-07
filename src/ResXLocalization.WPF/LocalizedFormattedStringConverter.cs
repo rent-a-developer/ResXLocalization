@@ -11,10 +11,7 @@ namespace RentADeveloper.ResXLocalization.WPF;
 /// </summary>
 /// <param name="resolve">Resolves the localized string without composite formatting.</param>
 /// <param name="resolveFormatted">Resolves the localized string formatted with the supplied arguments.</param>
-internal sealed class LocalizedFormattedStringConverter(
-    Func<String> resolve,
-    Func<Object?[], String> resolveFormatted
-)
+internal sealed class LocalizedFormattedStringConverter(Func<string> resolve, Func<object?[], string> resolveFormatted)
     : IMultiValueConverter
 {
     /// <summary>
@@ -40,7 +37,7 @@ internal sealed class LocalizedFormattedStringConverter(
     /// property system mid-delivery and the text resolves cleanly on the next argument or culture
     /// change.
     /// </returns>
-    public Object Convert(Object?[] values, Type targetType, Object? parameter, CultureInfo culture)
+    public object Convert(object?[] values, Type targetType, object? parameter, CultureInfo culture)
     {
         if (values.Length < 3 || values[2] is not DependencyObject element)
         {
@@ -66,6 +63,6 @@ internal sealed class LocalizedFormattedStringConverter(
     /// <param name="culture">The culture supplied by the binding; not used.</param>
     /// <returns>Never returns; always throws.</returns>
     /// <exception cref="NotSupportedException">Always thrown; the converter is one-way.</exception>
-    public Object[] ConvertBack(Object? value, Type[] targetTypes, Object? parameter, CultureInfo culture) =>
+    public object[] ConvertBack(object? value, Type[] targetTypes, object? parameter, CultureInfo culture) =>
         throw new NotSupportedException();
 }

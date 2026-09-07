@@ -12,7 +12,7 @@ public sealed class LocalizeEnumExtension : MarkupExtension
     /// <summary>
     /// Gets or sets the prefix prepended to the generated resource key. Defaults to <c>Enum_</c>.
     /// </summary>
-    public String KeyPrefix { get; set; } = EnumKeyConvention.DefaultEnumKeyPrefix;
+    public string KeyPrefix { get; set; } = EnumKeyConvention.DefaultEnumKeyPrefix;
 
     /// <summary>
     /// Gets or sets the resource manager that scopes the lookup to a single <c>.resx</c> file. When
@@ -28,15 +28,15 @@ public sealed class LocalizeEnumExtension : MarkupExtension
     /// <param name="serviceProvider">The service provider supplied by the XAML loader.</param>
     /// <returns>
     /// An Avalonia binding that yields the localized enumeration text, or
-    /// <see cref="String.Empty" /> when the target is not an <see cref="AvaloniaObject" />.
+    /// <see cref="string.Empty" /> when the target is not an <see cref="AvaloniaObject" />.
     /// </returns>
-    public override Object ProvideValue(IServiceProvider serviceProvider)
+    public override object ProvideValue(IServiceProvider serviceProvider)
     {
         // The target is the per-item control being built (e.g. the TextBlock in the template).
         var target = serviceProvider.GetService(typeof(IProvideValueTarget)) as IProvideValueTarget;
         if (target?.TargetObject is not AvaloniaObject control)
         {
-            return String.Empty;
+            return string.Empty;
         }
 
         // Live stream of this control's DataContext (the enum value).

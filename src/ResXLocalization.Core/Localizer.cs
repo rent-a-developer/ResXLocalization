@@ -12,15 +12,60 @@ namespace RentADeveloper.ResXLocalization;
 /// </remarks>
 public sealed class Localizer : ILocalizer
 {
+    /// <summary>Cached event args announcing a <see cref="CurrentCulture" /> change.</summary>
+    private static readonly PropertyChangedEventArgs CurrentCultureChangedArgs = new(nameof(CurrentCulture));
+
+    /// <summary>
+    /// Cached event args announcing an indexer change (<c>Item[]</c>), which makes bindings through
+    /// the indexer re-resolve after a culture change.
+    /// </summary>
+    private static readonly PropertyChangedEventArgs IndexerChangedArgs = new("Item[]");
+
+    /// <summary>Backing field of <see cref="CurrentCulture" />.</summary>
+    private CultureInfo currentCulture = CultureInfo.CurrentUICulture;
+
+    /// <summary>
+    /// The search set for key-only and enum lookups, in registration order. Mutations swap the whole
+    /// immutable array (copy-on-write; see <see cref="RegisterResourceManager" />).
+    /// </summary>
+    private ImmutableArray<ResourceManager> resourceManagers = [];
+
     /// <summary>
     /// Initializes a new, isolated localizer with no registered resource managers. The XAML markup
     /// extensions always resolve through the ambient <see cref="Current" /> instance - create your own
     /// instance only where isolation matters, such as unit tests or code-behind consumers that inject
     /// <see cref="ILocalizer" />.
     /// </summary>
-    public Localizer()
+    public Localizer() { }
+
+    /// <inheritdoc />
+    public event EventHandler<CultureChangedEventArgs>? CultureChanged;
+
+    /// <summary>
+    /// Occurs when a property value changes, including <see cref="CurrentCulture" /> and the indexer,
+    /// so that localized bindings re-resolve after a culture change.
+    /// </summary>
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    /// <inheritdoc />
+    public event EventHandler<TranslationNotFoundEventArgs>? TranslationNotFound;
+
+    /// <summary>
+    /// Gets or sets the shared, ambient localizer instance used throughout the application. Register resource
+    /// managers on it at startup and set <see cref="CurrentCulture" /> to switch languages. Applications
+    /// may replace it at startup with their DI-owned implementation; markup extensions always resolve
+    /// through the current value.
+    /// </summary>
+    /// <exception cref="ArgumentNullException">The assigned value is <see langword="null" />.</exception>
+    public static ILocalizer Current
     {
-    }
+        get;
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            field = value;
+        }
+    } = new Localizer();
 
     /// <inheritdoc />
     public CultureInfo CurrentCulture
@@ -45,10 +90,7 @@ public sealed class Localizer : ILocalizer
     }
 
     /// <inheritdoc />
-    public String this[String key] => this.Get(key);
-
-    /// <inheritdoc />
-    public String MissingTranslationFormat
+    public string MissingTranslationFormat
     {
         get;
         set
@@ -60,13 +102,13 @@ public sealed class Localizer : ILocalizer
             // inside the first cache miss where the FormatException would be far from its cause.
             try
             {
-                _ = String.Format(CultureInfo.InvariantCulture, value, "probe");
+                _ = string.Format(CultureInfo.InvariantCulture, value, "probe");
             }
             catch (FormatException exception)
             {
                 throw new ArgumentException(
                     "The missing-translation format must be a composite format string with at most one "
-                    + "placeholder ({0}, the key).",
+                        + "placeholder ({0}, the key).",
                     nameof(value),
                     exception
                 );
@@ -77,36 +119,30 @@ public sealed class Localizer : ILocalizer
     } = "!{0}!";
 
     /// <inheritdoc />
-    public event EventHandler<CultureChangedEventArgs>? CultureChanged;
+    public string this[string key] => this.Get(key);
 
     /// <inheritdoc />
-    public event EventHandler<TranslationNotFoundEventArgs>? TranslationNotFound;
-
-    /// <summary>
-    /// Occurs when a property value changes, including <see cref="CurrentCulture" /> and the indexer,
-    /// so that localized bindings re-resolve after a culture change.
-    /// </summary>
-    public event PropertyChangedEventHandler? PropertyChanged;
+    public void ClearResourceManagers() => this.resourceManagers = [];
 
     /// <inheritdoc />
-    public String Get(String key)
+    public string Get(string key)
     {
-        if (String.IsNullOrEmpty(key))
+        if (string.IsNullOrEmpty(key))
         {
-            return String.Empty;
+            return string.Empty;
         }
 
         return this.FindInRegisteredManagers(key) ?? this.Miss(key, null);
     }
 
     /// <inheritdoc />
-    public String Get(String key, params Object?[] arguments)
+    public string Get(string key, params object?[] arguments)
     {
         ArgumentNullException.ThrowIfNull(arguments);
 
-        if (String.IsNullOrEmpty(key))
+        if (string.IsNullOrEmpty(key))
         {
-            return String.Empty;
+            return string.Empty;
         }
 
         var value = this.FindInRegisteredManagers(key);
@@ -115,7 +151,7 @@ public sealed class Localizer : ILocalizer
     }
 
     /// <inheritdoc />
-    public String Get(Enum value, String keyPrefix = EnumKeyConvention.DefaultEnumKeyPrefix)
+    public string Get(Enum value, string keyPrefix = EnumKeyConvention.DefaultEnumKeyPrefix)
     {
         ArgumentNullException.ThrowIfNull(value);
         ArgumentNullException.ThrowIfNull(keyPrefix);
@@ -124,27 +160,27 @@ public sealed class Localizer : ILocalizer
     }
 
     /// <inheritdoc />
-    public String Get(String key, ResourceManager resourceManager)
+    public string Get(string key, ResourceManager resourceManager)
     {
         ArgumentNullException.ThrowIfNull(resourceManager);
 
-        if (String.IsNullOrEmpty(key))
+        if (string.IsNullOrEmpty(key))
         {
-            return String.Empty;
+            return string.Empty;
         }
 
         return resourceManager.GetString(key, this.currentCulture) ?? this.Miss(key, resourceManager);
     }
 
     /// <inheritdoc />
-    public String Get(String key, ResourceManager resourceManager, params Object?[] arguments)
+    public string Get(string key, ResourceManager resourceManager, params object?[] arguments)
     {
         ArgumentNullException.ThrowIfNull(resourceManager);
         ArgumentNullException.ThrowIfNull(arguments);
 
-        if (String.IsNullOrEmpty(key))
+        if (string.IsNullOrEmpty(key))
         {
-            return String.Empty;
+            return string.Empty;
         }
 
         var value = resourceManager.GetString(key, this.currentCulture);
@@ -153,10 +189,10 @@ public sealed class Localizer : ILocalizer
     }
 
     /// <inheritdoc />
-    public String Get(
+    public string Get(
         Enum value,
         ResourceManager resourceManager,
-        String keyPrefix = EnumKeyConvention.DefaultEnumKeyPrefix
+        string keyPrefix = EnumKeyConvention.DefaultEnumKeyPrefix
     )
     {
         ArgumentNullException.ThrowIfNull(value);
@@ -167,48 +203,10 @@ public sealed class Localizer : ILocalizer
     }
 
     /// <inheritdoc />
-    public String Get(ResourceKey key) => this.Get(key.Name, key.Manager);
+    public string Get(ResourceKey key) => this.Get(key.Name, key.Manager);
 
     /// <inheritdoc />
-    public String Get(ResourceKey key, params Object?[] arguments) =>
-        this.Get(key.Name, key.Manager, arguments);
-
-    /// <inheritdoc />
-    public void RegisterResourceManager(ResourceManager resourceManager)
-    {
-        ArgumentNullException.ThrowIfNull(resourceManager);
-
-        if (this.resourceManagers.Contains(resourceManager))
-        {
-            return;
-        }
-
-        // Copy-on-write: register/unregister/clear swap the whole immutable array atomically, so a
-        // lookup that reads the field once (foreach captures the struct value) never enumerates a
-        // collection being mutated - even from a stray background thread - while keeping the
-        // documented UI-thread contract for culture changes.
-        this.resourceManagers = this.resourceManagers.Add(resourceManager);
-    }
-
-    /// <inheritdoc />
-    public Boolean UnregisterResourceManager(ResourceManager resourceManager)
-    {
-        ArgumentNullException.ThrowIfNull(resourceManager);
-
-        var updated = this.resourceManagers.Remove(resourceManager);
-
-        if (updated == this.resourceManagers)
-        {
-            return false;
-        }
-
-        this.resourceManagers = updated;
-
-        return true;
-    }
-
-    /// <inheritdoc />
-    public void ClearResourceManagers() => this.resourceManagers = [];
+    public string Get(ResourceKey key, params object?[] arguments) => this.Get(key.Name, key.Manager, arguments);
 
     /// <inheritdoc />
     public IReadOnlyList<CultureInfo> GetAvailableCultures()
@@ -234,22 +232,39 @@ public sealed class Localizer : ILocalizer
         return SortCultures(cultures);
     }
 
-    /// <summary>
-    /// Gets or sets the shared, ambient localizer instance used throughout the application. Register resource
-    /// managers on it at startup and set <see cref="CurrentCulture" /> to switch languages. Applications
-    /// may replace it at startup with their DI-owned implementation; markup extensions always resolve
-    /// through the current value.
-    /// </summary>
-    /// <exception cref="ArgumentNullException">The assigned value is <see langword="null" />.</exception>
-    public static ILocalizer Current
+    /// <inheritdoc />
+    public void RegisterResourceManager(ResourceManager resourceManager)
     {
-        get;
-        set
+        ArgumentNullException.ThrowIfNull(resourceManager);
+
+        if (this.resourceManagers.Contains(resourceManager))
         {
-            ArgumentNullException.ThrowIfNull(value);
-            field = value;
+            return;
         }
-    } = new Localizer();
+
+        // Copy-on-write: register/unregister/clear swap the whole immutable array atomically, so a
+        // lookup that reads the field once (foreach captures the struct value) never enumerates a
+        // collection being mutated - even from a stray background thread - while keeping the
+        // documented UI-thread contract for culture changes.
+        this.resourceManagers = this.resourceManagers.Add(resourceManager);
+    }
+
+    /// <inheritdoc />
+    public bool UnregisterResourceManager(ResourceManager resourceManager)
+    {
+        ArgumentNullException.ThrowIfNull(resourceManager);
+
+        var updated = this.resourceManagers.Remove(resourceManager);
+
+        if (updated == this.resourceManagers)
+        {
+            return false;
+        }
+
+        this.resourceManagers = updated;
+
+        return true;
+    }
 
     /// <summary>
     /// Probes every known culture for a resource set of <paramref name="resourceManager" /> and adds
@@ -274,11 +289,13 @@ public sealed class Localizer : ILocalizer
             // to the neutral resources, GetResourceSet("fr") returns that cached (parent) set even
             // with tryParents: false. A culture therefore only counts when its set is not simply its
             // parent's set surfacing through the cache.
-            if (!culture.Equals(CultureInfo.InvariantCulture)
+            if (
+                !culture.Equals(CultureInfo.InvariantCulture)
                 && ReferenceEquals(
                     resourceSet,
                     resourceManager.GetResourceSet(culture.Parent, createIfNotExists: true, tryParents: false)
-                ))
+                )
+            )
             {
                 continue;
             }
@@ -302,7 +319,7 @@ public sealed class Localizer : ILocalizer
     /// </summary>
     /// <param name="key">The resource key to resolve.</param>
     /// <returns>The first matching value, or <see langword="null" />.</returns>
-    private String? FindInRegisteredManagers(String key)
+    private string? FindInRegisteredManagers(string key)
     {
         foreach (var resourceManager in this.resourceManagers)
         {
@@ -316,12 +333,12 @@ public sealed class Localizer : ILocalizer
         return null;
     }
 
-    /// <summary>Formats a resolved value with <see cref="String.Format(IFormatProvider, String, Object[])" /> in the current culture.</summary>
+    /// <summary>Formats a resolved value with <see cref="string.Format(IFormatProvider, string, object[])" /> in the current culture.</summary>
     /// <param name="value">The resolved resource value, used as the composite format string.</param>
     /// <param name="arguments">The format arguments.</param>
     /// <returns>The formatted string.</returns>
-    private String FormatValue(String value, Object?[] arguments) =>
-        String.Format(this.currentCulture, value, arguments);
+    private string FormatValue(string value, object?[] arguments) =>
+        string.Format(this.currentCulture, value, arguments);
 
     /// <summary>
     /// Handles a lookup no resource file could satisfy: raises <see cref="TranslationNotFound" />
@@ -332,28 +349,10 @@ public sealed class Localizer : ILocalizer
     /// The single manager of a scoped or typed lookup, or <see langword="null" /> for search-all.
     /// </param>
     /// <returns>The miss sentinel, by default <c>!key!</c>.</returns>
-    private String Miss(String key, ResourceManager? resourceManager)
+    private string Miss(string key, ResourceManager? resourceManager)
     {
         this.TranslationNotFound?.Invoke(this, new(key, this.currentCulture, resourceManager));
 
-        return String.Format(CultureInfo.InvariantCulture, this.MissingTranslationFormat, key);
+        return string.Format(CultureInfo.InvariantCulture, this.MissingTranslationFormat, key);
     }
-
-    /// <summary>
-    /// The search set for key-only and enum lookups, in registration order. Mutations swap the whole
-    /// immutable array (copy-on-write; see <see cref="RegisterResourceManager" />).
-    /// </summary>
-    private ImmutableArray<ResourceManager> resourceManagers = [];
-
-    /// <summary>Backing field of <see cref="CurrentCulture" />.</summary>
-    private CultureInfo currentCulture = CultureInfo.CurrentUICulture;
-
-    /// <summary>Cached event args announcing a <see cref="CurrentCulture" /> change.</summary>
-    private static readonly PropertyChangedEventArgs CurrentCultureChangedArgs = new(nameof(CurrentCulture));
-
-    /// <summary>
-    /// Cached event args announcing an indexer change (<c>Item[]</c>), which makes bindings through
-    /// the indexer re-resolve after a culture change.
-    /// </summary>
-    private static readonly PropertyChangedEventArgs IndexerChangedArgs = new("Item[]");
 }
