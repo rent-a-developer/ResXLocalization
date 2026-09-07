@@ -24,7 +24,7 @@ public class LocalizerFormatTests
 
         // The template needs two arguments; supplying none is a resource defect, not a missing
         // translation, so it must throw rather than degrade silently.
-        var act = () => localizer.Get("ItemsFound", []);
+        var act = () => localizer.Get("ItemsFound", arguments: []);
 
         act.Should().Throw<FormatException>();
     }

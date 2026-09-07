@@ -1,4 +1,28 @@
 - name: Home
   href: index.md
-- name: API Reference
-  href: api/
+- name: Guides
+  items:
+    - name: Lookup modes and culture fallback
+      href: guides/lookup-and-fallback.md
+    - name: Localizing enum values
+      href: guides/enums.md
+    - name: Dynamic format arguments
+      href: guides/format-arguments.md
+    - name: Native AOT and trimming
+      href: guides/native-aot.md
+- name: Reference
+  items:
+    - name: Generated keys
+      href: reference/generated-keys.md
+- name: Project
+  items:
+    - name: Change log
+      href: ../CHANGELOG.md
+    - name: Contributing
+      href: ../CONTRIBUTING.md
+    - name: Code of conduct
+      href: ../CODE_OF_CONDUCT.md
+    - name: Security policy
+      href: ../SECURITY.md
+- name: API reference
+  href: ../artifacts/docs/api/toc.yml

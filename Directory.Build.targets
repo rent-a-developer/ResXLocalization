@@ -1,12 +1,35 @@
 <Project>
 
-    <!--
-    The resx -> @(AdditionalFiles) wiring lives in build/ResXLocalization.Resx.targets (one source of truth):
-    in-repo projects reference the engine via ProjectReference and therefore do NOT receive the NuGet
-    package's buildTransitive assets, so import the shared targets here. The very same file is packed to
-    buildTransitive/ResXLocalization.Avalonia.targets and buildTransitive/ResXLocalization.WPF.targets by the
-    UI projects for external consumers.
-    -->
-    <Import Project="$(MSBuildThisFileDirectory)build\ResXLocalization.Resx.targets" />
+  <!--
+Late-evaluated defaults for EVERY project in the repository.
+
+MSBuild reads Directory.Build.props before a project file and Directory.Build.targets after it. That
+ordering is why the package files below live here: they are conditioned on IsPackable, which the
+shipping projects set in their own .csproj, and a props file is read before that happens.
+
+tests/package-consumption/ is outside this on purpose: it carries its own empty
+Directory.Build.targets, which stops MSBuild's upward search before it reaches this file.
+-->
+
+  <!--
+The resx -> @(AdditionalFiles) wiring lives in build/ResXLocalization.Resx.targets (one source of truth):
+in-repo projects reference the engine via ProjectReference and therefore do NOT receive the NuGet
+package's buildTransitive assets, so import the shared targets here. The very same file is packed to
+buildTransitive/ResXLocalization.Avalonia.targets and buildTransitive/ResXLocalization.WPF.targets by the
+UI projects for external consumers.
+-->
+  <Import Project="$(MSBuildThisFileDirectory)build\ResXLocalization.Resx.targets" />
+
+  <ItemGroup Condition="'$(IsPackable)' == 'true'">
+    <!-- The files every package carries. $(MSBuildThisFileDirectory) is the repository root, so the
+         paths resolve relative to this file and not to the project that imports it.
+
+         LICENSE.md is packed as a file as well as declared as an SPDX expression
+         (PackageLicenseExpression in src/Directory.Build.props). The expression is what nuget.org
+         reads; the file is what someone unpacking the .nupkg finds. -->
+    <None Include="$(MSBuildThisFileDirectory)assets\logo-128.png" Pack="true" PackagePath="\" />
+    <None Include="$(MSBuildThisFileDirectory)LICENSE.md" Pack="true" PackagePath="\" />
+    <None Include="$(MSBuildThisFileDirectory)PACKAGE_README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
 </Project>

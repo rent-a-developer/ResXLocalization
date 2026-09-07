@@ -1,0 +1,22 @@
+# CSharpier formats C# in this repository, and nothing else.
+#
+# Since version 1.0 it can also format XML, which here means the .csproj, .props, .targets, .slnx and
+# .config files. Those are hand-maintained: they carry long explanatory comments, deliberate blank lines
+# between the property groups, and one item per line. CSharpier's XML formatter reflows all of that -
+# it splits short attribute lists across several lines each and re-indents elements without re-indenting
+# the comment bodies inside them. .editorconfig already fixes their indentation, which is all they need.
+#
+# XAML and AXAML belong to XamlStyler, configured in Settings.XamlStyler.
+#
+# Build output and generated documentation are not listed: CSharpier honours .gitignore, and obj, bin,
+# artifacts and docs/_site are all in there already.
+
+*.csproj
+*.props
+*.targets
+*.slnx
+*.config
+*.xml
+*.DotSettings
+*.xaml
+*.axaml

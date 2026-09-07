@@ -65,7 +65,7 @@ public class LocalizerContractTests
         localizer.CurrentCulture = TestResources.German;
 
         captured.Should().NotBeNull();
-        captured!.OldCulture.Should().Be(TestResources.English);
+        captured.OldCulture.Should().Be(TestResources.English);
         captured.NewCulture.Should().Be(TestResources.German);
     }
 

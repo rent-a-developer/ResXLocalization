@@ -1,0 +1,24 @@
+{
+  "description": "ResXLocalization: format the files an edit touched and guard the public API snapshot, the same two checks Claude Code runs from .claude/settings.json.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "apply_patch|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -NonInteractive -Command \"& (Join-Path (git rev-parse --show-toplevel) '.codex/hooks/tidy-code.ps1')\"",
+            "statusMessage": "Formatting the edited files",
+            "timeout": 120
+          },
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -NonInteractive -Command \"& (Join-Path (git rev-parse --show-toplevel) '.codex/hooks/public-api-guard.ps1')\"",
+            "statusMessage": "Checking the public API snapshot",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

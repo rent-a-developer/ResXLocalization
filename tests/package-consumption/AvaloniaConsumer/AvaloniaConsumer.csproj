@@ -2,8 +2,10 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <!-- net8.0 deliberately exercises the packages' LTS target. -->
-    <TargetFramework>net8.0</TargetFramework>
+    <!-- Both of the packages' target frameworks. net8.0 is the LTS floor they promise and net10.0 is
+         what most consumers use. The scripts and CI always select one explicitly, so a leg that
+         claims to test net8.0 cannot silently run the other. -->
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <SatelliteResourceLanguages>en;de</SatelliteResourceLanguages>

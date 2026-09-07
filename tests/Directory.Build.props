@@ -1,0 +1,48 @@
+<Project>
+
+  <!--
+Shared build properties for the test projects.
+
+MSBuild uses the NEAREST Directory.Build.props and stops there, so this file imports the repository
+root one explicitly - without that import the projects under tests/ would silently lose the version,
+authorship, the language settings, the style analyzers and the style gate itself.
+
+What belongs here is what every test suite needs and nothing else needs: the assertion library, the
+test SDK, the xUnit runner, the coverage collector and the CI logger. Their target frameworks stay in
+the projects, because they deliberately differ - the Core tests multi-target with the engine, the
+generator and Avalonia tests run on the current framework, and the WPF tests on the Windows one - and
+so does every package only one of them uses.
+
+tests/package-consumption/ is NOT covered by this file. It carries its own empty
+Directory.Build.props, which is nearer, so MSBuild stops there instead. That is deliberate: those
+projects must receive the library only from the packed packages.
+-->
+
+  <Import Project="$(MSBuildThisFileDirectory)../Directory.Build.props" />
+
+  <PropertyGroup>
+    <!-- CS1591 (missing XML comment) and CS1574 (unresolvable cref) are only reported because every
+         project generates a documentation file, which is what makes IDE0005 work - see the comment in
+         the repository-root Directory.Build.props. Nothing consumes the tests as an API, and the typed
+         key classes the source generator emits are public and deliberately carry no per-member
+         documentation.
+
+         This is NoWarn rather than an .editorconfig severity because .editorconfig cannot reach a
+         source-generated document: Roslyn resolves analyzer configuration from a syntax tree's path,
+         and a generated tree has none, so no section - not even [*] - applies to it. Under src/ both
+         diagnostics stay errors, which is what keeps the public API documented. -->
+    <NoWarn>$(NoWarn);CS1574;CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Every test project can collect coverage (the "XPlat Code Coverage" collector) and log to
+         GitHub Actions job summaries (the "GitHubActions" logger); CI passes the matching switches. -->
+    <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="coverlet.collector" PrivateAssets="all" />
+    <PackageReference Include="GitHubActionsTestLogger" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+</Project>

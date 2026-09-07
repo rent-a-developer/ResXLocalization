@@ -3,5 +3,38 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:l="using:RentADeveloper.ResXLocalization.Avalonia"
              xmlns:resources="using:AvaloniaConsumer.Resources">
-    <TextBlock Text="{l:Localize {x:Static resources:StringsKeys.Greeting}}" />
+    <StackPanel>
+        <!--  A typed key from the packaged generator, resolved across the registered resource managers.  -->
+        <TextBlock x:Name="GreetingText"
+                   Text="{l:Localize {x:Static resources:StringsKeys.Greeting}}" />
+
+        <!--  A typed key the German satellite does not carry: it must fall back to the neutral value.  -->
+        <TextBlock x:Name="FallbackText"
+                   Text="{l:Localize {x:Static resources:StringsKeys.NeutralOnly}}" />
+
+        <!--
+            A lookup scoped to one resource manager that is deliberately NOT registered with the
+            localizer, so a search-all lookup cannot find it and only the scoped path can.
+        -->
+        <TextBlock x:Name="ScopedText"
+                   Text="{l:Localize Key=ScopedOnly,
+                                     ResourceManager={x:Static resources:Catalog.ResourceManager}}" />
+
+        <!--  The same, for a catalog key with no German translation.  -->
+        <TextBlock x:Name="ScopedFallbackText"
+                   Text="{l:Localize Key=ScopedNeutralOnly,
+                                     ResourceManager={x:Static resources:Catalog.ResourceManager}}" />
+
+        <!--
+            A composite-format resource whose argument arrives through the LocalizeArgs attached
+            property. The code-behind sets it after construction, which is the argument change the
+            rendered text has to follow.
+        -->
+        <TextBlock x:Name="InvitedText"
+                   Text="{l:Localize {x:Static resources:StringsKeys.PeopleInvited}}" />
+
+        <!--  An enumeration value carried in the DataContext, localized by convention.  -->
+        <TextBlock x:Name="SortOrderText"
+                   Text="{l:LocalizeEnum}" />
+    </StackPanel>
 </UserControl>

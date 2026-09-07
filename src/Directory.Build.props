@@ -1,0 +1,114 @@
+<Project>
+
+  <!--
+Shared build properties for the projects under src/.
+
+The repository-root Directory.Build.props carries what every project needs (version, authorship,
+language settings, the style analyzers, and the style gate itself - EnforceCodeStyleInBuild with
+TreatWarningsAsErrors). MSBuild uses the NEAREST Directory.Build.props and stops, so this file imports
+it explicitly - without that import, the projects under src/ would silently lose all of it.
+
+What lives here is what only a shipping library needs: the strict quality level, the AOT, public-API
+and packaging defaults. Per-project identity - target frameworks, Description, PackageTags,
+RootNamespace overrides - stays in each .csproj, and so does IsPackable=true, because packing is
+opt-in.
+
+The files the packages carry are in the repository-root Directory.Build.targets, because they are
+conditioned on IsPackable, which a project sets after this file has been read.
+-->
+
+  <Import Project="$(MSBuildThisFileDirectory)../Directory.Build.props" />
+
+  <PropertyGroup>
+    <!--
+Which of the projects under src/ the defaults below apply to.
+
+ResXLocalization.SourceGenerators is a netstandard2.0 Roslyn component that ships INSIDE the UI
+packages as an analyzer. It is never packed on its own, never AOT-compiled, and has no tracked
+public API, so the packaging, AOT and public-API settings must not reach it.
+
+ResXLocalization.WPF is a shipping package but not an AOT one: WPF does not support Native AOT,
+and marking it AOT-compatible would claim a guarantee that cannot be met.
+
+_ConventionProjectName comes from the repository-root props and already carries the real project
+name during the WPF markup compiler's temporary <Name>_<random>_wpftmp pass, so these conditions
+hold in that pass too.
+-->
+    <_IsShippingPackage Condition="'$(_ConventionProjectName)' != 'ResXLocalization.SourceGenerators'">true</_IsShippingPackage>
+    <_IsAotCompatiblePackage Condition="'$(_IsShippingPackage)' == 'true' AND '$(_ConventionProjectName)' != 'ResXLocalization.WPF'">true</_IsAotCompatiblePackage>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- The CA quality rules at their broadest setting, for the library code. The style gate every
+         project shares - EnforceCodeStyleInBuild and TreatWarningsAsErrors - lives in the
+         repository-root Directory.Build.props instead, and the samples and the test harnesses are
+         held to that but not to this. -->
+    <AnalysisLevel>latest</AnalysisLevel>
+    <AnalysisMode>All</AnalysisMode>
+    <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(_IsAotCompatiblePackage)' == 'true'">
+    <!-- Enables the trim, AOT and single-file analyzers, and marks the produced assemblies trimmable
+         via [assembly: AssemblyMetadata("IsTrimmable", "True")], so IL2026/IL3050 surface during a
+         normal build rather than at a consumer's publish. -->
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(_IsShippingPackage)' == 'true'">
+    <!-- SourceLink: also embed files that are not committed (e.g. generated sources), so stepping
+         into the packaged assemblies always finds the code. -->
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(_IsShippingPackage)' == 'true'">
+    <!-- Package metadata that is identical for every package. Description and PackageTags are
+         per-package and live in the project files, and the files the packages carry are added by the
+         repository-root Directory.Build.targets.
+
+         The licence is an SPDX EXPRESSION rather than a file reference. nuget.org can read an
+         expression - it shows "MIT" on the package page and lets a consumer's licence tooling resolve
+         it without opening the package - where a file reference is opaque to everything but a human.
+         LICENSE.md is packed as well, so nothing is lost by saying it twice.
+
+         PackageRequireLicenseAcceptance is false because acceptance prompts exist for RESTRICTED
+         licences. MIT is not one, and a prompt in front of an MIT package is noise that trains people
+         to click through the prompts that matter. -->
+    <PackageIcon>logo-128.png</PackageIcon>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/rent-a-developer/ResXLocalization</PackageProjectUrl>
+    <PackageReadmeFile>PACKAGE_README.md</PackageReadmeFile>
+    <PackageReleaseNotes>$(PackageProjectUrl)/blob/main/CHANGELOG.md</PackageReleaseNotes>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>$(PackageProjectUrl).git</RepositoryUrl>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(_IsShippingPackage)' == 'true'">
+    <!-- Package validation, against the LAST PUBLISHED version of each package rather than against
+         nothing.
+
+         Without PackageValidationBaselineVersion the check is limited to internal consistency - that
+         the package's target frameworks are compatible with each other - which cannot see the failure
+         that actually matters: a member that shipped and is now gone. With the baseline, `dotnet pack`
+         downloads the published package and runs ApiCompat against it, so removing or changing a
+         public signature fails the pack rather than reaching nuget.org.
+
+         The baseline is the version currently on nuget.org. At a release it moves to the version being
+         replaced, alongside the <Version> bump in the repository-root Directory.Build.props. -->
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <PackageValidationBaselineVersion>1.1.0</PackageValidationBaselineVersion>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(_IsShippingPackage)' == 'true'">
+    <!-- Guards the public surface of every shipping package: a public member that is not listed in
+         the project's PublicAPI.*.txt files is RS0016, and removing a listed one is RS0017 - both
+         build errors here, because TreatWarningsAsErrors is on. Update the files with
+         scripts/update-public-api.ps1. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+  </ItemGroup>
+
+</Project>

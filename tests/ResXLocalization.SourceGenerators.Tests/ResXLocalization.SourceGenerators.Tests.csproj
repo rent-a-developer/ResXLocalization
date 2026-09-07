@@ -1,18 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>$(CurrentTargetFramework)</TargetFramework>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>$(CurrentTargetFramework)</TargetFramework>
+  </PropertyGroup>
 
-    <ItemGroup>
-        <!-- Pinned to the same Roslyn version the generator itself builds against. -->
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
-    </ItemGroup>
+  <ItemGroup>
+    <!-- The tests drive the generator through CSharpGeneratorDriver, so they need the compiler
+         API themselves. This is the repository's ordinary Roslyn version, not the shipping floor the
+         generator project builds against - a generator compiled for 4.8 also runs on a newer
+         compiler, which is what a consumer on a current SDK gets. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+  </ItemGroup>
 
-    <ItemGroup>
-        <!-- The generator is referenced as a plain library here (not as an analyzer): the tests
-             instantiate ResxKeysGenerator directly and drive it in-memory with CSharpGeneratorDriver. -->
-        <ProjectReference Include="..\..\src\ResXLocalization.SourceGenerators\ResXLocalization.SourceGenerators.csproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <!-- The generator is referenced as a plain library here (not as an analyzer): the tests
+         instantiate ResxKeysGenerator directly and drive it in-memory with CSharpGeneratorDriver. -->
+    <ProjectReference Include="..\..\src\ResXLocalization.SourceGenerators\ResXLocalization.SourceGenerators.csproj" />
+  </ItemGroup>
 
 </Project>

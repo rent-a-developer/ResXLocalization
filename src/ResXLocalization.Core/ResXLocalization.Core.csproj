@@ -1,29 +1,26 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <IsAotCompatible>true</IsAotCompatible>
-        <IsPackable>true</IsPackable>
-        <!-- net8.0 (LTS) keeps the library usable for the large installed base; net10.0 is current. -->
-        <TargetFrameworks>$(LibraryTargetFrameworks)</TargetFrameworks>
-    </PropertyGroup>
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <!-- net8.0 (LTS) keeps the library usable for the large installed base; net10.0 is current. -->
+    <TargetFrameworks>$(LibraryTargetFrameworks)</TargetFrameworks>
+  </PropertyGroup>
 
-    <PropertyGroup>
-        <!-- Deviates from the repo-wide RentADeveloper.$(MSBuildProjectName) convention: Core's types
-             sit directly in RentADeveloper.ResXLocalization (no .Core suffix). -->
-        <RootNamespace>RentADeveloper.ResXLocalization</RootNamespace>
-    </PropertyGroup>
+  <PropertyGroup>
+    <!-- Deviates from the repo-wide RentADeveloper.$(MSBuildProjectName) convention: Core's types
+         sit directly in RentADeveloper.ResXLocalization (no .Core suffix). -->
+    <RootNamespace>RentADeveloper.ResXLocalization</RootNamespace>
+  </PropertyGroup>
 
-    <ItemGroup>
-        <!-- The UI-specific engines need the shared internal helpers (EnumKeyConvention, …). -->
-        <InternalsVisibleTo Include="ResXLocalization.Avalonia" />
-        <InternalsVisibleTo Include="ResXLocalization.WPF" />
-    </ItemGroup>
+  <PropertyGroup>
+    <Description>The shared, UI-agnostic runtime engine for ResXLocalization, with live culture switching, multiple resource managers, typed resource keys, and Native AOT support. Installed automatically as a dependency of ResXLocalization.Avalonia and ResXLocalization.WPF - most applications should install one of those packages instead.</Description>
+    <PackageTags>localization;resx;i18n;l10n;aot</PackageTags>
+  </PropertyGroup>
 
-    <ItemGroup>
-        <!-- Tracks the declared public API surface (PublicAPI.Shipped.txt / PublicAPI.Unshipped.txt):
-             an unreviewed public API change fails the build (RS0016/RS0017). -->
-        <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
-    </ItemGroup>
+  <ItemGroup>
+    <!-- The UI-specific engines need the shared internal helpers (EnumKeyConvention, …). -->
+    <InternalsVisibleTo Include="ResXLocalization.Avalonia" />
+    <InternalsVisibleTo Include="ResXLocalization.WPF" />
+  </ItemGroup>
 
 </Project>
