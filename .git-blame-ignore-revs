@@ -12,3 +12,16 @@
 # style: renormalize line endings to LF
 # Line endings only.
 3c9a8deec2a886ad7c8e5a269c5f8b60b11cc78b
+
+# style: apply the C# style, ordering and formatting rules
+# dotnet format style, ReSharper member reordering and CSharpier. The visible change is the type
+# names: String became string everywhere.
+2e78c0b2aeec62ee829f84e972b80962d0c4909c
+
+# style: reformat the XAML with XamlStyler
+# Attribute layout only. No element, setter or attached property moved.
+35fd5aa54aa4a0d569ee7b3b7391923b5581faeb
+
+# style: re-indent the structured configuration to two spaces
+# Leading whitespace only; `git diff -w` against its parent is empty.
+cd2512bdc6d05ca7ae6e11b91e28cb6a9cfde340
