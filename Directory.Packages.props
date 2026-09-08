@@ -7,10 +7,10 @@
 
   <ItemGroup>
     <!-- Runtime dependencies. -->
-    <PackageVersion Include="Avalonia" Version="12.1.0" />
-    <PackageVersion Include="Avalonia.Desktop" Version="12.1.0" />
-    <PackageVersion Include="Avalonia.Fonts.Inter" Version="12.1.0" />
-    <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.1.0" />
+    <PackageVersion Include="Avalonia" Version="12.1.2" />
+    <PackageVersion Include="Avalonia.Desktop" Version="12.1.2" />
+    <PackageVersion Include="Avalonia.Fonts.Inter" Version="12.1.2" />
+    <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.1.2" />
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
 
     <!-- Source generator toolchain. -->
@@ -38,7 +38,7 @@
     <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.33.0.1635" />
 
     <!-- Test stack (coverlet + the logger are referenced centrally for every test project). -->
-    <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.1.0" />
+    <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.1.2" />
     <PackageVersion Include="AwesomeAssertions" Version="9.6.0" />
     <PackageVersion Include="coverlet.collector" Version="10.0.1" />
     <!-- 2.x is the VSTest logger; 3.x targets Microsoft.Testing.Platform, which xunit.v3 under
