@@ -6,27 +6,7 @@ namespace RentADeveloper.ResXLocalization.Core.Tests;
 /// </summary>
 public class AvailableCulturesTests
 {
-    [Fact]
-    public void PerManager_ReportsNeutralAsInvariant_AndEachSatelliteCulture()
-    {
-        var localizer = this.resources.CreateLocalizer();
-
-        var cultures = localizer.GetAvailableCultures(this.resources.Catalog);
-
-        cultures.Should().Contain(CultureInfo.InvariantCulture);
-        cultures.Should().Contain(CultureInfo.GetCultureInfo("de"));
-        cultures.Should().NotContain(CultureInfo.GetCultureInfo("fr"));
-    }
-
-    [Fact]
-    public void PerManager_SortsTheInvariantCultureFirst()
-    {
-        var localizer = this.resources.CreateLocalizer();
-
-        var cultures = localizer.GetAvailableCultures(this.resources.Catalog);
-
-        cultures[0].Should().Be(CultureInfo.InvariantCulture);
-    }
+    private readonly TestResources resources = new();
 
     [Fact]
     public void AcrossAllManagers_ReturnsTheUnion()
@@ -38,14 +18,6 @@ public class AvailableCulturesTests
         cultures.Should().Contain(CultureInfo.InvariantCulture);
         cultures.Should().Contain(CultureInfo.GetCultureInfo("de"));
         cultures.Should().OnlyHaveUniqueItems();
-    }
-
-    [Fact]
-    public void WithNothingRegistered_ReturnsAnEmptyList()
-    {
-        var localizer = new Localizer();
-
-        localizer.GetAvailableCultures().Should().BeEmpty();
     }
 
     [Fact]
@@ -76,5 +48,33 @@ public class AvailableCulturesTests
         act.Should().Throw<ArgumentNullException>();
     }
 
-    private readonly TestResources resources = new();
+    [Fact]
+    public void PerManager_ReportsNeutralAsInvariant_AndEachSatelliteCulture()
+    {
+        var localizer = this.resources.CreateLocalizer();
+
+        var cultures = localizer.GetAvailableCultures(this.resources.Catalog);
+
+        cultures.Should().Contain(CultureInfo.InvariantCulture);
+        cultures.Should().Contain(CultureInfo.GetCultureInfo("de"));
+        cultures.Should().NotContain(CultureInfo.GetCultureInfo("fr"));
+    }
+
+    [Fact]
+    public void PerManager_SortsTheInvariantCultureFirst()
+    {
+        var localizer = this.resources.CreateLocalizer();
+
+        var cultures = localizer.GetAvailableCultures(this.resources.Catalog);
+
+        cultures[0].Should().Be(CultureInfo.InvariantCulture);
+    }
+
+    [Fact]
+    public void WithNothingRegistered_ReturnsAnEmptyList()
+    {
+        var localizer = new Localizer();
+
+        localizer.GetAvailableCultures().Should().BeEmpty();
+    }
 }

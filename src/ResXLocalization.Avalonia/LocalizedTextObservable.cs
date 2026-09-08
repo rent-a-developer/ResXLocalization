@@ -8,7 +8,7 @@ namespace RentADeveloper.ResXLocalization.Avalonia;
 /// localizer lives on.
 /// </summary>
 /// <param name="valueFactory">Produces the localized string for the current culture on demand.</param>
-internal sealed class LocalizedTextObservable(Func<String> valueFactory) : IObservable<Object?>
+internal sealed class LocalizedTextObservable(Func<string> valueFactory) : IObservable<object?>
 {
     /// <summary>
     /// Pushes the currently resolved string to <paramref name="observer" /> and keeps it updated on
@@ -16,7 +16,7 @@ internal sealed class LocalizedTextObservable(Func<String> valueFactory) : IObse
     /// </summary>
     /// <param name="observer">The observer receiving the localized string.</param>
     /// <returns>A subscription that stops the culture-change updates when disposed.</returns>
-    public IDisposable Subscribe(IObserver<Object?> observer)
+    public IDisposable Subscribe(IObserver<object?> observer)
     {
         observer.OnNext(valueFactory());
         return new Subscription(valueFactory, observer);
@@ -29,13 +29,19 @@ internal sealed class LocalizedTextObservable(Func<String> valueFactory) : IObse
     /// </summary>
     private sealed class Subscription : IDisposable, IWeakEventSubscriber<CultureChangedEventArgs>
     {
+        /// <summary>The observer receiving each freshly resolved string.</summary>
+        private readonly IObserver<object?> observer;
+
+        /// <summary>Produces the localized string for the current culture on demand.</summary>
+        private readonly Func<string> valueFactory;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="Subscription" /> class and subscribes it to
         /// culture changes of the ambient localizer.
         /// </summary>
         /// <param name="valueFactory">Produces the localized string for the current culture on demand.</param>
         /// <param name="observer">The observer receiving each freshly resolved string.</param>
-        public Subscription(Func<String> valueFactory, IObserver<Object?> observer)
+        public Subscription(Func<string> valueFactory, IObserver<object?> observer)
         {
             this.valueFactory = valueFactory;
             this.observer = observer;
@@ -43,20 +49,13 @@ internal sealed class LocalizedTextObservable(Func<String> valueFactory) : IObse
         }
 
         /// <summary>Unsubscribes from the culture-change weak event.</summary>
-        public void Dispose() =>
-            LocalizerWeakEvents.CultureChanged.Unsubscribe(Localizer.Current, this);
+        public void Dispose() => LocalizerWeakEvents.CultureChanged.Unsubscribe(Localizer.Current, this);
 
         /// <summary>Handles a culture change by re-resolving the string and emitting it to the observer.</summary>
         /// <param name="sender">The localizer that raised the event.</param>
         /// <param name="ev">The weak event delivering the notification.</param>
         /// <param name="e">The event data carrying the previous and current culture.</param>
-        public void OnEvent(Object? sender, WeakEvent ev, CultureChangedEventArgs e) =>
+        public void OnEvent(object? sender, WeakEvent ev, CultureChangedEventArgs e) =>
             this.observer.OnNext(this.valueFactory());
-
-        /// <summary>The observer receiving each freshly resolved string.</summary>
-        private readonly IObserver<Object?> observer;
-
-        /// <summary>Produces the localized string for the current culture on demand.</summary>
-        private readonly Func<String> valueFactory;
     }
 }

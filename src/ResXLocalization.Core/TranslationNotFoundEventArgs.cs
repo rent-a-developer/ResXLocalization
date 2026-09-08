@@ -18,7 +18,7 @@ public sealed class TranslationNotFoundEventArgs : EventArgs
     /// The single resource manager of a scoped or typed lookup, or <see langword="null" /> for a
     /// search-all lookup.
     /// </param>
-    public TranslationNotFoundEventArgs(String key, CultureInfo culture, ResourceManager? resourceManager)
+    public TranslationNotFoundEventArgs(string key, CultureInfo culture, ResourceManager? resourceManager)
     {
         ArgumentNullException.ThrowIfNull(key);
         ArgumentNullException.ThrowIfNull(culture);
@@ -28,11 +28,11 @@ public sealed class TranslationNotFoundEventArgs : EventArgs
         this.ResourceManager = resourceManager;
     }
 
-    /// <summary>Gets the resource key that could not be resolved.</summary>
-    public String Key { get; }
-
     /// <summary>Gets the culture the lookup ran against.</summary>
     public CultureInfo Culture { get; }
+
+    /// <summary>Gets the resource key that could not be resolved.</summary>
+    public string Key { get; }
 
     /// <summary>
     /// Gets the single resource manager of a scoped or typed lookup, or <see langword="null" /> when

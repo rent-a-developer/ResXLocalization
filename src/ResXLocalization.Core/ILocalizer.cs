@@ -13,6 +13,20 @@ namespace RentADeveloper.ResXLocalization;
 public interface ILocalizer : INotifyPropertyChanged
 {
     /// <summary>
+    /// Occurs after <see cref="CurrentCulture" /> changes, carrying the previous and current culture.
+    /// Subscribe to refresh values that are not resolved through a binding.
+    /// </summary>
+    event EventHandler<CultureChangedEventArgs> CultureChanged;
+
+    /// <summary>
+    /// Occurs whenever a lookup misses - no resource file could resolve the key for the current
+    /// culture and the sentinel (see <see cref="MissingTranslationFormat" />) is about to be
+    /// returned. Normal .NET resource fallback runs first; subscribe to log keys that remain
+    /// unresolved across the complete parent and neutral fallback chain.
+    /// </summary>
+    event EventHandler<TranslationNotFoundEventArgs> TranslationNotFound;
+
+    /// <summary>
     /// Gets or sets the culture used to resolve resources. Setting a different value raises
     /// <see cref="INotifyPropertyChanged.PropertyChanged" /> and <see cref="CultureChanged" />, causing
     /// bound localized values to re-resolve.
@@ -30,19 +44,6 @@ public interface ILocalizer : INotifyPropertyChanged
     CultureInfo CurrentCulture { get; set; }
 
     /// <summary>
-    /// Gets the localized string for the specified key by searching every registered
-    /// <see cref="ResourceManager" /> in registration order.
-    /// </summary>
-    /// <param name="key">The resource key to resolve.</param>
-    /// <returns>
-    /// The localized string for <paramref name="key" /> in <see cref="CurrentCulture" />;
-    /// <see cref="String.Empty" /> if <paramref name="key" /> is <see langword="null" /> or empty;
-    /// or the configured missing-translation sentinel (by default <c>!key!</c>) if no registered
-    /// resource manager contains the key.
-    /// </returns>
-    String this[String key] { get; }
-
-    /// <summary>
     /// Gets or sets the composite format string that produces the sentinel returned for a key no
     /// lookup could resolve, where <c>{0}</c> is the key. Defaults to <c>!{0}!</c>, which renders a
     /// missing <c>Greeting</c> as <c>!Greeting!</c>.
@@ -58,21 +59,26 @@ public interface ILocalizer : INotifyPropertyChanged
     /// example <c>{1}</c>. It is validated on assignment so the defect surfaces here rather than on the
     /// first miss.
     /// </exception>
-    String MissingTranslationFormat { get; set; }
+    string MissingTranslationFormat { get; set; }
 
     /// <summary>
-    /// Occurs after <see cref="CurrentCulture" /> changes, carrying the previous and current culture.
-    /// Subscribe to refresh values that are not resolved through a binding.
+    /// Gets the localized string for the specified key by searching every registered
+    /// <see cref="ResourceManager" /> in registration order.
     /// </summary>
-    event EventHandler<CultureChangedEventArgs> CultureChanged;
+    /// <param name="key">The resource key to resolve.</param>
+    /// <returns>
+    /// The localized string for <paramref name="key" /> in <see cref="CurrentCulture" />;
+    /// <see cref="string.Empty" /> if <paramref name="key" /> is <see langword="null" /> or empty;
+    /// or the configured missing-translation sentinel (by default <c>!key!</c>) if no registered
+    /// resource manager contains the key.
+    /// </returns>
+    string this[string key] { get; }
 
     /// <summary>
-    /// Occurs whenever a lookup misses - no resource file could resolve the key for the current
-    /// culture and the sentinel (see <see cref="MissingTranslationFormat" />) is about to be
-    /// returned. Normal .NET resource fallback runs first; subscribe to log keys that remain
-    /// unresolved across the complete parent and neutral fallback chain.
+    /// Removes every registered <see cref="ResourceManager" /> from the search-all set. Typed and
+    /// scoped lookups are unaffected - they never consult the registration set.
     /// </summary>
-    event EventHandler<TranslationNotFoundEventArgs> TranslationNotFound;
+    void ClearResourceManagers();
 
     /// <summary>
     /// Resolves the localized string for the specified key by searching every registered
@@ -81,11 +87,11 @@ public interface ILocalizer : INotifyPropertyChanged
     /// <param name="key">The resource key to resolve.</param>
     /// <returns>
     /// The localized string for <paramref name="key" /> in <see cref="CurrentCulture" />;
-    /// <see cref="String.Empty" /> if <paramref name="key" /> is <see langword="null" /> or empty;
+    /// <see cref="string.Empty" /> if <paramref name="key" /> is <see langword="null" /> or empty;
     /// or the configured missing-translation sentinel (by default <c>!key!</c>) if no registered
     /// resource manager contains the key.
     /// </returns>
-    String Get(String key);
+    string Get(string key);
 
     /// <summary>
     /// Resolves the localized string for the specified key by searching every registered
@@ -96,7 +102,7 @@ public interface ILocalizer : INotifyPropertyChanged
     /// <param name="key">The resource key to resolve.</param>
     /// <param name="arguments">The values to format into the resolved string.</param>
     /// <returns>
-    /// The formatted, localized string; <see cref="String.Empty" /> if <paramref name="key" /> is
+    /// The formatted, localized string; <see cref="string.Empty" /> if <paramref name="key" /> is
     /// <see langword="null" /> or empty; or the configured missing-translation sentinel (by default
     /// <c>!key!</c>), without applying <paramref name="arguments" />, if no registered resource manager
     /// contains the key.
@@ -107,7 +113,7 @@ public interface ILocalizer : INotifyPropertyChanged
     /// <paramref name="arguments" />. That is a defect in the resource file you want to surface
     /// during development, not a missing translation, so it fails loudly.
     /// </exception>
-    String Get(String key, params Object?[] arguments);
+    string Get(string key, params object?[] arguments);
 
     /// <summary>
     /// Resolves the localized string for an enumeration value by mapping it to a resource key using
@@ -124,7 +130,7 @@ public interface ILocalizer : INotifyPropertyChanged
     /// <exception cref="ArgumentNullException">
     /// <paramref name="value" /> or <paramref name="keyPrefix" /> is <see langword="null" />.
     /// </exception>
-    String Get(Enum value, String keyPrefix = EnumKeyConvention.DefaultEnumKeyPrefix);
+    string Get(Enum value, string keyPrefix = EnumKeyConvention.DefaultEnumKeyPrefix);
 
     /// <summary>
     /// Resolves the localized string for the specified key from a single, explicit
@@ -134,14 +140,14 @@ public interface ILocalizer : INotifyPropertyChanged
     /// <param name="resourceManager">The resource manager to read the key from.</param>
     /// <returns>
     /// The localized string for <paramref name="key" /> in <see cref="CurrentCulture" />;
-    /// <see cref="String.Empty" /> if <paramref name="key" /> is <see langword="null" /> or empty;
+    /// <see cref="string.Empty" /> if <paramref name="key" /> is <see langword="null" /> or empty;
     /// or the configured missing-translation sentinel (by default <c>!key!</c>) if
     /// <paramref name="resourceManager" /> does not contain the key.
     /// </returns>
     /// <exception cref="ArgumentNullException">
     /// <paramref name="resourceManager" /> is <see langword="null" />.
     /// </exception>
-    String Get(String key, ResourceManager resourceManager);
+    string Get(string key, ResourceManager resourceManager);
 
     /// <summary>
     /// Resolves the localized string for the specified key from a single, explicit
@@ -152,7 +158,7 @@ public interface ILocalizer : INotifyPropertyChanged
     /// <param name="resourceManager">The resource manager to read the key from.</param>
     /// <param name="arguments">The values to format into the resolved string.</param>
     /// <returns>
-    /// The formatted, localized string; <see cref="String.Empty" /> if <paramref name="key" /> is
+    /// The formatted, localized string; <see cref="string.Empty" /> if <paramref name="key" /> is
     /// <see langword="null" /> or empty; or the configured missing-translation sentinel (by default
     /// <c>!key!</c>), without applying <paramref name="arguments" />, if
     /// <paramref name="resourceManager" /> does not contain the key.
@@ -164,7 +170,7 @@ public interface ILocalizer : INotifyPropertyChanged
     /// The resolved resource value is not a valid composite format string for
     /// <paramref name="arguments" />.
     /// </exception>
-    String Get(String key, ResourceManager resourceManager, params Object?[] arguments);
+    string Get(string key, ResourceManager resourceManager, params object?[] arguments);
 
     /// <summary>
     /// Resolves the localized string for an enumeration value from a single, explicit
@@ -183,7 +189,7 @@ public interface ILocalizer : INotifyPropertyChanged
     /// <paramref name="value" />, <paramref name="resourceManager" />, or
     /// <paramref name="keyPrefix" /> is <see langword="null" />.
     /// </exception>
-    String Get(Enum value, ResourceManager resourceManager, String keyPrefix = EnumKeyConvention.DefaultEnumKeyPrefix);
+    string Get(Enum value, ResourceManager resourceManager, string keyPrefix = EnumKeyConvention.DefaultEnumKeyPrefix);
 
     /// <summary>
     /// Resolves the localized string for a typed <see cref="ResourceKey" />, which carries both the
@@ -199,7 +205,7 @@ public interface ILocalizer : INotifyPropertyChanged
     /// <paramref name="key" /> is a default or otherwise uninitialized <see cref="ResourceKey" />,
     /// whose <see cref="ResourceKey.Manager" /> is <see langword="null" />.
     /// </exception>
-    String Get(ResourceKey key);
+    string Get(ResourceKey key);
 
     /// <summary>
     /// Resolves the localized string for a typed <see cref="ResourceKey" />, then formats it as a
@@ -221,39 +227,7 @@ public interface ILocalizer : INotifyPropertyChanged
     /// The resolved resource value is not a valid composite format string for
     /// <paramref name="arguments" />.
     /// </exception>
-    String Get(ResourceKey key, params Object?[] arguments);
-
-    /// <summary>
-    /// Registers a <see cref="ResourceManager" /> to be searched by the key-only and enum lookups.
-    /// Managers are searched in registration order on a first-match-wins basis; registering the same
-    /// manager more than once has no effect.
-    /// </summary>
-    /// <param name="resourceManager">The resource manager to add to the search set.</param>
-    /// <exception cref="ArgumentNullException">
-    /// <paramref name="resourceManager" /> is <see langword="null" />.
-    /// </exception>
-    void RegisterResourceManager(ResourceManager resourceManager);
-
-    /// <summary>
-    /// Removes a previously registered <see cref="ResourceManager" /> from the search-all set, for
-    /// example when the plugin or module that owns its strings is unloaded. Typed and scoped lookups
-    /// are unaffected - they never consult the registration set.
-    /// </summary>
-    /// <param name="resourceManager">The resource manager to remove from the search set.</param>
-    /// <returns>
-    /// <see langword="true" /> when the manager was registered and has been removed;
-    /// <see langword="false" /> when it was not registered.
-    /// </returns>
-    /// <exception cref="ArgumentNullException">
-    /// <paramref name="resourceManager" /> is <see langword="null" />.
-    /// </exception>
-    Boolean UnregisterResourceManager(ResourceManager resourceManager);
-
-    /// <summary>
-    /// Removes every registered <see cref="ResourceManager" /> from the search-all set. Typed and
-    /// scoped lookups are unaffected - they never consult the registration set.
-    /// </summary>
-    void ClearResourceManagers();
+    string Get(ResourceKey key, params object?[] arguments);
 
     /// <summary>
     /// Discovers the cultures for which any registered <see cref="ResourceManager" /> ships its own
@@ -292,4 +266,30 @@ public interface ILocalizer : INotifyPropertyChanged
     /// <paramref name="resourceManager" /> is <see langword="null" />.
     /// </exception>
     IReadOnlyList<CultureInfo> GetAvailableCultures(ResourceManager resourceManager);
+
+    /// <summary>
+    /// Registers a <see cref="ResourceManager" /> to be searched by the key-only and enum lookups.
+    /// Managers are searched in registration order on a first-match-wins basis; registering the same
+    /// manager more than once has no effect.
+    /// </summary>
+    /// <param name="resourceManager">The resource manager to add to the search set.</param>
+    /// <exception cref="ArgumentNullException">
+    /// <paramref name="resourceManager" /> is <see langword="null" />.
+    /// </exception>
+    void RegisterResourceManager(ResourceManager resourceManager);
+
+    /// <summary>
+    /// Removes a previously registered <see cref="ResourceManager" /> from the search-all set, for
+    /// example when the plugin or module that owns its strings is unloaded. Typed and scoped lookups
+    /// are unaffected - they never consult the registration set.
+    /// </summary>
+    /// <param name="resourceManager">The resource manager to remove from the search set.</param>
+    /// <returns>
+    /// <see langword="true" /> when the manager was registered and has been removed;
+    /// <see langword="false" /> when it was not registered.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">
+    /// <paramref name="resourceManager" /> is <see langword="null" />.
+    /// </exception>
+    bool UnregisterResourceManager(ResourceManager resourceManager);
 }

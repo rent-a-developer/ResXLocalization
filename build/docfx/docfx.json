@@ -1,0 +1,69 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
+  "metadata": [
+    {
+      "src": [
+        {
+          "src": "../../src",
+          "files": [
+            "**/*.csproj"
+          ],
+          "exclude": [
+            "**/ResXLocalization.SourceGenerators.csproj"
+          ]
+        }
+      ],
+      "dest": "../../artifacts/docs/api",
+      "noRestore": true
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "src": "../../docs",
+        "files": [
+          "**/*.{md,yml}"
+        ],
+        "dest": "."
+      },
+      {
+        "src": "../../artifacts/docs/api",
+        "files": [
+          "**/*.{md,yml}"
+        ],
+        "dest": "api"
+      },
+      {
+        "src": "../../",
+        "files": [
+          "CONTRIBUTING.md",
+          "CODE_OF_CONDUCT.md",
+          "SECURITY.md",
+          "CHANGELOG.md"
+        ],
+        "dest": "."
+      }
+    ],
+    "resource": [
+      {
+        "src": "../../docs",
+        "files": [
+          "assets/**"
+        ],
+        "dest": "."
+      }
+    ],
+    "output": "../../artifacts/docs/site",
+    "template": [
+      "default",
+      "modern"
+    ],
+    "globalMetadata": {
+      "_appName": "ResXLocalization",
+      "_appTitle": "ResXLocalization documentation",
+      "_appLogoPath": "assets/logo.svg",
+      "_appFaviconPath": "assets/favicon.ico",
+      "_enableSearch": true
+    }
+  }
+}

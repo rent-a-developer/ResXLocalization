@@ -8,7 +8,8 @@ namespace RentADeveloper.ResXLocalization.WPF.Sample.Tests;
 public class MainWindowViewModelTests
 {
     [Fact]
-    public void Construction_ExposesEnglishValues() => WpfThread.Invoke(() =>
+    public void Construction_ExposesEnglishValues() =>
+        WpfThread.Invoke(() =>
         {
             TestSupport.ResetToEnglishWithTestCatalogs();
 
@@ -25,17 +26,17 @@ public class MainWindowViewModelTests
             viewModel.SortOrderViaSearchAllCustomPrefix.Should().Be("A to Z");
             viewModel.SortOrderViaScopedDefaultPrefix.Should().Be("Ascending");
             viewModel.SortOrderViaScopedCustomPrefix.Should().Be("A to Z");
-        }
-    );
+        });
 
     [Fact]
-    public void SelectingLanguage_RecomputesAndNotifies_ReadOutProperties() => WpfThread.Invoke(() =>
+    public void SelectingLanguage_RecomputesAndNotifies_ReadOutProperties() =>
+        WpfThread.Invoke(() =>
         {
             TestSupport.ResetToEnglishWithTestCatalogs();
             using var viewModel = new MainWindowViewModel(Localizer.Current);
 
-            var changed = new List<String>();
-            viewModel.PropertyChanged += (_, args) => changed.Add(args.PropertyName ?? String.Empty);
+            var changed = new List<string>();
+            viewModel.PropertyChanged += (_, args) => changed.Add(args.PropertyName ?? string.Empty);
 
             viewModel.SelectedLanguage = TestSupport.German;
 
@@ -46,11 +47,11 @@ public class MainWindowViewModelTests
             changed.Should().Contain(nameof(MainWindowViewModel.GreetingViaSearchAll));
             changed.Should().Contain(nameof(MainWindowViewModel.SortOrderViaSearchAllDefaultPrefix));
             changed.Should().Contain(nameof(MainWindowViewModel.PoweredByViaTypedKey));
-        }
-    );
+        });
 
     [Fact]
-    public void SelectingLanguage_SwitchesTheAmbientCulture() => WpfThread.Invoke(() =>
+    public void SelectingLanguage_SwitchesTheAmbientCulture() =>
+        WpfThread.Invoke(() =>
         {
             TestSupport.ResetToEnglishWithTestCatalogs();
 
@@ -58,17 +59,17 @@ public class MainWindowViewModelTests
             viewModel.SelectedLanguage = TestSupport.German;
 
             Localizer.Current.CurrentCulture.Name.Should().Be("de");
-        }
-    );
+        });
 
     [Fact]
-    public void SelectingSortOrder_RecomputesAndNotifies_EnumReadOuts() => WpfThread.Invoke(() =>
+    public void SelectingSortOrder_RecomputesAndNotifies_EnumReadOuts() =>
+        WpfThread.Invoke(() =>
         {
             TestSupport.ResetToEnglishWithTestCatalogs();
             using var viewModel = new MainWindowViewModel(Localizer.Current);
 
-            var changed = new List<String>();
-            viewModel.PropertyChanged += (_, args) => changed.Add(args.PropertyName ?? String.Empty);
+            var changed = new List<string>();
+            viewModel.PropertyChanged += (_, args) => changed.Add(args.PropertyName ?? string.Empty);
 
             viewModel.SelectedFileSortOrder = FileSortOrder.Descending;
 
@@ -76,17 +77,16 @@ public class MainWindowViewModelTests
             viewModel.SortOrderViaSearchAllCustomPrefix.Should().Be("Z to A");
             changed.Should().Contain(nameof(MainWindowViewModel.SortOrderViaSearchAllDefaultPrefix));
             changed.Should().Contain(nameof(MainWindowViewModel.SortOrderViaScopedCustomPrefix));
-        }
-    );
+        });
 
     [Fact]
-    public void SupportedLanguages_AndSortOrders_AreExposedForTheComboBoxes() => WpfThread.Invoke(() =>
+    public void SupportedLanguages_AndSortOrders_AreExposedForTheComboBoxes() =>
+        WpfThread.Invoke(() =>
         {
             TestSupport.ResetToEnglishWithTestCatalogs();
             using var viewModel = new MainWindowViewModel(Localizer.Current);
 
             viewModel.SupportedLanguages.Select(culture => culture.Name).Should().Equal("en", "de");
             viewModel.FileSortOrders.Should().Equal(Enum.GetValues<FileSortOrder>());
-        }
-    );
+        });
 }

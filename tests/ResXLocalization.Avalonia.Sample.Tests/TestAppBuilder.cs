@@ -9,16 +9,21 @@ namespace RentADeveloper.ResXLocalization.Avalonia.Sample.Tests;
 /// </summary>
 public sealed class TestAppBuilder
 {
+    /// <summary>
+    /// Avalonia.Headless only ever calls the static factory below through the assembly attribute, so the
+    /// type is never instantiated.
+    /// </summary>
+    private TestAppBuilder() { }
+
     public static AppBuilder BuildAvaloniaApp()
     {
         Localizer.Current.RegisterResourceManager(ApplicationStrings.ResourceManager);
         Localizer.Current.RegisterResourceManager(SortingStrings.ResourceManager);
         Localizer.Current.RegisterResourceManager(BrandingStrings.ResourceManager);
 
-        return AppBuilder.Configure<App>().UseSkia().UseHeadless(new()
-        {
-            ShouldRenderOnUIThread = true,
-            UseHeadlessDrawing = false
-        });
+        return AppBuilder
+            .Configure<App>()
+            .UseSkia()
+            .UseHeadless(new() { ShouldRenderOnUIThread = true, UseHeadlessDrawing = false });
     }
 }

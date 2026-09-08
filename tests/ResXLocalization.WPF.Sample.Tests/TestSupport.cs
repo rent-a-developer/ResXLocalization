@@ -7,13 +7,31 @@ namespace RentADeveloper.ResXLocalization.WPF.Sample.Tests;
 /// </summary>
 internal static class TestSupport
 {
+    /// <summary>English culture, used to reset the ambient localizer at the start of each test.</summary>
+    public static readonly CultureInfo English = new("en");
+
+    /// <summary>German culture. Used to assert that values switch live.</summary>
+    public static readonly CultureInfo German = new("de");
+
+    /// <summary>The test-only Catalog file; registered first so it wins search-all ties for "Shared".</summary>
+    private static readonly ResourceManager CatalogResources = new(
+        "RentADeveloper.ResXLocalization.WPF.Sample.Tests.Resources.Catalog",
+        typeof(TestSupport).Assembly
+    );
+
+    /// <summary>The test-only Fallback file; registered after <see cref="CatalogResources" />.</summary>
+    private static readonly ResourceManager FallbackResources = new(
+        "RentADeveloper.ResXLocalization.WPF.Sample.Tests.Resources.Fallback",
+        typeof(TestSupport).Assembly
+    );
+
     /// <summary>Collects the non-empty text of every descendant <see cref="TextBlock" /> in the logical tree.</summary>
     /// <param name="root">The root of the logical tree to inspect.</param>
     /// <returns>The non-empty text values in logical-tree traversal order.</returns>
-    public static String[] AllVisibleText(DependencyObject root) =>
+    public static string[] AllVisibleText(DependencyObject root) =>
         LogicalDescendants(root)
             .OfType<TextBlock>()
-            .Select(textBlock => textBlock.Text ?? String.Empty)
+            .Select(textBlock => textBlock.Text ?? string.Empty)
             .Where(text => text.Length > 0)
             .ToArray();
 
@@ -74,12 +92,6 @@ internal static class TestSupport
         Localizer.Current.RegisterResourceManager(FallbackResources);
     }
 
-    /// <summary>English culture, used to reset the ambient localizer at the start of each test.</summary>
-    public static readonly CultureInfo English = new("en");
-
-    /// <summary>German culture. Used to assert that values switch live.</summary>
-    public static readonly CultureInfo German = new("de");
-
     private static IEnumerable<DependencyObject> LogicalDescendants(DependencyObject root)
     {
         foreach (var child in LogicalTreeHelper.GetChildren(root).OfType<DependencyObject>())
@@ -93,18 +105,10 @@ internal static class TestSupport
         }
     }
 
-    /// <summary>The test-only Catalog file; registered first so it wins search-all ties for "Shared".</summary>
-    private static readonly ResourceManager CatalogResources =
-        new("RentADeveloper.ResXLocalization.WPF.Sample.Tests.Resources.Catalog", typeof(TestSupport).Assembly);
-
-    /// <summary>The test-only Fallback file; registered after <see cref="CatalogResources" />.</summary>
-    private static readonly ResourceManager FallbackResources =
-        new("RentADeveloper.ResXLocalization.WPF.Sample.Tests.Resources.Fallback", typeof(TestSupport).Assembly);
-
     private sealed class EmptyServiceProvider : IServiceProvider
     {
-        public Object? GetService(Type serviceType) => null;
-
         public static readonly EmptyServiceProvider Instance = new();
+
+        public object? GetService(Type serviceType) => null;
     }
 }

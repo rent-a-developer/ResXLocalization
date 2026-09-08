@@ -8,7 +8,8 @@ namespace RentADeveloper.ResXLocalization.WPF.Sample.Tests;
 public class LocalizeEnumExtensionTests
 {
     [Fact]
-    public void BoundValue_SwitchesLive_OnCultureChange() => WpfThread.Invoke(() =>
+    public void BoundValue_SwitchesLive_OnCultureChange() =>
+        WpfThread.Invoke(() =>
         {
             TestSupport.ResetToEnglishWithTestCatalogs();
 
@@ -18,25 +19,22 @@ public class LocalizeEnumExtensionTests
             Localizer.Current.CurrentCulture = TestSupport.German;
             TestSupport.Flush();
             textBlock.Text.Should().Be("Absteigend");
-        }
-    );
+        });
 
     [Fact]
-    public void CustomPrefix_NoManager_ResolvesViaSearchAll() => WpfThread.Invoke(() =>
+    public void CustomPrefix_NoManager_ResolvesViaSearchAll() =>
+        WpfThread.Invoke(() =>
         {
             TestSupport.ResetToEnglishWithTestCatalogs();
 
-            var textBlock = TestSupport.BindLocalizedEnum(
-                new() { KeyPrefix = "Display_" },
-                FileSortOrder.Ascending
-            );
+            var textBlock = TestSupport.BindLocalizedEnum(new() { KeyPrefix = "Display_" }, FileSortOrder.Ascending);
 
             textBlock.Text.Should().Be("A to Z");
-        }
-    );
+        });
 
     [Fact]
-    public void CustomPrefix_WithManager_ResolvesScoped() => WpfThread.Invoke(() =>
+    public void CustomPrefix_WithManager_ResolvesScoped() =>
+        WpfThread.Invoke(() =>
         {
             TestSupport.ResetToEnglishWithTestCatalogs();
 
@@ -46,22 +44,22 @@ public class LocalizeEnumExtensionTests
             );
 
             textBlock.Text.Should().Be("A to Z");
-        }
-    );
+        });
 
     [Fact]
-    public void DefaultPrefix_NoManager_ResolvesViaSearchAll() => WpfThread.Invoke(() =>
+    public void DefaultPrefix_NoManager_ResolvesViaSearchAll() =>
+        WpfThread.Invoke(() =>
         {
             TestSupport.ResetToEnglishWithTestCatalogs();
 
             var textBlock = TestSupport.BindLocalizedEnum(new(), FileSortOrder.Ascending);
 
             textBlock.Text.Should().Be("Ascending");
-        }
-    );
+        });
 
     [Fact]
-    public void DefaultPrefix_WithManager_ResolvesScoped() => WpfThread.Invoke(() =>
+    public void DefaultPrefix_WithManager_ResolvesScoped() =>
+        WpfThread.Invoke(() =>
         {
             TestSupport.ResetToEnglishWithTestCatalogs();
 
@@ -71,6 +69,5 @@ public class LocalizeEnumExtensionTests
             );
 
             textBlock.Text.Should().Be("Ascending");
-        }
-    );
+        });
 }

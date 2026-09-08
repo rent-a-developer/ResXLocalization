@@ -6,12 +6,31 @@ namespace RentADeveloper.ResXLocalization.Avalonia.Sample.Tests;
 /// </summary>
 internal static class TestSupport
 {
+    /// <summary>English culture, used to reset the ambient localizer at the start of each test.</summary>
+    public static readonly CultureInfo English = new("en");
+
+    /// <summary>German culture. Used to assert that values switch live.</summary>
+    public static readonly CultureInfo German = new("de");
+
+    /// <summary>The test-only Catalog file; registered first so it wins search-all ties for "Shared".</summary>
+    private static readonly ResourceManager CatalogResources = new(
+        "RentADeveloper.ResXLocalization.Avalonia.Sample.Tests.Resources.Catalog",
+        typeof(TestSupport).Assembly
+    );
+
+    /// <summary>The test-only Fallback file; registered after <see cref="CatalogResources" />.</summary>
+    private static readonly ResourceManager FallbackResources = new(
+        "RentADeveloper.ResXLocalization.Avalonia.Sample.Tests.Resources.Fallback",
+        typeof(TestSupport).Assembly
+    );
+
     /// <summary>Collects the non-empty text of every <see cref="TextBlock" /> beneath a visual.</summary>
     /// <param name="root">The visual whose descendants to inspect.</param>
     /// <returns>The non-empty text values in visual-tree traversal order.</returns>
-    public static String[] AllVisibleText(Visual root) =>
-        root.GetVisualDescendants().OfType<TextBlock>()
-            .Select(static textBlock => textBlock.Text ?? String.Empty)
+    public static string[] AllVisibleText(Visual root) =>
+        root.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Select(static textBlock => textBlock.Text ?? string.Empty)
             .Where(static text => text.Length > 0)
             .ToArray();
 
@@ -25,9 +44,8 @@ internal static class TestSupport
     public static TextBlock BindLocalizedEnum(LocalizeEnumExtension extension, Enum value)
     {
         var textBlock = new TextBlock();
-        var binding = (BindingBase)extension.ProvideValue(
-            new SimpleServiceProvider(new SimpleProvideValueTarget(textBlock))
-        );
+        var binding = (BindingBase)
+            extension.ProvideValue(new SimpleServiceProvider(new SimpleProvideValueTarget(textBlock)));
         textBlock.Bind(TextBlock.TextProperty, binding);
         textBlock.DataContext = value;
         Dispatcher.UIThread.RunJobs(DispatcherPriority.Loaded);
@@ -54,16 +72,14 @@ internal static class TestSupport
     public static TextBlock BindLocalizedTextWithTarget(LocalizeExtension extension)
     {
         var textBlock = new TextBlock();
-        var binding = (BindingBase)extension.ProvideValue(
-            new SimpleServiceProvider(new SimpleProvideValueTarget(textBlock))
-        );
+        var binding = (BindingBase)
+            extension.ProvideValue(new SimpleServiceProvider(new SimpleProvideValueTarget(textBlock)));
         textBlock.Bind(TextBlock.TextProperty, binding);
         return textBlock;
     }
 
     /// <summary>Pumps queued UI work so that bindings settle before assertions.</summary>
-    public static void PumpUi() =>
-        Dispatcher.UIThread.RunJobs(DispatcherPriority.Loaded);
+    public static void PumpUi() => Dispatcher.UIThread.RunJobs(DispatcherPriority.Loaded);
 
     /// <summary>
     /// Resets the ambient localizer to English and registers the two test-only files. Registration dedups
@@ -76,30 +92,15 @@ internal static class TestSupport
         Localizer.Current.RegisterResourceManager(FallbackResources);
     }
 
-    /// <summary>English culture, used to reset the ambient localizer at the start of each test.</summary>
-    public static readonly CultureInfo English = new("en");
-
-    /// <summary>German culture. Used to assert that values switch live.</summary>
-    public static readonly CultureInfo German = new("de");
-
-    /// <summary>The test-only Catalog file; registered first so it wins search-all ties for "Shared".</summary>
-    private static readonly ResourceManager CatalogResources =
-        new("RentADeveloper.ResXLocalization.Avalonia.Sample.Tests.Resources.Catalog", typeof(TestSupport).Assembly);
-
-    /// <summary>The test-only Fallback file; registered after <see cref="CatalogResources" />.</summary>
-    private static readonly ResourceManager FallbackResources =
-        new("RentADeveloper.ResXLocalization.Avalonia.Sample.Tests.Resources.Fallback", typeof(TestSupport).Assembly);
-
-    private sealed class SimpleProvideValueTarget(Object targetObject) : IProvideValueTarget
+    private sealed class SimpleProvideValueTarget(object targetObject) : IProvideValueTarget
     {
-        public Object TargetObject { get; } = targetObject;
+        public object TargetObject { get; } = targetObject;
 
-        public Object TargetProperty => null!;
+        public object TargetProperty => null!;
     }
 
     private sealed class SimpleServiceProvider(IProvideValueTarget target) : IServiceProvider
     {
-        public Object? GetService(Type serviceType) =>
-            serviceType == typeof(IProvideValueTarget) ? target : null;
+        public object? GetService(Type serviceType) => serviceType == typeof(IProvideValueTarget) ? target : null;
     }
 }

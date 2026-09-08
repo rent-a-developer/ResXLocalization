@@ -12,35 +12,17 @@ namespace RentADeveloper.ResXLocalization.Core.Tests;
 [Collection(AmbientLocalizerGroup.Name)]
 public class LocalizerContractTests
 {
-    [Fact]
-    public void CultureChange_RaisesCurrentCulture_ThenIndexer_ThenCultureChanged()
-    {
-        var localizer = this.resources.CreateLocalizer();
-        var events = new List<String>();
-        localizer.PropertyChanged += (_, args) => events.Add($"PropertyChanged({args.PropertyName})");
-        localizer.CultureChanged += (_, _) => events.Add("CultureChanged");
-
-        localizer.CurrentCulture = TestResources.German;
-
-        events.Should().Equal(
-            "PropertyChanged(CurrentCulture)",
-            "PropertyChanged(Item[])",
-            "CultureChanged"
-        );
-    }
+    private readonly TestResources resources = new();
 
     [Fact]
-    public void CultureChanged_CarriesOldAndNewCulture()
+    public void AssigningNullCulture_Throws()
     {
         var localizer = this.resources.CreateLocalizer();
-        CultureChangedEventArgs? captured = null;
-        localizer.CultureChanged += (_, args) => captured = args;
 
-        localizer.CurrentCulture = TestResources.German;
+        var act = () => localizer.CurrentCulture = null!;
 
-        captured.Should().NotBeNull();
-        captured!.OldCulture.Should().Be(TestResources.English);
-        captured.NewCulture.Should().Be(TestResources.German);
+        act.Should().Throw<ArgumentNullException>();
+        localizer.CurrentCulture.Should().Be(TestResources.English);
     }
 
     [Fact]
@@ -61,19 +43,42 @@ public class LocalizerContractTests
     }
 
     [Fact]
-    public void AssigningNullCulture_Throws()
+    public void CultureChange_RaisesCurrentCulture_ThenIndexer_ThenCultureChanged()
     {
         var localizer = this.resources.CreateLocalizer();
+        var events = new List<string>();
+        localizer.PropertyChanged += (_, args) => events.Add($"PropertyChanged({args.PropertyName})");
+        localizer.CultureChanged += (_, _) => events.Add("CultureChanged");
 
-        var act = () => localizer.CurrentCulture = null!;
+        localizer.CurrentCulture = TestResources.German;
 
-        act.Should().Throw<ArgumentNullException>();
-        localizer.CurrentCulture.Should().Be(TestResources.English);
+        events.Should().Equal("PropertyChanged(CurrentCulture)", "PropertyChanged(Item[])", "CultureChanged");
+    }
+
+    [Fact]
+    public void CultureChanged_CarriesOldAndNewCulture()
+    {
+        var localizer = this.resources.CreateLocalizer();
+        CultureChangedEventArgs? captured = null;
+        localizer.CultureChanged += (_, args) => captured = args;
+
+        localizer.CurrentCulture = TestResources.German;
+
+        captured.Should().NotBeNull();
+        captured.OldCulture.Should().Be(TestResources.English);
+        captured.NewCulture.Should().Be(TestResources.German);
     }
 
     [Fact]
     public void CurrentCulture_DefaultsToCurrentUICulture() =>
         new Localizer().CurrentCulture.Should().Be(CultureInfo.CurrentUICulture);
+
+    [Fact]
+    public void Current_IsAProcessWideSingleton()
+    {
+        Localizer.Current.Should().BeSameAs(Localizer.Current);
+        Localizer.Current.Should().BeAssignableTo<ILocalizer>();
+    }
 
     [Fact]
     public void RegisterResourceManager_RejectsNull()
@@ -96,13 +101,4 @@ public class LocalizerContractTests
         localizer.Get("Shared").Should().Be("CatalogShared");
         localizer.Get("FallbackOnly").Should().Be("FallbackOnlyValue");
     }
-
-    [Fact]
-    public void Current_IsAProcessWideSingleton()
-    {
-        Localizer.Current.Should().BeSameAs(Localizer.Current);
-        Localizer.Current.Should().BeAssignableTo<ILocalizer>();
-    }
-
-    private readonly TestResources resources = new();
 }

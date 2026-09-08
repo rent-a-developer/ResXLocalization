@@ -12,7 +12,19 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Enum_ConsumerSortOrder_Ascending" xml:space="preserve">
+    <value>Ascending</value>
+  </data>
+  <data name="Enum_ConsumerSortOrder_Descending" xml:space="preserve">
+    <value>Descending</value>
+  </data>
   <data name="Greeting" xml:space="preserve">
     <value>Hello from the package!</value>
+  </data>
+  <data name="NeutralOnly" xml:space="preserve">
+    <value>Only in the neutral file</value>
+  </data>
+  <data name="PeopleInvited" xml:space="preserve">
+    <value>{0} people invited</value>
   </data>
 </root>

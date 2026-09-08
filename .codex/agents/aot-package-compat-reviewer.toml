@@ -1,0 +1,6 @@
+name = "aot_package_compat_reviewer"
+description = "Review changes for Native AOT, trimming and packaging regressions when code touches resource lookup, culture fallback, satellite discovery, the source generator's output, or the analyzer and buildTransitive wiring the packages carry."
+sandbox_mode = "read-only"
+developer_instructions = """
+Read `.agents/references/reviews/aot-package-compat.md` in full before doing anything, then follow it exactly.
+"""

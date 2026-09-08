@@ -13,10 +13,9 @@ namespace RentADeveloper.ResXLocalization.Avalonia;
 /// <param name="resolveFormatted">Resolves the localized string formatted with the supplied arguments.</param>
 internal sealed class LocalizedFormattedTextObservable(
     AvaloniaObject element,
-    Func<String> resolve,
-    Func<Object?[], String> resolveFormatted
-)
-    : IObservable<Object?>
+    Func<string> resolve,
+    Func<object?[], string> resolveFormatted
+) : IObservable<object?>
 {
     /// <summary>
     /// Pushes the currently resolved string to <paramref name="observer" /> and keeps it updated on
@@ -24,7 +23,7 @@ internal sealed class LocalizedFormattedTextObservable(
     /// </summary>
     /// <param name="observer">The observer receiving the localized string.</param>
     /// <returns>A subscription that stops the updates when disposed.</returns>
-    public IDisposable Subscribe(IObserver<Object?> observer) =>
+    public IDisposable Subscribe(IObserver<object?> observer) =>
         new Subscription(element, resolve, resolveFormatted, observer);
 
     /// <summary>
@@ -35,6 +34,21 @@ internal sealed class LocalizedFormattedTextObservable(
     /// </summary>
     private sealed class Subscription : IDisposable, IWeakEventSubscriber<CultureChangedEventArgs>
     {
+        /// <summary>The subscription following the element's args-version property.</summary>
+        private readonly IDisposable argsVersionSubscription;
+
+        /// <summary>The target element carrying the <see cref="LocalizeArgs" /> arguments.</summary>
+        private readonly AvaloniaObject element;
+
+        /// <summary>The observer receiving each freshly resolved string.</summary>
+        private readonly IObserver<object?> observer;
+
+        /// <summary>Resolves the localized string without composite formatting.</summary>
+        private readonly Func<string> resolve;
+
+        /// <summary>Resolves the localized string formatted with the supplied arguments.</summary>
+        private readonly Func<object?[], string> resolveFormatted;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="Subscription" /> class, subscribing it to the
         /// element's args-version stream and to culture changes of the ambient localizer.
@@ -45,9 +59,9 @@ internal sealed class LocalizedFormattedTextObservable(
         /// <param name="observer">The observer receiving each freshly resolved string.</param>
         public Subscription(
             AvaloniaObject element,
-            Func<String> resolve,
-            Func<Object?[], String> resolveFormatted,
-            IObserver<Object?> observer
+            Func<string> resolve,
+            Func<object?[], string> resolveFormatted,
+            IObserver<object?> observer
         )
         {
             this.element = element;
@@ -56,7 +70,7 @@ internal sealed class LocalizedFormattedTextObservable(
             this.observer = observer;
             this.argsVersionSubscription = element
                 .GetObservable(LocalizeArgs.ArgsVersionProperty)
-                .Subscribe(new AnonymousObserver<Int32>(_ => this.Emit()));
+                .Subscribe(new AnonymousObserver<int>(_ => this.Emit()));
             LocalizerWeakEvents.CultureChanged.Subscribe(Localizer.Current, this);
         }
 
@@ -71,7 +85,7 @@ internal sealed class LocalizedFormattedTextObservable(
         /// <param name="sender">The localizer that raised the event.</param>
         /// <param name="ev">The weak event delivering the notification.</param>
         /// <param name="e">The event data carrying the previous and current culture.</param>
-        public void OnEvent(Object? sender, WeakEvent ev, CultureChangedEventArgs e) => this.Emit();
+        public void OnEvent(object? sender, WeakEvent ev, CultureChangedEventArgs e) => this.Emit();
 
         /// <summary>
         /// Emits the freshly resolved string: formatted with the element's current
@@ -80,7 +94,7 @@ internal sealed class LocalizedFormattedTextObservable(
         /// </summary>
         private void Emit()
         {
-            Object? value;
+            object? value;
 
             try
             {
@@ -99,20 +113,5 @@ internal sealed class LocalizedFormattedTextObservable(
 
             this.observer.OnNext(value);
         }
-
-        /// <summary>The subscription following the element's args-version property.</summary>
-        private readonly IDisposable argsVersionSubscription;
-
-        /// <summary>The target element carrying the <see cref="LocalizeArgs" /> arguments.</summary>
-        private readonly AvaloniaObject element;
-
-        /// <summary>The observer receiving each freshly resolved string.</summary>
-        private readonly IObserver<Object?> observer;
-
-        /// <summary>Resolves the localized string without composite formatting.</summary>
-        private readonly Func<String> resolve;
-
-        /// <summary>Resolves the localized string formatted with the supplied arguments.</summary>
-        private readonly Func<Object?[], String> resolveFormatted;
     }
 }

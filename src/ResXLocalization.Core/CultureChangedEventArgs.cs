@@ -23,9 +23,9 @@ public sealed class CultureChangedEventArgs : EventArgs
         this.NewCulture = newCulture;
     }
 
-    /// <summary>Gets the culture that was in effect before the change.</summary>
-    public CultureInfo OldCulture { get; }
-
     /// <summary>Gets the culture that is in effect after the change.</summary>
     public CultureInfo NewCulture { get; }
+
+    /// <summary>Gets the culture that was in effect before the change.</summary>
+    public CultureInfo OldCulture { get; }
 }

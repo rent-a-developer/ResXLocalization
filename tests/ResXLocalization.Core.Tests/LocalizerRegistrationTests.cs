@@ -6,6 +6,46 @@ namespace RentADeveloper.ResXLocalization.Core.Tests;
 /// </summary>
 public class LocalizerRegistrationTests
 {
+    private readonly TestResources resources = new();
+
+    [Fact]
+    public void Clear_EmptiesTheSearchSet_ButLeavesScopedLookupsWorking()
+    {
+        var localizer = this.resources.CreateLocalizer();
+
+        localizer.ClearResourceManagers();
+
+        localizer.Get("Greeting").Should().Be("!Greeting!");
+
+        // Scoped and typed lookups never consult the registration set.
+        localizer.Get("Greeting", this.resources.Catalog).Should().Be("Hello and welcome!");
+        localizer.Get(new ResourceKey("Greeting", this.resources.Catalog)).Should().Be("Hello and welcome!");
+    }
+
+    [Fact]
+    public void RegisteringTwice_KeepsASingleEntry_SoOneUnregisterRemovesIt()
+    {
+        var localizer = new Localizer { CurrentCulture = TestResources.English };
+        localizer.RegisterResourceManager(this.resources.Catalog);
+        localizer.RegisterResourceManager(this.resources.Catalog);
+
+        localizer.UnregisterResourceManager(this.resources.Catalog).Should().BeTrue();
+
+        // A second unregister finds nothing left: the duplicate registration was de-duplicated.
+        localizer.UnregisterResourceManager(this.resources.Catalog).Should().BeFalse();
+        localizer.Get("CatalogOnly").Should().Be("!CatalogOnly!");
+    }
+
+    [Fact]
+    public void Unregister_RejectsNull()
+    {
+        var localizer = this.resources.CreateLocalizer();
+
+        var act = () => localizer.UnregisterResourceManager(null!);
+
+        act.Should().Throw<ArgumentNullException>();
+    }
+
     [Fact]
     public void Unregister_RemovesTheManagerFromTheSearchOrder()
     {
@@ -26,44 +66,4 @@ public class LocalizerRegistrationTests
 
         localizer.UnregisterResourceManager(this.resources.Catalog).Should().BeFalse();
     }
-
-    [Fact]
-    public void Unregister_RejectsNull()
-    {
-        var localizer = this.resources.CreateLocalizer();
-
-        var act = () => localizer.UnregisterResourceManager(null!);
-
-        act.Should().Throw<ArgumentNullException>();
-    }
-
-    [Fact]
-    public void RegisteringTwice_KeepsASingleEntry_SoOneUnregisterRemovesIt()
-    {
-        var localizer = new Localizer { CurrentCulture = TestResources.English };
-        localizer.RegisterResourceManager(this.resources.Catalog);
-        localizer.RegisterResourceManager(this.resources.Catalog);
-
-        localizer.UnregisterResourceManager(this.resources.Catalog).Should().BeTrue();
-
-        // A second unregister finds nothing left: the duplicate registration was de-duplicated.
-        localizer.UnregisterResourceManager(this.resources.Catalog).Should().BeFalse();
-        localizer.Get("CatalogOnly").Should().Be("!CatalogOnly!");
-    }
-
-    [Fact]
-    public void Clear_EmptiesTheSearchSet_ButLeavesScopedLookupsWorking()
-    {
-        var localizer = this.resources.CreateLocalizer();
-
-        localizer.ClearResourceManagers();
-
-        localizer.Get("Greeting").Should().Be("!Greeting!");
-
-        // Scoped and typed lookups never consult the registration set.
-        localizer.Get("Greeting", this.resources.Catalog).Should().Be("Hello and welcome!");
-        localizer.Get(new ResourceKey("Greeting", this.resources.Catalog)).Should().Be("Hello and welcome!");
-    }
-
-    private readonly TestResources resources = new();
 }

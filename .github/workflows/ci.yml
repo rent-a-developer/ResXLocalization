@@ -25,15 +25,15 @@ env:
   COMBINED_CONSUMER_PROJECT: tests/package-consumption/CombinedConsumer/CombinedConsumer.csproj
   CONFIGURATION: Release
   CONSUMER_DIRECTORY: tests/package-consumption
-  DOCFX_CONFIG: docs/docfx.json
-  DOCS_SITE: docs/_site
+  DOCFX_CONFIG: build/docfx/docfx.json
+  DOCS_SITE: artifacts/docs/site
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   DOTNET_NOLOGO: true
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
   NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
   NUGET_CONFIG: NuGet.config
   PACKAGE_OUTPUT: artifacts/packages
-  RELEASE_NOTES_FILE: release-notes.md
+  RELEASE_NOTES_FILE: artifacts/release/release-notes.md
   RELEASE_NOTES_SCRIPT: scripts/extract-release-notes.ps1
   SOLUTION: ResXLocalization.slnx
   SOLUTION_FILTER_NON_WINDOWS: ResXLocalization.NonWindows.slnf
@@ -42,16 +42,14 @@ env:
   WPF_TEST_PROJECT: tests/ResXLocalization.WPF.Sample.Tests/ResXLocalization.WPF.Sample.Tests.csproj
 
 jobs:
-  # Enforce the formatting the repo ships tooling for: a rule that is not enforced in CI drifts with
-  # the first external pull request.
+  # Enforce the hygiene and formatting the repository ships tooling for: a rule that is not enforced in
+  # CI drifts with the first external pull request.
   #
-  # This runs scripts/tidy-code.ps1, the same entry point a developer uses. -Check formats the checkout
-  # for real and then asks whether anything changed: XamlStyler has no usable check mode here, because
-  # it compares against its own CRLF output and so fails on LF files on Windows. Writing to the
-  # checkout is harmless in CI; it is thrown away at the end of the job.
+  # Every substantive check here is a call to the script a developer runs, so the two cannot disagree.
   #
-  # Ubuntu is a cost and speed choice, not a correctness one: -Check gives the same answer on every OS,
-  # and on Linux the non-Windows solution filter keeps the WPF projects out of the restore.
+  # Ubuntu is a cost and speed choice, not a correctness one: the tidiness check gives the same answer on
+  # every OS, and on Linux the non-Windows solution filter keeps the WPF projects out of the restore -
+  # which the script reports rather than passing over in silence.
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -68,16 +66,10 @@ jobs:
 
       # .gitattributes only applies when a file is ADDED. A file committed past it, or a rule added
       # after the file, stays wrong forever and nothing complains - and commits created server-side,
-      # such as a bot's, bypass the filter entirely. Renormalizing and asking whether anything changed
-      # is the exact question, and it needs no toolchain.
-      - name: Verify line endings are normalized
-        run: |
-          git add --renormalize .
-          if ! git diff --cached --quiet; then
-            git --no-pager diff --cached --name-only
-            echo "::error title=Line endings::The files above are not stored as .gitattributes requires. Run 'git add --renormalize .' and commit the result."
-            exit 1
-          fi
+      # such as a bot's, bypass the filter entirely. The script asks the same question of both what git
+      # stored and what is on disk, and says what fixes each.
+      - name: Verify line endings
+        run: pwsh -NoProfile -NonInteractive -File scripts/verify-line-endings.ps1
 
       # .git-blame-ignore-revs names commits by raw SHA, and git does NOT complain about one it cannot
       # resolve - it silently skips the entry. A rebase-merge or squash-merge rewrites every SHA on a
@@ -139,13 +131,10 @@ jobs:
       - name: Restore
         run: dotnet restore ${{ env.SOLUTION_FILTER_NON_WINDOWS }} --configfile ${{ env.NUGET_CONFIG }}
 
-      - name: Verify formatting
-        run: pwsh -NoProfile -NonInteractive -File scripts/tidy-code.ps1 -Check
-
-      # The check above only says that something is unformatted. This says what.
-      - name: Show the changes that would fix it
-        if: failure()
-        run: git --no-pager diff --stat && git --no-pager diff
+      # -Check runs the tools on a disposable copy of the tree, so this job cannot rewrite the checkout,
+      # and prints the diff that would fix whatever it found.
+      - name: Verify style, formatting and member ordering
+        run: pwsh -NoProfile -NonInteractive -File scripts/tidy-code.ps1 -Scope all -Check
 
   # Cross-platform: build and test the shared Core, the source generator, and the Avalonia stack. These
   # projects target net8.0/net10.0 and build/test identically on Linux and Windows. The WPF projects are
@@ -192,8 +181,14 @@ jobs:
 
       # The solution filter is the source of truth for the cross-platform project set. dotnet test
       # discovers its test projects and runs every target framework automatically.
+      #
+      # VSTestResultsDirectory rather than --results-directory: MSBuild expands it per project, so each
+      # project and each target framework writes into its own folder. With one shared directory the
+      # reports collide - two suites both produce a net10.0 report, and VSTest resolves that by appending
+      # "[1]" to whichever arrives second, which is not an identity anyone can read.
       - name: Test
-        run: dotnet test ${{ env.SOLUTION_FILTER_NON_WINDOWS }} --configuration ${{ env.CONFIGURATION }} --no-build --logger GitHubActions --logger trx --collect:"XPlat Code Coverage" --results-directory "${{ env.TEST_RESULTS }}"
+        shell: bash
+        run: dotnet test ${{ env.SOLUTION_FILTER_NON_WINDOWS }} --configuration ${{ env.CONFIGURATION }} --no-build --logger GitHubActions --logger trx --collect:"XPlat Code Coverage" -p:VSTestResultsDirectory='${{ github.workspace }}/${{ env.TEST_RESULTS }}/$(MSBuildProjectName)/$(TargetFramework)'
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
@@ -248,7 +243,8 @@ jobs:
         run: dotnet build ${{ env.WPF_TEST_PROJECT }} --configuration ${{ env.CONFIGURATION }} --no-restore /p:ContinuousIntegrationBuild=true
 
       - name: Test
-        run: dotnet test ${{ env.WPF_TEST_PROJECT }} --configuration ${{ env.CONFIGURATION }} --no-build --logger GitHubActions --logger "trx;LogFileName=wpf-test-results.trx" --collect:"XPlat Code Coverage" --results-directory "${{ env.TEST_RESULTS }}"
+        shell: bash
+        run: dotnet test ${{ env.WPF_TEST_PROJECT }} --configuration ${{ env.CONFIGURATION }} --no-build --logger GitHubActions --logger trx --collect:"XPlat Code Coverage" -p:VSTestResultsDirectory='${{ github.workspace }}/${{ env.TEST_RESULTS }}/$(MSBuildProjectName)/$(TargetFramework)'
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
@@ -266,9 +262,9 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-  # Windows-only: build the whole solution (Avalonia + WPF), generate DocFX documentation for all three
-  # runtime assemblies, and pack all three NuGet packages. Runs on Windows because the WPF assemblies must build
-  # for both the DocFX metadata and the WPF package.
+  # Windows-only: build the whole solution (Avalonia + WPF), generate DocFX documentation for the runtime
+  # assemblies, and pack every package. Runs on Windows because the WPF assemblies must build for both the
+  # DocFX metadata and the WPF package.
   package-and-docs:
     name: Package and docs
     runs-on: windows-latest
@@ -314,10 +310,13 @@ jobs:
       - name: Build DocFX metadata
         run: dotnet tool run docfx metadata ${{ env.DOCFX_CONFIG }}
 
+      # --warningsAsErrors: a docfx warning is a broken cross-reference or a file the configuration does
+      # not reach, and both of those arrive on the published site as a hole.
       - name: Build DocFX site
-        run: dotnet tool run docfx build ${{ env.DOCFX_CONFIG }}
+        run: dotnet tool run docfx build ${{ env.DOCFX_CONFIG }} --warningsAsErrors
 
       # IsPackable in the project files is the source of truth for which projects ship as packages.
+      # Package validation runs here, against the last published version.
       - name: Pack NuGet packages
         run: dotnet pack ${{ env.SOLUTION }} --configuration ${{ env.CONFIGURATION }} --no-build --output ${{ env.PACKAGE_OUTPUT }} /p:ContinuousIntegrationBuild=true
 
@@ -350,8 +349,7 @@ jobs:
 
   # Prove the source generator's Roslyn floor forever: consume the packed packages with ONLY the .NET 8
   # SDK. A generator compiled against a newer Roslyn than the .NET 8 compiler would emit CS9057, skip
-  # generation, and fail the consumer build on the missing …Keys types. The temporary global.json pins
-  # the 8.0 SDK for the consumer subtree only and is never committed.
+  # generation, and fail the consumer build on the missing …Keys types.
   verify-net8-consumers:
     name: Consume packages on .NET 8 SDK (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -382,6 +380,9 @@ jobs:
           name: nuget-packages
           path: ${{ env.PACKAGE_OUTPUT }}
 
+      # The pin covers the consumer subtree only, and every step below runs from there: `dotnet` resolves
+      # global.json from the current directory upward, so a command run from the repository root would
+      # pick up the root global.json instead and prove nothing.
       - name: Pin the .NET 8 SDK for the consumers (CI only, not committed)
         shell: bash
         run: |
@@ -394,24 +395,49 @@ jobs:
           }
           JSON
 
-      - name: Confirm the active SDK is 8.0
+      - name: Assert the active SDK is 8.0
         shell: bash
         working-directory: ${{ env.CONSUMER_DIRECTORY }}
-        run: dotnet --version
+        run: |
+          version="$(dotnet --version)"
+          echo "Active SDK: ${version}"
+          case "${version}" in
+            8.*) ;;
+            *) echo "::error title=Wrong SDK::Expected an 8.0 SDK, got ${version}."; exit 1 ;;
+          esac
 
+      # -p:TargetFrameworks=net8.0 as well as --framework: `dotnet run --framework` still EVALUATES every
+      # entry in TargetFrameworks during restore, and an 8.0 SDK cannot evaluate net10.0 (NETSDK1045).
       - name: Run Avalonia package consumer (net8.0 SDK)
-        run: dotnet run --project ${{ env.AVALONIA_CONSUMER_PROJECT }} --configuration ${{ env.CONFIGURATION }} -p:ResXLocalizationVersion=${{ needs.package-and-docs.outputs.version }}
+        working-directory: ${{ env.CONSUMER_DIRECTORY }}
+        run: dotnet run --project AvaloniaConsumer/AvaloniaConsumer.csproj --framework net8.0 -p:TargetFrameworks=net8.0 --configuration ${{ env.CONFIGURATION }} -p:ResXLocalizationVersion=${{ needs.package-and-docs.outputs.version }}
 
       - name: Run WPF package consumer (net8.0 SDK)
         if: runner.os == 'Windows'
-        run: dotnet run --project ${{ env.WPF_CONSUMER_PROJECT }} --configuration ${{ env.CONFIGURATION }} -p:ResXLocalizationVersion=${{ needs.package-and-docs.outputs.version }}
+        working-directory: ${{ env.CONSUMER_DIRECTORY }}
+        run: dotnet run --project WpfConsumer/WpfConsumer.csproj --configuration ${{ env.CONFIGURATION }} -p:ResXLocalizationVersion=${{ needs.package-and-docs.outputs.version }}
 
       - name: Run combined Avalonia and WPF package consumer (net8.0 SDK)
         if: runner.os == 'Windows'
-        run: dotnet run --project ${{ env.COMBINED_CONSUMER_PROJECT }} --configuration ${{ env.CONFIGURATION }} -p:ResXLocalizationVersion=${{ needs.package-and-docs.outputs.version }}
+        working-directory: ${{ env.CONSUMER_DIRECTORY }}
+        run: dotnet run --project CombinedConsumer/CombinedConsumer.csproj --configuration ${{ env.CONFIGURATION }} -p:ResXLocalizationVersion=${{ needs.package-and-docs.outputs.version }}
 
+      # The pin is a CI-only file. Removing it keeps a reused workspace from carrying an 8.0 SDK
+      # selection into whatever runs there next.
+      - name: Remove the temporary SDK pin
+        if: always()
+        shell: bash
+        run: rm -f "${CONSUMER_DIRECTORY}/global.json"
+
+  # The packed-package Native AOT gate. It publishes the Avalonia consumer with PublishAot, requires zero
+  # IL2xxx/IL3xxx diagnostics, and RUNS the native binary - a file that exists proves nothing, because
+  # everything trimming can break (a satellite that is no longer loaded, a resource name that no longer
+  # resolves) produces a binary that starts and answers wrongly.
+  #
+  # Three legs. The trimming behaviour under test belongs to the ILC compiler and does not vary by host,
+  # so net8.0 - the LTS floor the packages promise - is exercised on Linux, and net10.0 on both.
   verify-package-aot:
-    name: Verify packed-package Native AOT (${{ matrix.runtime }})
+    name: Verify packed-package Native AOT (${{ matrix.framework }}, ${{ matrix.runtime }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     needs: package-and-docs
@@ -421,10 +447,13 @@ jobs:
         include:
           - os: ubuntu-latest
             runtime: linux-x64
-            executable: AvaloniaConsumer
+            framework: net8.0
+          - os: ubuntu-latest
+            runtime: linux-x64
+            framework: net10.0
           - os: windows-latest
             runtime: win-x64
-            executable: AvaloniaConsumer.exe
+            framework: net10.0
 
     steps:
       - name: Checkout
@@ -435,8 +464,54 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: 10.0.x
+          # The 8.0 runtime is what the net8.0 leg's build-time tooling runs on.
+          dotnet-version: |
+            8.0.x
+            10.0.x
           dotnet-quality: ga
+
+      # ILC links the native image with the platform toolchain. Without these the link step fails with a
+      # message about a missing linker rather than about a missing prerequisite.
+      - name: Provision the Linux native toolchain
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes clang zlib1g-dev
+
+      - name: Verify the Windows native toolchain
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
+
+          if (-not (Test-Path -LiteralPath $vswhere))
+          {
+              Write-Output "::error title=Missing toolchain::vswhere.exe was not found at $vswhere. The Native AOT link step needs it and fails with MSB3073 without it."
+              exit 1
+          }
+
+          $installation = & $vswhere -latest -products '*' -property installationPath `
+              -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64
+
+          if (-not $installation)
+          {
+              Write-Output '::error title=Missing toolchain::No Visual Studio installation with the MSVC x64 C++ tools was found.'
+              exit 1
+          }
+
+          Write-Output "MSVC toolchain: $installation"
+
+          $windowsSdk = Get-ChildItem -Path 'C:/Program Files (x86)/Windows Kits/10/Lib' -Directory -ErrorAction SilentlyContinue |
+              Sort-Object Name |
+              Select-Object -Last 1
+
+          if (-not $windowsSdk)
+          {
+              Write-Output '::error title=Missing Windows SDK::No Windows SDK was found under Windows Kits/10/Lib; the native link step needs its import libraries.'
+              exit 1
+          }
+
+          Write-Output "Windows SDK: $($windowsSdk.Name)"
 
       - name: Download exact packages to be published
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
@@ -444,14 +519,19 @@ jobs:
           name: nuget-packages
           path: ${{ env.PACKAGE_OUTPUT }}
 
-      - name: Native AOT publish package-only consumer
-        run: dotnet publish ${{ env.AVALONIA_CONSUMER_PROJECT }} --configuration ${{ env.CONFIGURATION }} -r ${{ matrix.runtime }} --self-contained true -p:PublishAot=true -p:ResXLocalizationVersion=${{ needs.package-and-docs.outputs.version }} --output ${{ env.AOT_OUTPUT }}/${{ matrix.runtime }}
+      # The script is the gate, not this job: it validates the artifact set from each nuspec, isolates the
+      # consumer package cache, publishes, requires zero IL diagnostics, and runs the binary.
+      - name: Native AOT gate
+        run: pwsh -NoProfile -NonInteractive -File scripts/verify-package-aot.ps1 -Framework ${{ matrix.framework }} -Runtime ${{ matrix.runtime }} -PackageVersion ${{ needs.package-and-docs.outputs.version }} -Configuration ${{ env.CONFIGURATION }}
 
-      - name: Assert native binary and German satellite
-        shell: bash
-        run: |
-          test -f "${AOT_OUTPUT}/${{ matrix.runtime }}/${{ matrix.executable }}"
-          test -f "${AOT_OUTPUT}/${{ matrix.runtime }}/de/AvaloniaConsumer.resources.dll"
+      - name: Upload the Native AOT logs
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: package-aot-logs-${{ matrix.framework }}-${{ matrix.runtime }}
+          path: ${{ env.AOT_OUTPUT }}/logs
+          if-no-files-found: warn
+          retention-days: 14
 
   # Publish the DocFX site to GitHub Pages on every push to main (requires Pages to be set to
   # "GitHub Actions" as the source in the repository settings).
@@ -473,15 +553,20 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5
 
-  # Publishing is deliberate, not automatic: it runs only when a version tag (v1.2.3) is pushed, never
-  # on regular pushes to main.
+  # Publishing is deliberate, not automatic: it runs only when a version tag (v1.2.3) is pushed, never on
+  # regular pushes to main.
+  #
+  # Nothing reaches NuGet.org that has not been built, tested, validated on pack, published natively and
+  # installed as a package first: the needs below name every one of those jobs, so a green publish cannot
+  # be reached by any path that skipped one.
   publish-nuget:
     name: Publish to NuGet.org
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs:
+      - verify-avalonia
+      - verify-wpf
       - package-and-docs
-      # Nothing reaches NuGet.org that a real consumer could not install and run.
       - verify-package-aot
       - verify-net8-consumers
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
@@ -519,7 +604,8 @@ jobs:
         shell: bash
         # The Version property in Directory.Build.props is the single source of truth; tagging a
         # different version would otherwise publish stale packages (or silently publish nothing,
-        # thanks to --skip-duplicate).
+        # thanks to --skip-duplicate). The expected set is named here as well, so a pack that produced
+        # fewer packages than it should cannot reach NuGet.org.
         run: |
           tag_version="${GITHUB_REF_NAME#v}"
           status=0

@@ -13,6 +13,5 @@ public partial class MainWindow : Window
         this.Closed += (_, _) => (this.DataContext as IDisposable)?.Dispose();
     }
 
-    private void InitializeComponent() =>
-        AvaloniaXamlLoader.Load(this);
+    private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 }

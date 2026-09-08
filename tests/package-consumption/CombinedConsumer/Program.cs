@@ -2,7 +2,8 @@ using RentADeveloper.ResXLocalization;
 
 _ = new RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension("Probe");
 _ = new RentADeveloper.ResXLocalization.WPF.LocalizeExtension("Probe");
-var coreAssemblies = AppDomain.CurrentDomain.GetAssemblies()
+var coreAssemblies = AppDomain
+    .CurrentDomain.GetAssemblies()
     .Where(static assembly => assembly.GetName().Name == "ResXLocalization.Core")
     .ToArray();
 

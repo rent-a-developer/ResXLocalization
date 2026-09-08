@@ -25,10 +25,7 @@ public class LocalizeEnumExtensionTests
     {
         TestSupport.ResetToEnglishWithTestCatalogs();
 
-        var textBlock = TestSupport.BindLocalizedEnum(
-            new() { KeyPrefix = "Display_" },
-            FileSortOrder.Ascending
-        );
+        var textBlock = TestSupport.BindLocalizedEnum(new() { KeyPrefix = "Display_" }, FileSortOrder.Ascending);
 
         textBlock.Text.Should().Be("A to Z");
     }

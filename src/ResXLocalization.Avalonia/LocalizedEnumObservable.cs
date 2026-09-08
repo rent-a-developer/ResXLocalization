@@ -15,11 +15,10 @@ namespace RentADeveloper.ResXLocalization.Avalonia;
 /// <see langword="null" /> to search all registered resource managers.
 /// </param>
 internal sealed class LocalizedEnumObservable(
-    IObservable<Object?> dataContextSource,
-    String keyPrefix,
+    IObservable<object?> dataContextSource,
+    string keyPrefix,
     ResourceManager? resourceManager
-)
-    : IObservable<Object?>
+) : IObservable<object?>
 {
     /// <summary>
     /// Pushes the localized text for the control's current <c>DataContext</c> value to
@@ -27,7 +26,7 @@ internal sealed class LocalizedEnumObservable(
     /// </summary>
     /// <param name="observer">The observer receiving the localized enumeration text.</param>
     /// <returns>A subscription that stops the updates when disposed.</returns>
-    public IDisposable Subscribe(IObserver<Object?> observer) =>
+    public IDisposable Subscribe(IObserver<object?> observer) =>
         new Subscription(dataContextSource, keyPrefix, resourceManager, observer);
 
     /// <summary>
@@ -37,6 +36,27 @@ internal sealed class LocalizedEnumObservable(
     /// </summary>
     private sealed class Subscription : IDisposable, IWeakEventSubscriber<CultureChangedEventArgs>
     {
+        /// <summary>The subscription following the control's <c>DataContext</c>.</summary>
+        private readonly IDisposable dataContextSubscription;
+
+        /// <summary>The prefix prepended to the generated resource key.</summary>
+        private readonly string keyPrefix;
+
+        /// <summary>The observer receiving the localized enumeration text.</summary>
+        private readonly IObserver<object?> observer;
+
+        /// <summary>
+        /// The resource manager that scopes the lookup to a single <c>.resx</c> file, or
+        /// <see langword="null" /> to search all registered resource managers.
+        /// </summary>
+        private readonly ResourceManager? resourceManager;
+
+        /// <summary>
+        /// The latest <c>DataContext</c> enumeration value, or <see langword="null" /> when the
+        /// <c>DataContext</c> is missing or not an enumeration value.
+        /// </summary>
+        private Enum? currentValue;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="Subscription" /> class, subscribing it to
         /// the <c>DataContext</c> stream (which emits the current value immediately) and to culture
@@ -50,22 +70,21 @@ internal sealed class LocalizedEnumObservable(
         /// </param>
         /// <param name="observer">The observer receiving the localized enumeration text.</param>
         public Subscription(
-            IObservable<Object?> dataContextSource,
-            String keyPrefix,
+            IObservable<object?> dataContextSource,
+            string keyPrefix,
             ResourceManager? resourceManager,
-            IObserver<Object?> observer
+            IObserver<object?> observer
         )
         {
             this.observer = observer;
             this.keyPrefix = keyPrefix;
             this.resourceManager = resourceManager;
             this.dataContextSubscription = dataContextSource.Subscribe(
-                new AnonymousObserver<Object?>(value =>
-                    {
-                        this.currentValue = value as Enum;
-                        this.Emit();
-                    }
-                )
+                new AnonymousObserver<object?>(value =>
+                {
+                    this.currentValue = value as Enum;
+                    this.Emit();
+                })
             );
             LocalizerWeakEvents.CultureChanged.Subscribe(Localizer.Current, this);
         }
@@ -81,18 +100,18 @@ internal sealed class LocalizedEnumObservable(
         /// <param name="sender">The localizer that raised the event.</param>
         /// <param name="ev">The weak event delivering the notification.</param>
         /// <param name="e">The event data carrying the previous and current culture.</param>
-        public void OnEvent(Object? sender, WeakEvent ev, CultureChangedEventArgs e) => this.Emit();
+        public void OnEvent(object? sender, WeakEvent ev, CultureChangedEventArgs e) => this.Emit();
 
         /// <summary>
         /// Emits the localized text for the tracked enumeration value, or
-        /// <see cref="String.Empty" /> when the current <c>DataContext</c> is not an enumeration
+        /// <see cref="string.Empty" /> when the current <c>DataContext</c> is not an enumeration
         /// value (for example while it is still <see langword="null" /> during template setup).
         /// </summary>
         private void Emit()
         {
             if (this.currentValue is null)
             {
-                this.observer.OnNext(String.Empty);
+                this.observer.OnNext(string.Empty);
                 return;
             }
 
@@ -103,26 +122,5 @@ internal sealed class LocalizedEnumObservable(
                     : Localizer.Current.Get(key, this.resourceManager)
             );
         }
-
-        /// <summary>The subscription following the control's <c>DataContext</c>.</summary>
-        private readonly IDisposable dataContextSubscription;
-
-        /// <summary>The prefix prepended to the generated resource key.</summary>
-        private readonly String keyPrefix;
-
-        /// <summary>The observer receiving the localized enumeration text.</summary>
-        private readonly IObserver<Object?> observer;
-
-        /// <summary>
-        /// The resource manager that scopes the lookup to a single <c>.resx</c> file, or
-        /// <see langword="null" /> to search all registered resource managers.
-        /// </summary>
-        private readonly ResourceManager? resourceManager;
-
-        /// <summary>
-        /// The latest <c>DataContext</c> enumeration value, or <see langword="null" /> when the
-        /// <c>DataContext</c> is missing or not an enumeration value.
-        /// </summary>
-        private Enum? currentValue;
     }
 }

@@ -1,46 +1,48 @@
 <Project>
-    <!-- NuGet metadata shared by every packable project. Packing is opt-in: only the three shipped
-       packages (Core, Avalonia, WPF) set IsPackable=true; Description and PackageTags stay per-package. -->
-    <PropertyGroup>
-        <!-- Single source of truth for the version of both NuGet packages. The CI publish job
-             verifies that the pushed v* tag matches this value before anything reaches NuGet.org. -->
-        <Version>1.1.0</Version>
 
+    <!--
+  Properties shared by EVERY project in the repository - the shipping libraries, the source generator,
+  the samples and the test projects. (tests/package-consumption/ is outside this on purpose: it carries
+  its own empty Directory.Build.props, which stops MSBuild's upward search before it reaches this file,
+  so those projects receive the library only from the packed packages.)
+
+  Anything that only a shipping library needs belongs in src/Directory.Build.props, and anything only the
+  test projects need belongs in tests/Directory.Build.props. MSBuild uses the NEAREST
+  Directory.Build.props and stops there, so both of those import this file explicitly.
+  -->
+
+    <PropertyGroup>
+        <!-- Single source of truth for the version every produced package carries. The packages are
+             released together, so this is one edit per release rather than one per project, and the CI
+             publish job verifies that the pushed v* tag matches this value before anything reaches
+             NuGet.org. The samples and tests inherit it too; they are never packed, so the only effect
+             there is that their assembly version tracks the repository's. -->
+        <Version>1.1.0</Version>
+    </PropertyGroup>
+
+    <PropertyGroup>
         <Authors>David Liebeherr, rent-a-developer</Authors>
         <Copyright>© David Liebeherr, rent-a-developer</Copyright>
-        <!-- SourceLink: also embed files that are not committed (e.g. generated sources), so
-             stepping into the packaged assemblies always finds the code. -->
-        <EmbedUntrackedSources>true</EmbedUntrackedSources>
-        <!-- Validates the packages on pack (multi-TFM consistency; baseline checks in later versions). -->
-        <EnablePackageValidation>true</EnablePackageValidation>
-        <IncludeSymbols>true</IncludeSymbols>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <LangVersion>latest</LangVersion>
+        <NeutralLanguage>en</NeutralLanguage>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <!-- Packing is opt-in, not opt-out. Every project starts unpackable and the shipping projects
+             under src/ each set IsPackable=true themselves, so "which projects ship as packages" is
+             answered by those .csproj files rather than by whichever project last remembered to say no.
+             A new sample, test or tool project is silently unpackable, which is the safe default.
+
+             The files those packages carry are added by Directory.Build.targets. -->
         <IsPackable>false</IsPackable>
-        <PackageIcon>logo-128.png</PackageIcon>
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <PackageProjectUrl>https://github.com/rent-a-developer/ResXLocalization</PackageProjectUrl>
-        <PackageReadmeFile>PACKAGE_README.md</PackageReadmeFile>
-        <PackageReleaseNotes>$(PackageProjectUrl)/blob/main/CHANGELOG.md</PackageReleaseNotes>
-        <RepositoryType>git</RepositoryType>
-        <RepositoryUrl>$(PackageProjectUrl).git</RepositoryUrl>
-        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     </PropertyGroup>
 
-    <!-- Package-specific catalog metadata is kept together so all NuGet listing text can be reviewed
-         and changed in one place. The projects themselves still opt in to packing explicitly. -->
-    <PropertyGroup Condition="'$(MSBuildProjectName)' == 'ResXLocalization.Core'">
-        <Description>The shared, UI-agnostic runtime engine for ResXLocalization, with live culture switching, multiple resource managers, typed resource keys, and Native AOT support. Installed automatically as a dependency of ResXLocalization.Avalonia and ResXLocalization.WPF - most applications should install one of those packages instead.</Description>
-        <PackageTags>localization;resx;i18n;l10n;aot</PackageTags>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(MSBuildProjectName)' == 'ResXLocalization.Avalonia'">
-        <Description>Type-safe .resx localization for Avalonia: compile-checked resource keys generated from your .resx files, live language switching without reloads, enum localization, and multiple-.resx support. Fully Native AOT and trimming compatible.</Description>
-        <PackageTags>avalonia;localization;resx;i18n;l10n;aot;source-generator;mvvm</PackageTags>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(MSBuildProjectName)' == 'ResXLocalization.WPF'">
-        <Description>Type-safe .resx localization for WPF: compile-checked resource keys generated from your .resx files, live language switching without reloads, enum localization, and multiple-.resx support. Windows-only; Native AOT is not supported for WPF.</Description>
-        <PackageTags>wpf;localization;resx;i18n;l10n;source-generator;mvvm</PackageTags>
-    </PropertyGroup>
-
-    <!-- Framework families used by the shipped libraries, current samples/tests, and minimum-version
+    <!-- Framework families used by the shipped libraries, the samples and tests, and the minimum-version
          package consumers. Keeping the roles distinct prevents a routine SDK update from silently
          raising the packages' compatibility floor. -->
     <PropertyGroup>
@@ -50,24 +52,13 @@
         <WindowsLibraryTargetFrameworks>net8.0-windows;net10.0-windows</WindowsLibraryTargetFrameworks>
     </PropertyGroup>
 
-    <!-- Compiler and code-quality defaults for every project in the repo. -->
-    <PropertyGroup>
-        <AnalysisLevel>latest</AnalysisLevel>
-        <AnalysisMode>All</AnalysisMode>
-        <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
-        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <LangVersion>latest</LangVersion>
-        <Nullable>enable</Nullable>
-        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    </PropertyGroup>
-
     <!-- Naming conventions: every assembly is named after its project file; every namespace lives under
-       the RentADeveloper vendor prefix (ResXLocalization.Core overrides RootNamespace because its
-       types sit directly in RentADeveloper.ResXLocalization).
-       WPF's markup compiler builds a temporary copy of the project under a randomized
-       <Name>_<random>_wpftmp name; _TargetAssemblyProjectName then carries the real project name,
-       so prefer it to keep AssemblyName/RootNamespace stable during that pass. -->
+         the RentADeveloper vendor prefix (ResXLocalization.Core overrides RootNamespace because its
+         types sit directly in RentADeveloper.ResXLocalization).
+         WPF's markup compiler builds a temporary copy of the project under a randomized
+                  <Name>_<random>_wpftmp name; _TargetAssemblyProjectName then carries the real project name,
+         so prefer it to keep AssemblyName/RootNamespace stable during that pass. _ConventionProjectName
+         is also what the conditions in src/Directory.Build.props test, for the same reason. -->
     <PropertyGroup>
         <_ConventionProjectName>$(MSBuildProjectName)</_ConventionProjectName>
         <_ConventionProjectName Condition="'$(_TargetAssemblyProjectName)' != ''">$(_TargetAssemblyProjectName)</_ConventionProjectName>
@@ -75,51 +66,81 @@
         <RootNamespace>RentADeveloper.$(_ConventionProjectName)</RootNamespace>
     </PropertyGroup>
 
-    <!-- Application defaults. -->
     <PropertyGroup>
-        <NeutralLanguage>en</NeutralLanguage>
+        <!-- CSharpier as a build step, so formatting is a build error like style and member ordering,
+             rather than something only the editor hooks, the pre-commit gate and CI notice.
+
+             Check, not format. Left at its default the package REWRITES source files during the build,
+             which turns building into editing: the file on disk stops being the file you asked the
+             compiler to compile. With Check the build fails instead and names the file, and fixing it
+             stays a deliberate act - scripts/tidy-code.ps1, or the editor hook that runs on every agent
+             edit.
+
+             CSharpier_Bypass=true skips it, for the rare case of needing a build out of a tree mid-edit. -->
+        <CSharpier_Check>true</CSharpier_Check>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+        <!-- Every project generates an XML documentation file, including the samples and the tests, which
+             have no use for one. This is not about documentation: IDE0005 (unnecessary using directive) is
+             simply not REPORTED at build time unless the compilation produces a doc file, and it says so -
+             "Set MSBuild property 'GenerateDocumentationFile' to 'true' ... to enable IDE0005 on build",
+             https://github.com/dotnet/roslyn/issues/41640. Without this, an unused using is invisible to
+             the build in every project, and the price is an unread XML file in each project's obj/.
+
+             The samples and the tests do not document their public members, so CS1591 and CS1574 are in
+             their NoWarn lists, with the reason stated there. Under src/ both stay errors, which is what
+             keeps the public API documented. -->
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <!-- NuGet's dependency audit, at its widest scope: NuGetAuditMode=all reports advisories against
+             transitive packages too, which is where they usually are - the direct references here are few
+             and watched, and a vulnerable package two levels down is exactly what would otherwise be
+             missed. The level is moderate rather than low, so the audit reports what is worth acting on.
+
+             WarningsNotAsErrors is what keeps this from being hostile. TreatWarningsAsErrors is on for
+             every project, so without it the publication of a new advisory anywhere in the transitive
+             graph would break an unrelated build, on a schedule nobody in this repository controls.
+             NU1901-NU1904 therefore stay warnings: visible in every build and in CI, and never a reason a
+             change that touched nothing cannot compile. Dependabot's security updates are what close
+             them. -->
+        <NuGetAudit>true</NuGetAudit>
+        <NuGetAuditMode>all</NuGetAuditMode>
+        <NuGetAuditLevel>moderate</NuGetAuditLevel>
+        <WarningsNotAsErrors>NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(NoBuild)' == 'true'">
         <!-- `dotnet pack` with the no-build switch sets NoBuild=true as a global property. The packable
-         projects run ResolveReferences while packing (see _AddAnalyzersToPackage), which would otherwise
-         invoke the Build target on their ProjectReferences and fail with NETSDK1085. Everything is
-         already built, so just stop project references from building again. -->
+             projects run ResolveReferences while packing (see _AddAnalyzersToPackage), which would
+             otherwise invoke the Build target on their ProjectReferences and fail with NETSDK1085.
+             Everything is already built, so just stop project references from building again. -->
         <BuildProjectReferences>false</BuildProjectReferences>
     </PropertyGroup>
 
-    <ItemGroup Condition="'$(IsPackable)' == 'true'">
-        <None Include="$(MSBuildThisFileDirectory)assets\logo-128.png"
-              Link="logo-128.png"
-              Pack="true"
-              PackagePath="\" />
-        <None Include="$(MSBuildThisFileDirectory)PACKAGE_README.md"
-              Link="PACKAGE_README.md"
-              Pack="true"
-              PackagePath="\" />
-    </ItemGroup>
-
     <ItemGroup>
+        <!-- One stylecop.json for the whole repository; $(MSBuildThisFileDirectory) is the repository
+             root. -->
         <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json" Link="stylecop.json" />
     </ItemGroup>
 
-    <!-- The analyzer set every project builds with (build-time only, never a runtime dependency).
-         Versions live in Directory.Packages.props. -->
-    <ItemGroup>
-        <PackageReference Include="ErrorProne.NET.CoreAnalyzers" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
-        <PackageReference Include="Roslynator.Analyzers" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
-        <PackageReference Include="StyleCop.Analyzers" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
-    </ItemGroup>
+    <!-- The analyzer set and the formatter every project builds with (build-time only, never a runtime
+         dependency). Versions live in Directory.Packages.props.
 
-    <!-- Every test project can collect coverage (the "XPlat Code Coverage" collector) and log to
-         GitHub Actions job summaries (the "GitHubActions" logger); CI passes the matching switches. -->
-    <ItemGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
-        <PackageReference Include="AwesomeAssertions" />
-        <PackageReference Include="coverlet.collector" PrivateAssets="all" />
-        <PackageReference Include="GitHubActionsTestLogger" PrivateAssets="all" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" />
-        <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
-        <PackageReference Include="xunit.v3" />
+         NewStyleCop is here for one job: reporting members that are in the wrong order. See the ordering
+         section of .editorconfig, which switches every StyleCop category off and turns only the ordering
+         rules plus SA1309 back on. -->
+    <ItemGroup>
+        <PackageReference Include="CSharpier.MsBuild" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+        <PackageReference Include="ErrorProne.NET.CoreAnalyzers" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+        <PackageReference Include="NewStyleCop.Analyzers" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+        <PackageReference Include="Roslynator.Analyzers" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+        <PackageReference Include="SonarAnalyzer.CSharp" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
     </ItemGroup>
 
 </Project>

@@ -1,0 +1,6 @@
+name = "ui_parity_reviewer"
+description = "Review a change to one UI package for the matching change in the other. Use whenever src/ResXLocalization.Avalonia or src/ResXLocalization.WPF changes, or when their samples or test suites do."
+sandbox_mode = "read-only"
+developer_instructions = """
+Read `.agents/references/reviews/ui-parity.md` in full before doing anything, then follow it exactly.
+"""

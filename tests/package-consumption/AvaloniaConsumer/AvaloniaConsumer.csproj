@@ -1,20 +1,22 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <OutputType>Exe</OutputType>
-        <!-- net8.0 deliberately exercises the packages' LTS target. -->
-        <TargetFramework>net8.0</TargetFramework>
-        <Nullable>enable</Nullable>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <SatelliteResourceLanguages>en;de</SatelliteResourceLanguages>
-        <!-- CI overrides this with the version it just packed. -->
-        <ResXLocalizationVersion Condition="'$(ResXLocalizationVersion)' == ''">1.0.0</ResXLocalizationVersion>
-    </PropertyGroup>
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- Both of the packages' target frameworks. net8.0 is the LTS floor they promise and net10.0 is
+         what most consumers use. The scripts and CI always select one explicitly, so a leg that
+         claims to test net8.0 cannot silently run the other. -->
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <SatelliteResourceLanguages>en;de</SatelliteResourceLanguages>
+    <!-- CI overrides this with the version it just packed. -->
+    <ResXLocalizationVersion Condition="'$(ResXLocalizationVersion)' == ''">1.0.0</ResXLocalizationVersion>
+  </PropertyGroup>
 
-    <ItemGroup>
-        <!-- THE reference under test: engine + source generator + MSBuild wiring must all arrive
-             through this single package. -->
-        <PackageReference Include="ResXLocalization.Avalonia" Version="$(ResXLocalizationVersion)" />
-    </ItemGroup>
+  <ItemGroup>
+    <!-- THE reference under test: engine + source generator + MSBuild wiring must all arrive
+         through this single package. -->
+    <PackageReference Include="ResXLocalization.Avalonia" Version="$(ResXLocalizationVersion)" />
+  </ItemGroup>
 
 </Project>

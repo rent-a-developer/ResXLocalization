@@ -1,26 +1,94 @@
+# Dependabot configuration.
+#
+# This file governs VERSION updates only - the routine "a new version exists" pull requests. Dependabot
+# SECURITY updates are a separate, repository-level setting and are deliberately left enabled and immediate:
+# the quarterly cadence below is about noise, and a published advisory is not noise. `NuGetAudit` in
+# Directory.Build.props reports the same advisories in every local build and in CI, so a vulnerable
+# transitive package is visible long before a pull request arrives.
+#
+# Quarterly rather than monthly because these dependencies move faster than this repository needs them to.
+# A grouped quarterly pull request is reviewed; twelve monthly ones are skimmed.
 version: 2
 updates:
   - package-ecosystem: nuget
     directory: "/"
     schedule:
       interval: quarterly
+    commit-message:
+      # Conventional Commits, so a Dependabot branch reads like every other commit in the history and the
+      # changelog tooling does not have to special-case it. `build:` is right for a dependency that ships,
+      # `chore:` for one that only the build or the tests see.
+      prefix: build
+      prefix-development: chore
+      include: scope
     groups:
-      # Avalonia packages are version-locked to each other; update them together.
+      # Analyzers and the formatter. They only ever change what the build REJECTS, never what ships, so a
+      # group of them is one review of "what does the build complain about now" instead of one per package.
+      #
+      # CSharpier.MsBuild is in this group and needs a companion edit every time: the csharpier entry in
+      # .config/dotnet-tools.json has to move with it, or the build demands formatting the tool does not
+      # produce. Dependabot cannot make that edit.
+      analyzers-and-formatters:
+        applies-to: version-updates
+        update-types:
+          - minor
+          - patch
+        patterns:
+          - "CSharpier.MsBuild"
+          - "ErrorProne.NET.*"
+          - "Microsoft.CodeAnalysis.PublicApiAnalyzers"
+          - "NewStyleCop.Analyzers"
+          - "Roslynator.*"
+          - "SonarAnalyzer.CSharp"
+      # The test stack. A bump here can never affect a consumer: none of these packages is referenced by a
+      # shipping project or appears in any package's dependency graph.
+      test-stack:
+        applies-to: version-updates
+        update-types:
+          - minor
+          - patch
+        patterns:
+          - "AwesomeAssertions"
+          - "coverlet.*"
+          - "GitHubActionsTestLogger"
+          - "Microsoft.NET.Test.Sdk"
+          - "xunit*"
+      # Coupled families, at EVERY update type including major. These are packages that are versioned and
+      # released together and that will not resolve against each other across a major boundary, so
+      # splitting a major across pull requests produces a branch that cannot restore.
+      #
+      # Avalonia carries an intentional exception with it: the SHIPPED floor in Directory.Packages.props
+      # is 12.0.5 and is NOT what this group updates. Avalonia 12.1's XAML generator requires Roslyn 4.14,
+      # which the .NET 8 SDK cannot load, so raising that floor would make the package unusable on the SDK
+      # it promises to support. A pull request here moves the version the samples and tests resolve; the
+      # floor moves only when someone decides to drop .NET 8 SDK support.
       avalonia:
+        applies-to: version-updates
         patterns:
           - "Avalonia*"
+      xunit:
+        applies-to: version-updates
+        patterns:
+          - "xunit*"
     ignore:
-      # 3.x targets Microsoft.Testing.Platform; the repo tests through VSTest
-      # (dotnet test --logger GitHubActions), so 2.x is the correct major.
+      # GitHubActionsTestLogger 3.x targets Microsoft.Testing.Platform. This repository runs its tests
+      # through VSTest, so 2.x is the correct major - see the note beside the version in
+      # Directory.Packages.props. Re-check this against the package's own release notes before removing it.
       - dependency-name: GitHubActionsTestLogger
         update-types:
           - "version-update:semver-major"
+
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
       interval: quarterly
+    commit-message:
+      prefix: chore
+      include: scope
     groups:
-      # Keep CodeQL action variants in sync since they're released together
+      # The CodeQL actions are released together and their versions have to match, so they move together at
+      # every update type - including major.
       codeql:
+        applies-to: version-updates
         patterns:
           - "github/codeql-action/*"

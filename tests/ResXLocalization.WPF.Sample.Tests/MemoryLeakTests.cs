@@ -9,7 +9,8 @@ namespace RentADeveloper.ResXLocalization.WPF.Sample.Tests;
 public class MemoryLeakTests
 {
     [Fact]
-    public void BoundControls_AreCollected_WhenDiscarded() => WpfThread.Invoke(static () =>
+    public void BoundControls_AreCollected_WhenDiscarded() =>
+        WpfThread.Invoke(static () =>
         {
             TestSupport.ResetToEnglishWithTestCatalogs();
 
@@ -24,11 +25,11 @@ public class MemoryLeakTests
             GC.Collect();
 
             references.Should().NotContain(static reference => reference.IsAlive);
-        }
-    );
+        });
 
     [Fact]
-    public void DisposedViewModel_IsCollected_WhileAmbientLocalizerLives() => WpfThread.Invoke(static () =>
+    public void DisposedViewModel_IsCollected_WhileAmbientLocalizerLives() =>
+        WpfThread.Invoke(static () =>
         {
             TestSupport.ResetToEnglishWithTestCatalogs();
             var reference = CreateAndDisposeViewModel();
@@ -39,18 +40,9 @@ public class MemoryLeakTests
 
             reference.IsAlive.Should().BeFalse();
             Localizer.Current.Should().NotBeNull();
-        }
-    );
+        });
 
-    private static WeakReference CreateAndDisposeViewModel()
-    {
-        var viewModel = new MainWindowViewModel(Localizer.Current);
-        var reference = new WeakReference(viewModel);
-        viewModel.Dispose();
-        return reference;
-    }
-
-    private static List<WeakReference> CreateAndAbandonBoundControls(Int32 count)
+    private static List<WeakReference> CreateAndAbandonBoundControls(int count)
     {
         var references = new List<WeakReference>(count);
         for (var index = 0; index < count; index++)
@@ -60,5 +52,13 @@ public class MemoryLeakTests
         }
 
         return references;
+    }
+
+    private static WeakReference CreateAndDisposeViewModel()
+    {
+        var viewModel = new MainWindowViewModel(Localizer.Current);
+        var reference = new WeakReference(viewModel);
+        viewModel.Dispose();
+        return reference;
     }
 }

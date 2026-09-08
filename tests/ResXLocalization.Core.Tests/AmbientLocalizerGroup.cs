@@ -11,5 +11,8 @@ namespace RentADeveloper.ResXLocalization.Core.Tests;
 public sealed class AmbientLocalizerGroup
 {
     /// <summary>The collection name shared by the classes that use <see cref="Localizer.Current" />.</summary>
-    public const String Name = "Ambient Localizer.Current";
+    public const string Name = "Ambient Localizer.Current";
+
+    /// <summary>xUnit reads the attribute on this type and never constructs it.</summary>
+    private AmbientLocalizerGroup() { }
 }

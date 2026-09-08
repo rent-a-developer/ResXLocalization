@@ -1,22 +1,49 @@
-# Build outputs
-bin/
-obj/
-artifacts/
-TestResults/
-*.binlog
+# Only generated output belongs here.
+#
+# An ignore rule that matches an AUTHORED file is worse than no rule: the file is invisible to `git status`,
+# so it is never added, and the failure shows up as a build that works for you and for nobody else. So no
+# rule here names a source file, and none uses a pattern broad enough to swallow one - the hand-authored
+# *.Designer.cs accessors beside each .resx, for instance, look generated and are not.
 
-# Isolated package cache of the consumption tests
+# --- Build output -------------------------------------------------------------------------------------
+bin
+obj
+
+# --- Repository-level generated directories -----------------------------------------------------------
+# artifacts/ holds everything this repository generates on purpose: the packages, the Native AOT publish
+# and its logs, the generated API metadata, the documentation site, the test results and the extracted
+# release notes.
+artifacts/
+
+# --- Test output --------------------------------------------------------------------------------------
+TestResults/
+*.trx
+*.coverage
+coverage.*.xml
+
+# --- Diagnostic logs ----------------------------------------------------------------------------------
+*.binlog
+msbuild.log
+
+# --- Tool and package caches --------------------------------------------------------------------------
+.dotnet/
+.nuget/
+
+# The package consumers' isolated NuGet cache. See tests/package-consumption/nuget.config.
 tests/package-consumption/.packages/
 
-# Generated documentation
-docs/_site/
-docs/api/
+# Written by the CI "Consume packages on .NET 8 SDK" job to pin the SDK for the consumer subtree, and by a
+# developer reproducing that job locally. Never committed - the repository's own global.json pins 10.0.
+tests/package-consumption/global.json
 
-# IDE and user-specific files
+# --- Editor and machine-local files -------------------------------------------------------------------
 .vs/
 .vscode/
 .idea/
-*.user
+**/*.suo
+**/*.user
+**/*.DotSettings.user
+**/Properties/launchSettings.json
 
-# OS cruft
+# --- OS cruft -------------------------------------------------------------------------------------
 .DS_Store

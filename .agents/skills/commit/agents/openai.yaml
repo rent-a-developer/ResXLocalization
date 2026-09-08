@@ -1,0 +1,7 @@
+interface:
+  display_name: "Commit Changes"
+  short_description: "Review, verify, and commit repository changes"
+  default_prompt: "Use $commit to review, verify, stage, and commit the current repository changes."
+
+policy:
+  allow_implicit_invocation: false

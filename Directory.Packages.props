@@ -1,37 +1,83 @@
 <Project>
-    <!-- Central Package Management: every PackageReference version in the repo lives here.
-         https://learn.microsoft.com/nuget/consume-packages/central-package-management -->
-    <PropertyGroup>
-        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    </PropertyGroup>
+  <!-- Central Package Management: every PackageReference version in the repo lives here.
+       https://learn.microsoft.com/nuget/consume-packages/central-package-management -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
 
-    <ItemGroup>
-        <!-- Runtime dependencies. -->
-        <PackageVersion Include="Avalonia" Version="12.1.0" />
-        <PackageVersion Include="Avalonia.Desktop" Version="12.1.0" />
-        <PackageVersion Include="Avalonia.Fonts.Inter" Version="12.1.0" />
-        <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.1.0" />
-        <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  <ItemGroup>
+    <!-- Runtime dependencies. -->
+    <PackageVersion Include="Avalonia" Version="12.1.0" />
+    <PackageVersion Include="Avalonia.Desktop" Version="12.1.0" />
+    <PackageVersion Include="Avalonia.Fonts.Inter" Version="12.1.0" />
+    <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.1.0" />
+    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
 
-        <!-- Source generator toolchain. -->
-        <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.6.0" />
+    <!-- Source generator toolchain. -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.6.0" />
 
-        <!-- Analyzers (referenced centrally from Directory.Build.props; PublicApiAnalyzers only by
-             the shipped libraries). -->
-        <PackageVersion Include="ErrorProne.NET.CoreAnalyzers" Version="0.9.0-beta.4" />
-        <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0" />
-        <PackageVersion Include="Roslynator.Analyzers" Version="4.15.0" />
-        <PackageVersion Include="StyleCop.Analyzers" Version="1.2.0-beta.556" />
+    <!-- Analyzers and the formatter (referenced centrally from Directory.Build.props;
+         PublicApiAnalyzers only by the shipped libraries). All are build-time only, so none of them
+         reaches a consumer of the packages.
 
-        <!-- Test stack (coverlet + the logger are referenced centrally for every test project). -->
-        <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.1.0" />
-        <PackageVersion Include="AwesomeAssertions" Version="9.5.0" />
-        <PackageVersion Include="coverlet.collector" Version="10.0.1" />
-        <!-- 2.x is the VSTest logger; 3.x targets Microsoft.Testing.Platform, which xunit.v3 under
-             Microsoft.NET.Test.Sdk does not use here. -->
-        <PackageVersion Include="GitHubActionsTestLogger" Version="2.4.1" />
-        <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
-        <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
-        <PackageVersion Include="xunit.v3" Version="3.2.2" />
-    </ItemGroup>
+         KEEP CSharpier.MsBuild IN STEP with the csharpier entry in .config/dotnet-tools.json: the two
+         are the same formatter, and a version apart they disagree - the build would demand formatting
+         that `dotnet csharpier format` does not produce.
+
+         ErrorProne.NET.CoreAnalyzers 0.1.2 is the newest STABLE release; every higher version number
+         is a prerelease.
+
+         NewStyleCop.Analyzers is a fork of StyleCop.Analyzers, whose last release predates the C#
+         this repository writes. The rule IDs and stylecop.json are identical, so going back to
+         upstream is a one-line change here. -->
+    <PackageVersion Include="CSharpier.MsBuild" Version="1.3.0" />
+    <PackageVersion Include="ErrorProne.NET.CoreAnalyzers" Version="0.1.2" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0" />
+    <PackageVersion Include="NewStyleCop.Analyzers" Version="1.2.1" />
+    <PackageVersion Include="Roslynator.Analyzers" Version="5.0.0" />
+    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.33.0.1635" />
+
+    <!-- Test stack (coverlet + the logger are referenced centrally for every test project). -->
+    <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.1.0" />
+    <PackageVersion Include="AwesomeAssertions" Version="9.5.0" />
+    <PackageVersion Include="coverlet.collector" Version="10.0.1" />
+    <!-- 2.x is the VSTest logger; 3.x targets Microsoft.Testing.Platform, which xunit.v3 under
+         Microsoft.NET.Test.Sdk does not use here. -->
+    <PackageVersion Include="GitHubActionsTestLogger" Version="2.4.1" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageVersion Include="xunit.v3" Version="3.2.2" />
+  </ItemGroup>
+
+  <!-- ==================================================================================================
+       The shipping compatibility floors.
+
+       A package a SHIPPED library references becomes a minimum version in that package's nuspec, and it
+       is therefore part of the public contract - unlike the same package referenced by a sample or a
+       test, which binds nobody. The two roles need different versions, so each floor is stated here, on
+       the one project it binds, and every other reference resolves the version above.
+
+       Both conditions match on MSBuildProjectName. Neither of the two projects below uses WPF, so
+       neither is ever re-invoked by the WPF markup compiler under a <Name>_<random>_wpftmp name; a floor
+       that applied to a UseWPF project would have to match that name too.
+       ================================================================================================== -->
+
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'ResXLocalization.SourceGenerators'">
+    <!-- The SHIPPED analyzer is built against the lowest Roslyn that carries the APIs it uses
+         (IIncrementalGenerator, AdditionalTextsProvider, SymbolDisplay.FormatLiteral - all present
+         since 4.8). A generator built against a newer Roslyn only loads in compilers of that version
+         or later, so a consumer on the .NET 8 or 9 SDK would get CS9057 and no generated keys.
+         4.8.0 == VS 2022 17.8 / the .NET 8 SDK baseline. Every other Roslyn reference in the
+         repository, including the generator's own test project, uses the version above. -->
+    <PackageVersion Update="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'ResXLocalization.Avalonia'">
+    <!-- The SHIPPED package floor. Avalonia 12.1's XAML generator requires Roslyn 4.14, which the
+         .NET 8 SDK cannot load, so raising this floor would make the package unusable on that SDK.
+         The samples and tests resolve the 12.1.0 version above and therefore verify current-framework
+         compatibility on the repository's .NET 10 SDK. -->
+    <PackageVersion Update="Avalonia" Version="12.0.5" />
+  </ItemGroup>
+
 </Project>

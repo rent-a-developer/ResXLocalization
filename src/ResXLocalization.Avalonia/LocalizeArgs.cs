@@ -20,138 +20,174 @@ namespace RentADeveloper.ResXLocalization.Avalonia;
 public sealed class LocalizeArgs : AvaloniaObject
 {
     /// <summary>Identifies the <c>LocalizeArgs.Arg0</c> attached property: format argument <c>{0}</c>.</summary>
-    public static readonly AttachedProperty<Object?> Arg0Property =
-        AvaloniaProperty.RegisterAttached<LocalizeArgs, AvaloniaObject, Object?>("Arg0", UnsetSentinel.Value);
+    public static readonly AttachedProperty<object?> Arg0Property = AvaloniaProperty.RegisterAttached<
+        LocalizeArgs,
+        AvaloniaObject,
+        object?
+    >("Arg0", UnsetSentinel.Value);
 
     /// <summary>Identifies the <c>LocalizeArgs.Arg1</c> attached property: format argument <c>{1}</c>.</summary>
-    public static readonly AttachedProperty<Object?> Arg1Property =
-        AvaloniaProperty.RegisterAttached<LocalizeArgs, AvaloniaObject, Object?>("Arg1", UnsetSentinel.Value);
+    public static readonly AttachedProperty<object?> Arg1Property = AvaloniaProperty.RegisterAttached<
+        LocalizeArgs,
+        AvaloniaObject,
+        object?
+    >("Arg1", UnsetSentinel.Value);
 
     /// <summary>Identifies the <c>LocalizeArgs.Arg2</c> attached property: format argument <c>{2}</c>.</summary>
-    public static readonly AttachedProperty<Object?> Arg2Property =
-        AvaloniaProperty.RegisterAttached<LocalizeArgs, AvaloniaObject, Object?>("Arg2", UnsetSentinel.Value);
+    public static readonly AttachedProperty<object?> Arg2Property = AvaloniaProperty.RegisterAttached<
+        LocalizeArgs,
+        AvaloniaObject,
+        object?
+    >("Arg2", UnsetSentinel.Value);
 
     /// <summary>Identifies the <c>LocalizeArgs.Arg3</c> attached property: format argument <c>{3}</c>.</summary>
-    public static readonly AttachedProperty<Object?> Arg3Property =
-        AvaloniaProperty.RegisterAttached<LocalizeArgs, AvaloniaObject, Object?>("Arg3", UnsetSentinel.Value);
+    public static readonly AttachedProperty<object?> Arg3Property = AvaloniaProperty.RegisterAttached<
+        LocalizeArgs,
+        AvaloniaObject,
+        object?
+    >("Arg3", UnsetSentinel.Value);
 
     /// <summary>Identifies the <c>LocalizeArgs.Arg4</c> attached property: format argument <c>{4}</c>.</summary>
-    public static readonly AttachedProperty<Object?> Arg4Property =
-        AvaloniaProperty.RegisterAttached<LocalizeArgs, AvaloniaObject, Object?>("Arg4", UnsetSentinel.Value);
+    public static readonly AttachedProperty<object?> Arg4Property = AvaloniaProperty.RegisterAttached<
+        LocalizeArgs,
+        AvaloniaObject,
+        object?
+    >("Arg4", UnsetSentinel.Value);
 
     /// <summary>Identifies the <c>LocalizeArgs.Arg5</c> attached property: format argument <c>{5}</c>.</summary>
-    public static readonly AttachedProperty<Object?> Arg5Property =
-        AvaloniaProperty.RegisterAttached<LocalizeArgs, AvaloniaObject, Object?>("Arg5", UnsetSentinel.Value);
+    public static readonly AttachedProperty<object?> Arg5Property = AvaloniaProperty.RegisterAttached<
+        LocalizeArgs,
+        AvaloniaObject,
+        object?
+    >("Arg5", UnsetSentinel.Value);
 
     /// <summary>Identifies the <c>LocalizeArgs.Arg6</c> attached property: format argument <c>{6}</c>.</summary>
-    public static readonly AttachedProperty<Object?> Arg6Property =
-        AvaloniaProperty.RegisterAttached<LocalizeArgs, AvaloniaObject, Object?>("Arg6", UnsetSentinel.Value);
+    public static readonly AttachedProperty<object?> Arg6Property = AvaloniaProperty.RegisterAttached<
+        LocalizeArgs,
+        AvaloniaObject,
+        object?
+    >("Arg6", UnsetSentinel.Value);
 
     /// <summary>Identifies the <c>LocalizeArgs.Arg7</c> attached property: format argument <c>{7}</c>.</summary>
-    public static readonly AttachedProperty<Object?> Arg7Property =
-        AvaloniaProperty.RegisterAttached<LocalizeArgs, AvaloniaObject, Object?>("Arg7", UnsetSentinel.Value);
+    public static readonly AttachedProperty<object?> Arg7Property = AvaloniaProperty.RegisterAttached<
+        LocalizeArgs,
+        AvaloniaObject,
+        object?
+    >("Arg7", UnsetSentinel.Value);
 
     /// <summary>Identifies the <c>LocalizeArgs.Arg8</c> attached property: format argument <c>{8}</c>.</summary>
-    public static readonly AttachedProperty<Object?> Arg8Property =
-        AvaloniaProperty.RegisterAttached<LocalizeArgs, AvaloniaObject, Object?>("Arg8", UnsetSentinel.Value);
-
-    /// <summary>Gets the value of the <see cref="Arg0Property" /> attached property.</summary>
-    /// <param name="element">The element holding the argument.</param>
-    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
-    public static Object? GetArg0(AvaloniaObject element) => GetArgument(element, Arg0Property);
-
-    /// <summary>Gets the value of the <see cref="Arg1Property" /> attached property.</summary>
-    /// <param name="element">The element holding the argument.</param>
-    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
-    public static Object? GetArg1(AvaloniaObject element) => GetArgument(element, Arg1Property);
-
-    /// <summary>Gets the value of the <see cref="Arg2Property" /> attached property.</summary>
-    /// <param name="element">The element holding the argument.</param>
-    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
-    public static Object? GetArg2(AvaloniaObject element) => GetArgument(element, Arg2Property);
-
-    /// <summary>Gets the value of the <see cref="Arg3Property" /> attached property.</summary>
-    /// <param name="element">The element holding the argument.</param>
-    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
-    public static Object? GetArg3(AvaloniaObject element) => GetArgument(element, Arg3Property);
-
-    /// <summary>Gets the value of the <see cref="Arg4Property" /> attached property.</summary>
-    /// <param name="element">The element holding the argument.</param>
-    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
-    public static Object? GetArg4(AvaloniaObject element) => GetArgument(element, Arg4Property);
-
-    /// <summary>Gets the value of the <see cref="Arg5Property" /> attached property.</summary>
-    /// <param name="element">The element holding the argument.</param>
-    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
-    public static Object? GetArg5(AvaloniaObject element) => GetArgument(element, Arg5Property);
-
-    /// <summary>Gets the value of the <see cref="Arg6Property" /> attached property.</summary>
-    /// <param name="element">The element holding the argument.</param>
-    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
-    public static Object? GetArg6(AvaloniaObject element) => GetArgument(element, Arg6Property);
-
-    /// <summary>Gets the value of the <see cref="Arg7Property" /> attached property.</summary>
-    /// <param name="element">The element holding the argument.</param>
-    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
-    public static Object? GetArg7(AvaloniaObject element) => GetArgument(element, Arg7Property);
-
-    /// <summary>Gets the value of the <see cref="Arg8Property" /> attached property.</summary>
-    /// <param name="element">The element holding the argument.</param>
-    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
-    public static Object? GetArg8(AvaloniaObject element) => GetArgument(element, Arg8Property);
-
-    /// <summary>Sets the value of the <see cref="Arg0Property" /> attached property.</summary>
-    /// <param name="element">The element to hold the argument.</param>
-    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
-    public static void SetArg0(AvaloniaObject element, Object? value) => element.SetValue(Arg0Property, value);
-
-    /// <summary>Sets the value of the <see cref="Arg1Property" /> attached property.</summary>
-    /// <param name="element">The element to hold the argument.</param>
-    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
-    public static void SetArg1(AvaloniaObject element, Object? value) => element.SetValue(Arg1Property, value);
-
-    /// <summary>Sets the value of the <see cref="Arg2Property" /> attached property.</summary>
-    /// <param name="element">The element to hold the argument.</param>
-    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
-    public static void SetArg2(AvaloniaObject element, Object? value) => element.SetValue(Arg2Property, value);
-
-    /// <summary>Sets the value of the <see cref="Arg3Property" /> attached property.</summary>
-    /// <param name="element">The element to hold the argument.</param>
-    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
-    public static void SetArg3(AvaloniaObject element, Object? value) => element.SetValue(Arg3Property, value);
-
-    /// <summary>Sets the value of the <see cref="Arg4Property" /> attached property.</summary>
-    /// <param name="element">The element to hold the argument.</param>
-    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
-    public static void SetArg4(AvaloniaObject element, Object? value) => element.SetValue(Arg4Property, value);
-
-    /// <summary>Sets the value of the <see cref="Arg5Property" /> attached property.</summary>
-    /// <param name="element">The element to hold the argument.</param>
-    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
-    public static void SetArg5(AvaloniaObject element, Object? value) => element.SetValue(Arg5Property, value);
-
-    /// <summary>Sets the value of the <see cref="Arg6Property" /> attached property.</summary>
-    /// <param name="element">The element to hold the argument.</param>
-    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
-    public static void SetArg6(AvaloniaObject element, Object? value) => element.SetValue(Arg6Property, value);
-
-    /// <summary>Sets the value of the <see cref="Arg7Property" /> attached property.</summary>
-    /// <param name="element">The element to hold the argument.</param>
-    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
-    public static void SetArg7(AvaloniaObject element, Object? value) => element.SetValue(Arg7Property, value);
-
-    /// <summary>Sets the value of the <see cref="Arg8Property" /> attached property.</summary>
-    /// <param name="element">The element to hold the argument.</param>
-    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
-    public static void SetArg8(AvaloniaObject element, Object? value) => element.SetValue(Arg8Property, value);
+    public static readonly AttachedProperty<object?> Arg8Property = AvaloniaProperty.RegisterAttached<
+        LocalizeArgs,
+        AvaloniaObject,
+        object?
+    >("Arg8", UnsetSentinel.Value);
 
     /// <summary>
     /// The single "arguments changed" signal <see cref="LocalizeExtension" /> subscribes to: every
     /// <c>ArgN</c> change increments this version on the element, so one subscription per binding
     /// suffices instead of nine.
     /// </summary>
-    internal static readonly AttachedProperty<Int32> ArgsVersionProperty =
-        AvaloniaProperty.RegisterAttached<LocalizeArgs, AvaloniaObject, Int32>("ArgsVersion");
+    internal static readonly AttachedProperty<int> ArgsVersionProperty = AvaloniaProperty.RegisterAttached<
+        LocalizeArgs,
+        AvaloniaObject,
+        int
+    >("ArgsVersion");
+
+    /// <summary>The nine argument slots in slot order, for <see cref="GetArguments" />.</summary>
+    private static readonly AttachedProperty<object?>[] ArgumentProperties = CollectArgumentsAndHookChanges();
+
+    /// <summary>Prevents instantiation: the class only hosts attached properties.</summary>
+    private LocalizeArgs() { }
+
+    /// <summary>Gets the value of the <see cref="Arg0Property" /> attached property.</summary>
+    /// <param name="element">The element holding the argument.</param>
+    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
+    public static object? GetArg0(AvaloniaObject element) => GetArgument(element, Arg0Property);
+
+    /// <summary>Gets the value of the <see cref="Arg1Property" /> attached property.</summary>
+    /// <param name="element">The element holding the argument.</param>
+    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
+    public static object? GetArg1(AvaloniaObject element) => GetArgument(element, Arg1Property);
+
+    /// <summary>Gets the value of the <see cref="Arg2Property" /> attached property.</summary>
+    /// <param name="element">The element holding the argument.</param>
+    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
+    public static object? GetArg2(AvaloniaObject element) => GetArgument(element, Arg2Property);
+
+    /// <summary>Gets the value of the <see cref="Arg3Property" /> attached property.</summary>
+    /// <param name="element">The element holding the argument.</param>
+    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
+    public static object? GetArg3(AvaloniaObject element) => GetArgument(element, Arg3Property);
+
+    /// <summary>Gets the value of the <see cref="Arg4Property" /> attached property.</summary>
+    /// <param name="element">The element holding the argument.</param>
+    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
+    public static object? GetArg4(AvaloniaObject element) => GetArgument(element, Arg4Property);
+
+    /// <summary>Gets the value of the <see cref="Arg5Property" /> attached property.</summary>
+    /// <param name="element">The element holding the argument.</param>
+    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
+    public static object? GetArg5(AvaloniaObject element) => GetArgument(element, Arg5Property);
+
+    /// <summary>Gets the value of the <see cref="Arg6Property" /> attached property.</summary>
+    /// <param name="element">The element holding the argument.</param>
+    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
+    public static object? GetArg6(AvaloniaObject element) => GetArgument(element, Arg6Property);
+
+    /// <summary>Gets the value of the <see cref="Arg7Property" /> attached property.</summary>
+    /// <param name="element">The element holding the argument.</param>
+    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
+    public static object? GetArg7(AvaloniaObject element) => GetArgument(element, Arg7Property);
+
+    /// <summary>Gets the value of the <see cref="Arg8Property" /> attached property.</summary>
+    /// <param name="element">The element holding the argument.</param>
+    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
+    public static object? GetArg8(AvaloniaObject element) => GetArgument(element, Arg8Property);
+
+    /// <summary>Sets the value of the <see cref="Arg0Property" /> attached property.</summary>
+    /// <param name="element">The element to hold the argument.</param>
+    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
+    public static void SetArg0(AvaloniaObject element, object? value) => element.SetValue(Arg0Property, value);
+
+    /// <summary>Sets the value of the <see cref="Arg1Property" /> attached property.</summary>
+    /// <param name="element">The element to hold the argument.</param>
+    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
+    public static void SetArg1(AvaloniaObject element, object? value) => element.SetValue(Arg1Property, value);
+
+    /// <summary>Sets the value of the <see cref="Arg2Property" /> attached property.</summary>
+    /// <param name="element">The element to hold the argument.</param>
+    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
+    public static void SetArg2(AvaloniaObject element, object? value) => element.SetValue(Arg2Property, value);
+
+    /// <summary>Sets the value of the <see cref="Arg3Property" /> attached property.</summary>
+    /// <param name="element">The element to hold the argument.</param>
+    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
+    public static void SetArg3(AvaloniaObject element, object? value) => element.SetValue(Arg3Property, value);
+
+    /// <summary>Sets the value of the <see cref="Arg4Property" /> attached property.</summary>
+    /// <param name="element">The element to hold the argument.</param>
+    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
+    public static void SetArg4(AvaloniaObject element, object? value) => element.SetValue(Arg4Property, value);
+
+    /// <summary>Sets the value of the <see cref="Arg5Property" /> attached property.</summary>
+    /// <param name="element">The element to hold the argument.</param>
+    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
+    public static void SetArg5(AvaloniaObject element, object? value) => element.SetValue(Arg5Property, value);
+
+    /// <summary>Sets the value of the <see cref="Arg6Property" /> attached property.</summary>
+    /// <param name="element">The element to hold the argument.</param>
+    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
+    public static void SetArg6(AvaloniaObject element, object? value) => element.SetValue(Arg6Property, value);
+
+    /// <summary>Sets the value of the <see cref="Arg7Property" /> attached property.</summary>
+    /// <param name="element">The element to hold the argument.</param>
+    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
+    public static void SetArg7(AvaloniaObject element, object? value) => element.SetValue(Arg7Property, value);
+
+    /// <summary>Sets the value of the <see cref="Arg8Property" /> attached property.</summary>
+    /// <param name="element">The element to hold the argument.</param>
+    /// <param name="value">The argument value; <see langword="null" /> is a valid, set value.</param>
+    public static void SetArg8(AvaloniaObject element, object? value) => element.SetValue(Arg8Property, value);
 
     /// <summary>
     /// Reads the format arguments currently set on <paramref name="element" />, applying the
@@ -163,7 +199,7 @@ public sealed class LocalizeArgs : AvaloniaObject
     /// The arguments to format with, or <see langword="null" /> when no argument is set on the
     /// element - the caller must then resolve without composite formatting.
     /// </returns>
-    internal static Object?[]? GetArguments(AvaloniaObject element)
+    internal static object?[]? GetArguments(AvaloniaObject element)
     {
         var lastSetIndex = -1;
 
@@ -181,7 +217,7 @@ public sealed class LocalizeArgs : AvaloniaObject
             return null;
         }
 
-        var arguments = new Object?[lastSetIndex + 1];
+        var arguments = new object?[lastSetIndex + 1];
 
         for (var index = 0; index <= lastSetIndex; index++)
         {
@@ -192,21 +228,6 @@ public sealed class LocalizeArgs : AvaloniaObject
         return arguments;
     }
 
-    /// <summary>Prevents instantiation: the class only hosts attached properties.</summary>
-    private LocalizeArgs()
-    {
-    }
-
-    /// <summary>Reads one argument slot, mapping the unset sentinel to <see langword="null" />.</summary>
-    /// <param name="element">The element holding the argument.</param>
-    /// <param name="property">The argument slot to read.</param>
-    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
-    private static Object? GetArgument(AvaloniaObject element, AttachedProperty<Object?> property)
-    {
-        var value = element.GetValue(property);
-        return ReferenceEquals(value, UnsetSentinel.Value) ? null : value;
-    }
-
     /// <summary>
     /// Collects the nine argument slots and hooks their change notification: every <c>ArgN</c>
     /// change bumps <see cref="ArgsVersionProperty" /> on the changed element. Invoked from the
@@ -214,9 +235,9 @@ public sealed class LocalizeArgs : AvaloniaObject
     /// attached-property fields stay simple static initializers.
     /// </summary>
     /// <returns>The nine argument slots in slot order.</returns>
-    private static AttachedProperty<Object?>[] CollectArgumentsAndHookChanges()
+    private static AttachedProperty<object?>[] CollectArgumentsAndHookChanges()
     {
-        AttachedProperty<Object?>[] properties =
+        AttachedProperty<object?>[] properties =
         [
             Arg0Property,
             Arg1Property,
@@ -226,21 +247,28 @@ public sealed class LocalizeArgs : AvaloniaObject
             Arg5Property,
             Arg6Property,
             Arg7Property,
-            Arg8Property
+            Arg8Property,
         ];
 
         foreach (var property in properties)
         {
-            _ = property.Changed.AddClassHandler<AvaloniaObject, Object?>(static (element, _) =>
-                element.SetValue(ArgsVersionProperty, element.GetValue(ArgsVersionProperty) + 1)
+            _ = property.Changed.AddClassHandler<AvaloniaObject, object?>(
+                static (element, _) => element.SetValue(ArgsVersionProperty, element.GetValue(ArgsVersionProperty) + 1)
             );
         }
 
         return properties;
     }
 
-    /// <summary>The nine argument slots in slot order, for <see cref="GetArguments" />.</summary>
-    private static readonly AttachedProperty<Object?>[] ArgumentProperties = CollectArgumentsAndHookChanges();
+    /// <summary>Reads one argument slot, mapping the unset sentinel to <see langword="null" />.</summary>
+    /// <param name="element">The element holding the argument.</param>
+    /// <param name="property">The argument slot to read.</param>
+    /// <returns>The argument value, or <see langword="null" /> when the argument is not set.</returns>
+    private static object? GetArgument(AvaloniaObject element, AttachedProperty<object?> property)
+    {
+        var value = element.GetValue(property);
+        return ReferenceEquals(value, UnsetSentinel.Value) ? null : value;
+    }
 
     /// <summary>
     /// Holds the "argument never set" default of the <c>ArgN</c> properties. A nested type keeps the
@@ -249,6 +277,6 @@ public sealed class LocalizeArgs : AvaloniaObject
     private static class UnsetSentinel
     {
         /// <summary>The sentinel instance; compared by reference.</summary>
-        internal static readonly Object Value = new();
+        internal static readonly object Value = new();
     }
 }

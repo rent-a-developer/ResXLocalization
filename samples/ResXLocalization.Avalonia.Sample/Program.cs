@@ -6,8 +6,7 @@ namespace RentADeveloper.ResXLocalization.Avalonia.Sample;
 internal static class Program
 {
     [STAThread]
-    public static void Main(String[] args) =>
-        BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+    public static void Main(string[] args) => BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
 
     /// <summary>Referenced by Main and by the Avalonia design-time tooling.</summary>
     /// <returns>The configured application builder.</returns>
@@ -31,9 +30,6 @@ internal static class Program
         // machine's culture. The default would otherwise be CultureInfo.CurrentUICulture.
         Localizer.Current.CurrentCulture = new("en");
 
-        return AppBuilder.Configure<App>()
-            .UsePlatformDetect()
-            .WithInterFont()
-            .LogToTrace();
+        return AppBuilder.Configure<App>().UsePlatformDetect().WithInterFont().LogToTrace();
     }
 }

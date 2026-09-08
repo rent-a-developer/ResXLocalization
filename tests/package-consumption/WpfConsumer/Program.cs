@@ -30,7 +30,11 @@ internal static class Program
         Localizer.Current.RegisterResourceManager(Strings.ResourceManager);
         Localizer.Current.CurrentCulture = new CultureInfo("en");
 
-        Check("typed key (generated StringsKeys)", Localizer.Current.Get(StringsKeys.Greeting), "Hello from the package!");
+        Check(
+            "typed key (generated StringsKeys)",
+            Localizer.Current.Get(StringsKeys.Greeting),
+            "Hello from the package!"
+        );
         Check("search-all lookup", Localizer.Current.Get("Greeting"), "Hello from the package!");
 
         var localizedView = new LocalizedView();
