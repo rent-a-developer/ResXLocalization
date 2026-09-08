@@ -6,6 +6,27 @@ carries the rationale; this file is the commands, the constraints and the trigge
 Everything reusable lives in one place — see [`.agents/README.md`](.agents/README.md) for how the AI files fit
 together.
 
+## What this is
+
+ResXLocalization is a .NET library that gives XAML applications type-safe `.resx` localization with live
+language switching. It ships as two NuGet packages — `ResXLocalization.Avalonia` and `ResXLocalization.WPF` —
+over one shared, UI-agnostic engine. Consumers keep the `.resx` files and editors they already have.
+
+Two things separate it from plain `.resx`:
+
+- **Compile-checked keys.** A source generator turns every eligible `.resx` into a `<FileName>Keys` class of
+  `ResourceKey` fields, each carrying both its key name and the `ResourceManager` it belongs to. A renamed or
+  deleted resource becomes a build error instead of a runtime surprise.
+- **Live culture switching.** Assigning `Localizer.Current.CurrentCulture` re-resolves every `{l:Localize}`
+  binding in place — no window reload, no view rebuild, no restart.
+
+Around those: three lookup modes (typed, scoped, and search-all across registered resource managers) over
+.NET's own culture fallback chain, enum localization by naming convention, format arguments in code and in
+XAML, a `!key!` sentinel plus a `TranslationNotFound` event for missing translations, and Native AOT and
+trimming support on the Avalonia side (WPF supports neither).
+
+[`README.md`](README.md) is the user-facing version of the same story, with the quick start and the examples.
+
 ## Project map
 
 | Path | What it is |
