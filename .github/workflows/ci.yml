@@ -4,9 +4,11 @@ on:
   pull_request:
     branches:
       - main
+      - release/**
   push:
     branches:
       - main
+      - release/**
     # Version tags (v1.2.3) run the full pipeline and then publish the packages to NuGet.org.
     tags:
       - "v*"

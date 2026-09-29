@@ -4,9 +4,11 @@ on:
   pull_request:
     branches:
       - main
+      - release/**
   push:
     branches:
       - main
+      - release/**
   schedule:
     # Weekly scan so newly published queries also cover unchanged code.
     - cron: "26 7 * * 1"
