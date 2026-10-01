@@ -193,7 +193,7 @@ jobs:
         run: dotnet test ${{ env.SOLUTION_FILTER_NON_WINDOWS }} --configuration ${{ env.CONFIGURATION }} --no-build --logger GitHubActions --logger trx --collect:"XPlat Code Coverage" -p:VSTestResultsDirectory='${{ github.workspace }}/${{ env.TEST_RESULTS }}/$(MSBuildProjectName)/$(TargetFramework)'
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: avalonia-${{ matrix.os }}
           # Fork PRs may not receive CODECOV_TOKEN; protected main pushes must surface upload failures.
@@ -249,7 +249,7 @@ jobs:
         run: dotnet test ${{ env.WPF_TEST_PROJECT }} --configuration ${{ env.CONFIGURATION }} --no-build --logger GitHubActions --logger trx --collect:"XPlat Code Coverage" -p:VSTestResultsDirectory='${{ github.workspace }}/${{ env.TEST_RESULTS }}/$(MSBuildProjectName)/$(TargetFramework)'
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: wpf-windows-latest
           fail_ci_if_error: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
