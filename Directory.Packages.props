@@ -35,7 +35,7 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0" />
     <PackageVersion Include="NewStyleCop.Analyzers" Version="1.2.1" />
     <PackageVersion Include="Roslynator.Analyzers" Version="5.0.0" />
-    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.33.0.1635" />
+    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.35.0.4138" />
 
     <!-- Test stack (coverlet + the logger are referenced centrally for every test project). -->
     <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.1.2" />
