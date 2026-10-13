@@ -94,24 +94,9 @@ internal sealed class LocalizedFormattedTextObservable(
         /// </summary>
         private void Emit()
         {
-            object? value;
+            var arguments = LocalizeArgs.GetArguments(this.element);
 
-            try
-            {
-                var arguments = LocalizeArgs.GetArguments(this.element);
-                value = arguments is null ? this.resolve() : this.resolveFormatted(arguments);
-            }
-            catch (FormatException exception)
-            {
-                // Mirrors WPF, whose binding engine catches converter exceptions and reports a binding
-                // error: a format string that does not (yet) match the supplied arguments - routine
-                // while multi-argument bindings still deliver their values one by one - must not throw
-                // into the property system mid-delivery. It surfaces as a binding error instead and
-                // resolves cleanly on the next argument or culture change.
-                value = new BindingNotification(exception, BindingErrorType.Error);
-            }
-
-            this.observer.OnNext(value);
+            this.observer.OnNext(arguments is null ? this.resolve() : this.resolveFormatted(arguments));
         }
     }
 }

@@ -7,6 +7,39 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `IMessageFormatter` and `ILocalizer.MessageFormatter`: one replaceable formatter that every resolved
+  value passes through, with or without arguments. The default, `StringFormatMessageFormatter`, uses
+  `string.Format` and does not format a value without arguments.
+- `MessageArgument`, one argument of a lookup: its position, an optional name and its value.
+- `ILocalizer.LookupFailed` with `LookupFailedEventArgs`, raised for every failed lookup: a key that no
+  resource file contains, or a value the formatter cannot format.
+- `LookupFailure` and `LookupFailureReason`, which describe a failed lookup to `LookupFailed` and to
+  `ILocalizer.LookupFailureTextBuilder`.
+- `ILocalizer.RefreshTriggeringRevision`, which changes on every change that can change a lookup's
+  result (culture, formatter, lookup-failure text builder, registered resource managers).
+
+### Changed
+
+- **BREAKING:** A formatting failure in `Get(key, args)` and its scoped and typed siblings returns the
+  failure text and raises `ILocalizer.LookupFailed`; it no longer throws `FormatException`. See
+  the [migration guide](docs/guides/migration-2.0.md).
+- **BREAKING:** In XAML, a formatting failure in `{l:Localize}` renders the failure text instead of an
+  Avalonia binding error or an empty WPF text. See the [migration guide](docs/guides/migration-2.0.md).
+- **BREAKING:** `Get(key, args)` with an empty array returns the resource value unformatted: `{{x}}`
+  stays `{{x}}`. See the [migration guide](docs/guides/migration-2.0.md).
+- **BREAKING:** A custom `ILocalizer` implementation must implement `LookupFailed`,
+  `MessageFormatter`, `RefreshTriggeringRevision`, `LookupFailureTextBuilder` and the hidden
+  `Get(string key, MessageArgument[] arguments, ResourceManager? resourceManager)`. See the
+  [migration guide](docs/guides/migration-2.0.md).
+- **BREAKING:** `ILocalizer.MissingTranslationFormat` is replaced by `ILocalizer.LookupFailureTextBuilder`,
+  a `Func<LookupFailure, string>` that also produces the failure text for a formatting failure. See the
+  [migration guide](docs/guides/migration-2.0.md).
+- **BREAKING:** `ILocalizer.TranslationNotFound` and `TranslationNotFoundEventArgs` are replaced by
+  `ILocalizer.LookupFailed` and `LookupFailedEventArgs`, which report formatting failures too. See the
+  [migration guide](docs/guides/migration-2.0.md).
+
 ## [1.1.0] - 2026-07-20
 
 ### Added

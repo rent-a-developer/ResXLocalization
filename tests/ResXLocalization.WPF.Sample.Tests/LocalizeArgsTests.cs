@@ -1,5 +1,6 @@
 using System.Windows.Markup;
 using System.Windows.Media;
+using RentADeveloper.ResXLocalization.Core.Tests;
 
 namespace RentADeveloper.ResXLocalization.WPF.Sample.Tests;
 
@@ -58,6 +59,29 @@ public class LocalizeArgsTests
             Localizer.Current.CurrentCulture = TestSupport.German;
             TestSupport.Flush();
             textBlock.Text.Should().Be("3 Personen eingeladen");
+        });
+
+    [Fact]
+    public void FormattingFailure_RendersTheFailureText_AndRaisesLookupFailed() =>
+        WpfThread.Invoke(() =>
+        {
+            TestSupport.ResetToEnglishWithTestCatalogs();
+            using var monitor = Localizer.Current.Monitor();
+
+            var textBlock = TestSupport.BindLocalizedText(new("FormatBroken"));
+            LocalizeArgs.SetArg0(textBlock, 1);
+            TestSupport.Flush();
+
+            textBlock.Text.Should().Be("!FormatBroken!");
+            monitor
+                .LookupFailures()
+                .Should()
+                .NotBeEmpty()
+                .And.OnlyContain(failure =>
+                    failure.Reason == LookupFailureReason.MessageFormatFailed
+                    && failure.Key == "FormatBroken"
+                    && failure.Exception is FormatException
+                );
         });
 
     [Fact]

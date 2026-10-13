@@ -31,4 +31,10 @@
   <data name="ItemsFound" xml:space="preserve">
     <value>{0:N1} Elemente in {1} gefunden.</value>
   </data>
+  <data name="Malformed" xml:space="preserve">
+    <value>Kaputt {0</value>
+  </data>
+  <data name="EscapedBraces" xml:space="preserve">
+    <value>Wörtliche {{Klammern}} für {0}</value>
+  </data>
 </root>

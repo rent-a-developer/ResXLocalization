@@ -6,9 +6,31 @@ namespace RentADeveloper.ResXLocalization;
 /// culture changes - without reloading views.
 /// </summary>
 /// <remarks>
-/// Implementations are intended for UI-thread use: register resource managers at startup and switch
-/// <see cref="CurrentCulture" /> from the UI thread, so change notifications reach bindings on the
-/// thread WPF and Avalonia expect.
+/// <para>
+/// <b>Lookups.</b> Every <c>Get</c> overload and the indexer resolve the key in
+/// <see cref="CurrentCulture" />, with .NET's own parent and neutral fallback, and pass the resolved value
+/// to <see cref="MessageFormatter" /> together with the lookup's arguments - an empty array when the
+/// lookup has none. The default formatter (<see cref="StringFormatMessageFormatter"/>) returns a value without
+/// arguments unchanged and formats one with arguments with
+/// <see cref="string.Format(IFormatProvider, string, object[])" />. A <see langword="null" /> or empty key returns
+/// <see cref="string.Empty" /> without calling the formatter and without raising an event.
+/// </para>
+/// <para>
+/// <b>The failure text.</b> When no resource file contains the key, or the formatter throws, a lookup
+/// raises <see cref="LookupFailed" /> and then returns the failure text produced by
+/// <see cref="LookupFailureTextBuilder" />, by default <c>!key!</c>. The failure text never passes
+/// through the formatter.
+/// </para>
+/// <para>
+/// <b>Exceptions.</b> A lookup catches every exception the formatter throws. Exceptions from the
+/// resource lookup itself, from event handlers and from <see cref="LookupFailureTextBuilder" /> propagate
+/// unchanged; an event handler that throws prevents the failure text from being built.
+/// </para>
+/// <para>
+/// <b>Threading.</b> Implementations are intended for UI-thread use: register resource managers at
+/// startup and switch <see cref="CurrentCulture" /> from the UI thread, so change notifications reach
+/// bindings on the thread WPF and Avalonia expect.
+/// </para>
 /// </remarks>
 public interface ILocalizer : INotifyPropertyChanged
 {
@@ -19,17 +41,47 @@ public interface ILocalizer : INotifyPropertyChanged
     event EventHandler<CultureChangedEventArgs> CultureChanged;
 
     /// <summary>
-    /// Occurs whenever a lookup misses - no resource file could resolve the key for the current
-    /// culture and the sentinel (see <see cref="MissingTranslationFormat" />) is about to be
-    /// returned. Normal .NET resource fallback runs first; subscribe to log keys that remain
-    /// unresolved across the complete parent and neutral fallback chain.
+    /// Occurs when a lookup fails, before it returns the failure text: no resource file contains the key,
+    /// or <see cref="MessageFormatter" /> threw while formatting its value.
+    /// <see cref="LookupFailure.Reason" /> tells the two apart. Subscribe to log missing or broken
+    /// translations.
     /// </summary>
-    event EventHandler<TranslationNotFoundEventArgs> TranslationNotFound;
+    /// <remarks>
+    /// <para>
+    /// Normal .NET resource fallback runs first, so a key that resolves from a parent or the neutral
+    /// resources is not reported. A formatting failure is <b>not</b> specific to ICU MessageFormat: the
+    /// default <see cref="StringFormatMessageFormatter" /> reports one for <c>Broken {0</c>, or for
+    /// <c>File {0} of {1}</c> with one argument.
+    /// </para>
+    /// <para>Handlers must not throw (see <see cref="ILocalizer" />).</para>
+    /// </remarks>
+    event EventHandler<LookupFailedEventArgs> LookupFailed;
+
+    /// <summary>
+    /// Gets a value that changes whenever something changes that can change the result of a lookup -
+    /// the culture, the formatter, the lookup-failure text builder or the registered resource managers.
+    /// Bind to it to re-resolve localized text; only whether the value differs is meaningful.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The value advances after each real change of <see cref="CurrentCulture" />,
+    /// <see cref="MessageFormatter" /> or <see cref="LookupFailureTextBuilder" />, and after
+    /// <see cref="RegisterResourceManager" />, <see cref="UnregisterResourceManager" /> and
+    /// <see cref="ClearResourceManagers" /> when they change the registered set. Each advance raises
+    /// <see cref="INotifyPropertyChanged.PropertyChanged" /> for this property and then for the indexer
+    /// (<c>Item[]</c>). Strings previously returned by <c>Get</c> are not updated.
+    /// </para>
+    /// <para>
+    /// Make these changes on the UI thread once views exist. In XAML, the trigger is
+    /// <c>&lt;Binding Path="RefreshTriggeringRevision" Source="{x:Static core:Localizer.Current}" /&gt;</c>.
+    /// </para>
+    /// </remarks>
+    int RefreshTriggeringRevision { get; }
 
     /// <summary>
     /// Gets or sets the culture used to resolve resources. Setting a different value raises
-    /// <see cref="INotifyPropertyChanged.PropertyChanged" /> and <see cref="CultureChanged" />, causing
-    /// bound localized values to re-resolve.
+    /// <see cref="INotifyPropertyChanged.PropertyChanged" />, advances
+    /// <see cref="RefreshTriggeringRevision" /> and raises <see cref="CultureChanged" />.
     /// </summary>
     /// <remarks>
     /// Setting this property changes only how this localizer resolves translations; it deliberately
@@ -44,22 +96,54 @@ public interface ILocalizer : INotifyPropertyChanged
     CultureInfo CurrentCulture { get; set; }
 
     /// <summary>
-    /// Gets or sets the composite format string that produces the sentinel returned for a key no
-    /// lookup could resolve, where <c>{0}</c> is the key. Defaults to <c>!{0}!</c>, which renders a
-    /// missing <c>Greeting</c> as <c>!Greeting!</c>.
+    /// Gets or sets the function that produces the failure text: the text a lookup returns instead of a
+    /// translation when no resource file contains the key or its value cannot be formatted.
     /// </summary>
     /// <remarks>
-    /// Configure this once at startup, before views load: changing it later does not re-resolve
-    /// values that are already bound (only a culture change does that).
+    /// <para>
+    /// The function receives a <see cref="LookupFailure" /> describing the failed lookup;
+    /// <see cref="LookupFailure.Reason" /> tells the two cases apart. It returns the text shown instead
+    /// of the translation; an empty string shows nothing.
+    /// </para>
+    /// <para>Examples:</para>
+    /// <list type="bullet">
+    /// <item><description><c>failure =&gt; $"[{failure.Key}]"</c></description></item>
+    /// <item><description><c>failure =&gt; failure.Key[(failure.Key.LastIndexOf('.') + 1)..]</c></description></item>
+    /// <item><description><c>failure =&gt; failure.Culture.TwoLetterISOLanguageName == "de" ? $"[fehlt: {failure.Key}]" : $"[missing: {failure.Key}]"</c></description></item>
+    /// <item><description><c>failure =&gt; failure.Reason == LookupFailureReason.TranslationNotFound ? $"[missing: {failure.Key}]" : $"[broken: {failure.Key}]"</c></description></item>
+    /// </list>
+    /// <para>
+    /// The function is called on every failed lookup, so it should be cheap. It must not throw or return
+    /// <see langword="null" />: an exception it throws propagates out of the lookup, and a
+    /// <see langword="null" /> result makes the lookup throw <see cref="InvalidOperationException" />.
+    /// </para>
+    /// <para>
+    /// Assigning a different delegate instance advances <see cref="RefreshTriggeringRevision" />;
+    /// assigning the current instance again does nothing.
+    /// </para>
     /// </remarks>
-    /// <value>The sentinel format. Defaults to <c>!{0}!</c>.</value>
+    /// <value>The failure-text function. Defaults to <c>failure =&gt; $"!{failure.Key}!"</c>.</value>
     /// <exception cref="ArgumentNullException">The supplied value is <see langword="null" />.</exception>
-    /// <exception cref="ArgumentException">
-    /// The supplied value is not a valid composite format string for a single argument (the key) - for
-    /// example <c>{1}</c>. It is validated on assignment so the defect surfaces here rather than on the
-    /// first miss.
-    /// </exception>
-    string MissingTranslationFormat { get; set; }
+    Func<LookupFailure, string> LookupFailureTextBuilder { get; set; }
+
+    /// <summary>
+    /// Gets or sets the formatter that turns each resolved resource value and the arguments of its lookup
+    /// into the final string.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Every lookup that resolves a value calls the formatter, also a lookup without arguments, so it is
+    /// the one hook for all translated texts (see <see cref="ILocalizer" />).
+    /// </para>
+    /// <para>
+    /// Assigning a different instance advances <see cref="RefreshTriggeringRevision" />; assigning the
+    /// current instance again does nothing. Exceptions thrown by
+    /// <see cref="INotifyPropertyChanged.PropertyChanged" /> handlers propagate from the assignment.
+    /// </para>
+    /// </remarks>
+    /// <value>The formatter. Defaults to <see cref="StringFormatMessageFormatter.Instance" />.</value>
+    /// <exception cref="ArgumentNullException">The supplied value is <see langword="null" />.</exception>
+    IMessageFormatter MessageFormatter { get; set; }
 
     /// <summary>
     /// Gets the localized string for the specified key by searching every registered
@@ -67,16 +151,15 @@ public interface ILocalizer : INotifyPropertyChanged
     /// </summary>
     /// <param name="key">The resource key to resolve.</param>
     /// <returns>
-    /// The localized string for <paramref name="key" /> in <see cref="CurrentCulture" />;
-    /// <see cref="string.Empty" /> if <paramref name="key" /> is <see langword="null" /> or empty;
-    /// or the configured missing-translation sentinel (by default <c>!key!</c>) if no registered
-    /// resource manager contains the key.
+    /// The localized string, <see cref="string.Empty" /> for a <see langword="null" /> or empty key, or the
+    /// failure text (see <see cref="ILocalizer" />).
     /// </returns>
     string this[string key] { get; }
 
     /// <summary>
     /// Removes every registered <see cref="ResourceManager" /> from the search-all set. Typed and
-    /// scoped lookups are unaffected - they never consult the registration set.
+    /// scoped lookups are unaffected - they never consult the registration set. When at least one
+    /// manager was registered, advances <see cref="RefreshTriggeringRevision" />.
     /// </summary>
     void ClearResourceManagers();
 
@@ -86,34 +169,56 @@ public interface ILocalizer : INotifyPropertyChanged
     /// </summary>
     /// <param name="key">The resource key to resolve.</param>
     /// <returns>
-    /// The localized string for <paramref name="key" /> in <see cref="CurrentCulture" />;
-    /// <see cref="string.Empty" /> if <paramref name="key" /> is <see langword="null" /> or empty;
-    /// or the configured missing-translation sentinel (by default <c>!key!</c>) if no registered
-    /// resource manager contains the key.
+    /// The localized string, <see cref="string.Empty" /> for a <see langword="null" /> or empty key, or the
+    /// failure text (see <see cref="ILocalizer" />).
     /// </returns>
     string Get(string key);
 
     /// <summary>
     /// Resolves the localized string for the specified key by searching every registered
-    /// <see cref="ResourceManager" /> in registration order, then formats it as a composite format
-    /// string with the supplied arguments in <see cref="CurrentCulture" /> - for example a resource
-    /// value of <c>Downloading {0} of {1}…</c>.
+    /// <see cref="ResourceManager" /> in registration order, and formats it with the supplied arguments -
+    /// for example a resource value of <c>Downloading {0} of {1}…</c>.
     /// </summary>
     /// <param name="key">The resource key to resolve.</param>
-    /// <param name="arguments">The values to format into the resolved string.</param>
+    /// <param name="arguments">The values to format into the resolved string; empty for none.</param>
     /// <returns>
-    /// The formatted, localized string; <see cref="string.Empty" /> if <paramref name="key" /> is
-    /// <see langword="null" /> or empty; or the configured missing-translation sentinel (by default
-    /// <c>!key!</c>), without applying <paramref name="arguments" />, if no registered resource manager
-    /// contains the key.
+    /// The formatted string, <see cref="string.Empty" /> for a <see langword="null" /> or empty key, or the
+    /// failure text (see <see cref="ILocalizer" />).
     /// </returns>
     /// <exception cref="ArgumentNullException"><paramref name="arguments" /> is <see langword="null" />.</exception>
-    /// <exception cref="FormatException">
-    /// The resolved resource value is not a valid composite format string for
-    /// <paramref name="arguments" />. That is a defect in the resource file you want to surface
-    /// during development, not a missing translation, so it fails loudly.
-    /// </exception>
     string Get(string key, params object?[] arguments);
+
+    /// <summary>
+    /// Resolves the localized string for the specified key and formats it with the supplied arguments -
+    /// the one entry point every lookup goes through.
+    /// </summary>
+    /// <remarks>
+    /// This member is infrastructure and hidden from IntelliSense: code callers use the ordinary
+    /// <c>Get</c> overloads, which all delegate to it. It is an interface member because
+    /// <see cref="Localizer.Current" /> may hold a custom implementation and the UI packages call it
+    /// from other assemblies.
+    /// </remarks>
+    /// <param name="key">The resource key to resolve.</param>
+    /// <param name="arguments">
+    /// The arguments of the lookup; empty for none. Argument <c>i</c> must have
+    /// <see cref="MessageArgument.Position" /> <c>i</c>, and a <see cref="MessageArgument.Name" /> must not
+    /// be an empty string.
+    /// </param>
+    /// <param name="resourceManager">
+    /// The single resource manager to read the key from, or <see langword="null" /> to search every
+    /// registered resource manager in registration order.
+    /// </param>
+    /// <returns>
+    /// The formatted string, <see cref="string.Empty" /> for a <see langword="null" /> or empty key, or the
+    /// failure text (see <see cref="ILocalizer" />).
+    /// </returns>
+    /// <exception cref="ArgumentNullException"><paramref name="arguments" /> is <see langword="null" />.</exception>
+    /// <exception cref="ArgumentException">
+    /// An argument's <see cref="MessageArgument.Position" /> is not its index, or its
+    /// <see cref="MessageArgument.Name" /> is an empty string.
+    /// </exception>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    string Get(string key, MessageArgument[] arguments, ResourceManager? resourceManager);
 
     /// <summary>
     /// Resolves the localized string for an enumeration value by mapping it to a resource key using
@@ -122,11 +227,7 @@ public interface ILocalizer : INotifyPropertyChanged
     /// </summary>
     /// <param name="value">The enumeration value to resolve.</param>
     /// <param name="keyPrefix">The prefix prepended to the generated key. Defaults to <c>Enum_</c>.</param>
-    /// <returns>
-    /// The localized string for the generated key in <see cref="CurrentCulture" />, or the configured
-    /// missing-translation sentinel (by default <c>!key!</c>) if no registered resource manager
-    /// contains it.
-    /// </returns>
+    /// <returns>The localized string, or the failure text (see <see cref="ILocalizer" />).</returns>
     /// <exception cref="ArgumentNullException">
     /// <paramref name="value" /> or <paramref name="keyPrefix" /> is <see langword="null" />.
     /// </exception>
@@ -139,10 +240,8 @@ public interface ILocalizer : INotifyPropertyChanged
     /// <param name="key">The resource key to resolve.</param>
     /// <param name="resourceManager">The resource manager to read the key from.</param>
     /// <returns>
-    /// The localized string for <paramref name="key" /> in <see cref="CurrentCulture" />;
-    /// <see cref="string.Empty" /> if <paramref name="key" /> is <see langword="null" /> or empty;
-    /// or the configured missing-translation sentinel (by default <c>!key!</c>) if
-    /// <paramref name="resourceManager" /> does not contain the key.
+    /// The localized string, <see cref="string.Empty" /> for a <see langword="null" /> or empty key, or the
+    /// failure text (see <see cref="ILocalizer" />).
     /// </returns>
     /// <exception cref="ArgumentNullException">
     /// <paramref name="resourceManager" /> is <see langword="null" />.
@@ -151,24 +250,17 @@ public interface ILocalizer : INotifyPropertyChanged
 
     /// <summary>
     /// Resolves the localized string for the specified key from a single, explicit
-    /// <see cref="ResourceManager" />, then formats it as a composite format string with the supplied
-    /// arguments in <see cref="CurrentCulture" />.
+    /// <see cref="ResourceManager" />, and formats it with the supplied arguments.
     /// </summary>
     /// <param name="key">The resource key to resolve.</param>
     /// <param name="resourceManager">The resource manager to read the key from.</param>
-    /// <param name="arguments">The values to format into the resolved string.</param>
+    /// <param name="arguments">The values to format into the resolved string; empty for none.</param>
     /// <returns>
-    /// The formatted, localized string; <see cref="string.Empty" /> if <paramref name="key" /> is
-    /// <see langword="null" /> or empty; or the configured missing-translation sentinel (by default
-    /// <c>!key!</c>), without applying <paramref name="arguments" />, if
-    /// <paramref name="resourceManager" /> does not contain the key.
+    /// The formatted string, <see cref="string.Empty" /> for a <see langword="null" /> or empty key, or the
+    /// failure text (see <see cref="ILocalizer" />).
     /// </returns>
     /// <exception cref="ArgumentNullException">
     /// <paramref name="resourceManager" /> or <paramref name="arguments" /> is <see langword="null" />.
-    /// </exception>
-    /// <exception cref="FormatException">
-    /// The resolved resource value is not a valid composite format string for
-    /// <paramref name="arguments" />.
     /// </exception>
     string Get(string key, ResourceManager resourceManager, params object?[] arguments);
 
@@ -180,11 +272,7 @@ public interface ILocalizer : INotifyPropertyChanged
     /// <param name="value">The enumeration value to resolve.</param>
     /// <param name="resourceManager">The resource manager to read the generated key from.</param>
     /// <param name="keyPrefix">The prefix prepended to the generated key. Defaults to <c>Enum_</c>.</param>
-    /// <returns>
-    /// The localized string for the generated key in <see cref="CurrentCulture" />, or the configured
-    /// missing-translation sentinel (by default <c>!key!</c>) if
-    /// <paramref name="resourceManager" /> does not contain it.
-    /// </returns>
+    /// <returns>The localized string, or the failure text (see <see cref="ILocalizer" />).</returns>
     /// <exception cref="ArgumentNullException">
     /// <paramref name="value" />, <paramref name="resourceManager" />, or
     /// <paramref name="keyPrefix" /> is <see langword="null" />.
@@ -196,11 +284,7 @@ public interface ILocalizer : INotifyPropertyChanged
     /// key name and the owning <see cref="ResourceManager" />.
     /// </summary>
     /// <param name="key">The typed key identifying the resource and its resource manager.</param>
-    /// <returns>
-    /// The localized string for <paramref name="key" /> in <see cref="CurrentCulture" />, or the
-    /// configured missing-translation sentinel (by default <c>!key!</c>) if the resource manager does
-    /// not contain it.
-    /// </returns>
+    /// <returns>The localized string, or the failure text (see <see cref="ILocalizer" />).</returns>
     /// <exception cref="ArgumentNullException">
     /// <paramref name="key" /> is a default or otherwise uninitialized <see cref="ResourceKey" />,
     /// whose <see cref="ResourceKey.Manager" /> is <see langword="null" />.
@@ -208,24 +292,16 @@ public interface ILocalizer : INotifyPropertyChanged
     string Get(ResourceKey key);
 
     /// <summary>
-    /// Resolves the localized string for a typed <see cref="ResourceKey" />, then formats it as a
-    /// composite format string with the supplied arguments in <see cref="CurrentCulture" />.
+    /// Resolves the localized string for a typed <see cref="ResourceKey" />, and formats it with the
+    /// supplied arguments.
     /// </summary>
     /// <param name="key">The typed key identifying the resource and its resource manager.</param>
-    /// <param name="arguments">The values to format into the resolved string.</param>
-    /// <returns>
-    /// The formatted, localized string, or the configured missing-translation sentinel (by default
-    /// <c>!key!</c>), without applying <paramref name="arguments" />, if the resource manager does not
-    /// contain the key.
-    /// </returns>
+    /// <param name="arguments">The values to format into the resolved string; empty for none.</param>
+    /// <returns>The formatted string, or the failure text (see <see cref="ILocalizer" />).</returns>
     /// <exception cref="ArgumentNullException">
     /// <paramref name="arguments" /> is <see langword="null" />, or <paramref name="key" /> is a
     /// default or otherwise uninitialized <see cref="ResourceKey" /> whose
     /// <see cref="ResourceKey.Manager" /> is <see langword="null" />.
-    /// </exception>
-    /// <exception cref="FormatException">
-    /// The resolved resource value is not a valid composite format string for
-    /// <paramref name="arguments" />.
     /// </exception>
     string Get(ResourceKey key, params object?[] arguments);
 
@@ -270,7 +346,8 @@ public interface ILocalizer : INotifyPropertyChanged
     /// <summary>
     /// Registers a <see cref="ResourceManager" /> to be searched by the key-only and enum lookups.
     /// Managers are searched in registration order on a first-match-wins basis; registering the same
-    /// manager more than once has no effect.
+    /// manager more than once has no effect. Adding a manager advances
+    /// <see cref="RefreshTriggeringRevision" />.
     /// </summary>
     /// <param name="resourceManager">The resource manager to add to the search set.</param>
     /// <exception cref="ArgumentNullException">
@@ -281,7 +358,8 @@ public interface ILocalizer : INotifyPropertyChanged
     /// <summary>
     /// Removes a previously registered <see cref="ResourceManager" /> from the search-all set, for
     /// example when the plugin or module that owns its strings is unloaded. Typed and scoped lookups
-    /// are unaffected - they never consult the registration set.
+    /// are unaffected - they never consult the registration set. Removing a manager advances
+    /// <see cref="RefreshTriggeringRevision" />.
     /// </summary>
     /// <param name="resourceManager">The resource manager to remove from the search set.</param>
     /// <returns>

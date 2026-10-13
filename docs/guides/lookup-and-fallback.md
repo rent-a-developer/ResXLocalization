@@ -46,13 +46,13 @@ that loads resources dynamically.
 > [!TIP]
 > In Avalonia, put the registration and the initial `CurrentCulture` inside `BuildAvaloniaApp()`
 > rather than `Main`. `BuildAvaloniaApp` runs at run time *and* under the XAML previewer, so
-> search-all lookups resolve at design time too instead of showing the `!Greeting!` sentinel.
+> search-all lookups resolve at design time too instead of showing the `!Greeting!` failure text.
 
 ## Culture fallback
 
 Fallback is .NET's own `ResourceManager` behaviour, unchanged. The localizer sits on top of it.
 
-| Situation | Result | Raises `TranslationNotFound` |
+| Situation | Result | Raises `LookupFailed` |
 | --- | --- | --- |
 | `de-DE` entry exists | the `de-DE` value | No |
 | Missing in `de-DE`, exists in `de` | the parent `de` value | No |
@@ -60,21 +60,74 @@ Fallback is .NET's own `ResourceManager` behaviour, unchanged. The localizer sit
 | Missing across the complete fallback chain | `!key!` by default | Yes |
 
 Because fallback runs first, a key that resolves from a parent or from the neutral file does **not**
-count as missing. The sentinel and the event report keys that cannot be resolved at all — they are
-not a report of incomplete per-language coverage.
+count as missing. The failure text and the event report keys that cannot be resolved at all — they
+are not a report of incomplete per-language coverage.
 
 ## Missing-translation diagnostics
 
 ```csharp
-// Change the sentinel, or make it invisible in production.
-Localizer.MissingTranslationFormat = "«{0}»";
+// Log every key that cannot be resolved, and every value that cannot be formatted.
+Localizer.Current.LookupFailed += (_, args) =>
+{
+    var failure = args.Failure;
 
-// Log every unresolvable key.
-Localizer.Current.TranslationNotFound += (_, args) => logger.LogWarning("No translation for {Key}", args.Key);
+    if (failure.Reason == LookupFailureReason.TranslationNotFound)
+    {
+        logger.LogWarning("No translation for {Key} in {Culture}", failure.Key, failure.Culture);
+    }
+    else
+    {
+        logger.LogWarning(failure.Exception, "Cannot format {Key} in {Culture}: {Pattern}", failure.Key, failure.Culture, failure.Pattern);
+    }
+};
 ```
 
-The default sentinel is `!key!`, which is deliberately ugly: a missing translation should be
-noticeable in a screenshot.
+`LookupFailed` reports both kinds of failure, and `LookupFailure.Reason` tells them apart:
+`TranslationNotFound` for a key that no resource file contains, `MessageFormatFailed` for a key that
+was found but whose value could not be formatted - for example `Broken {0`, or `File {0} of {1}` with
+one argument. Both lookups return the failure text.
+
+## Failure text
+
+The failure text is what a lookup returns instead of a translation when it cannot produce one: the key
+is in no resource file, or its value could not be formatted. It is produced by the function
+`LookupFailureTextBuilder`, which receives the same `LookupFailure` that `LookupFailed` reports - the
+reason, the key, the culture, the resource manager of a scoped or typed lookup, the arguments, and for a
+formatting failure the pattern and the exception.
+
+```csharp
+// Wrap the key differently, or make it invisible in production.
+Localizer.Current.LookupFailureTextBuilder = failure => $"«{failure.Key}»";
+
+// Show only the last segment of a dotted key.
+Localizer.Current.LookupFailureTextBuilder = failure => failure.Key[(failure.Key.LastIndexOf('.') + 1)..];
+
+// Tell the two reasons apart.
+Localizer.Current.LookupFailureTextBuilder = failure =>
+    failure.Reason == LookupFailureReason.TranslationNotFound
+        ? $"[missing: {failure.Key}]"
+        : $"[broken: {failure.Key}]";
+```
+
+The default produces `!key!`, which is deliberately ugly: a missing translation should be noticeable
+in a screenshot. A formatting failure uses the same function.
+
+The function is called on every failed lookup, so keep it cheap. It must not throw or return `null`:
+an exception it throws propagates out of the lookup, and a `null` result throws
+`InvalidOperationException`. An empty string is fine and shows nothing. Changing the function
+re-resolves bound text.
+
+## Refreshing localized text
+
+`ILocalizer.RefreshTriggeringRevision` changes whenever something changes that can change the result
+of a lookup: the culture, the formatter, the lookup-failure text builder, or the registered resource
+managers (a manager registered or unregistered, or the registrations cleared). Only whether the value
+differs is meaningful, never the number itself.
+
+Bound text re-resolves on each of these changes. Strings fetched in code with `Get` are not
+updated; re-fetch them when the localizer raises
+`PropertyChanged(nameof(ILocalizer.RefreshTriggeringRevision))`. Make these changes on the UI thread
+once views exist.
 
 ## Available cultures
 

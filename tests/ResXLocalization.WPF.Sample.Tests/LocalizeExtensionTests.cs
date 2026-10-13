@@ -1,3 +1,5 @@
+using RentADeveloper.ResXLocalization.Core.Tests;
+
 namespace RentADeveloper.ResXLocalization.WPF.Sample.Tests;
 
 /// <summary>
@@ -42,6 +44,36 @@ public class LocalizeExtensionTests
             );
 
             textBlock.Text.Should().Be("Hello and welcome!");
+        });
+
+    [Fact]
+    public void NoArguments_PassesTheValueThroughTheFormatter() =>
+        WpfThread.Invoke(() =>
+        {
+            TestSupport.ResetToEnglishWithTestCatalogs();
+            var previous = Localizer.Current.MessageFormatter;
+            var formatter = new CapturingFormatter();
+            Localizer.Current.MessageFormatter = formatter;
+
+            try
+            {
+                var textBlock = TestSupport.BindLocalizedText(new("CurlyNoArgs"));
+                TestSupport.Flush();
+
+                textBlock.Text.Should().Be("Literal {braces} stay");
+                formatter.Calls.Should().NotBeEmpty();
+                formatter
+                    .Calls.Should()
+                    .AllSatisfy(call =>
+                    {
+                        call.Pattern.Should().Be("Literal {braces} stay");
+                        call.Arguments.Should().BeEmpty();
+                    });
+            }
+            finally
+            {
+                Localizer.Current.MessageFormatter = previous;
+            }
         });
 
     [Fact]

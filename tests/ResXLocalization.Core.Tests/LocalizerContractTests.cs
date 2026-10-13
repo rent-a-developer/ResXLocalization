@@ -29,16 +29,14 @@ public class LocalizerContractTests
     public void AssigningTheSameCulture_RaisesNoNotifications()
     {
         var localizer = this.resources.CreateLocalizer();
-        var eventCount = 0;
-        localizer.PropertyChanged += (_, _) => eventCount++;
-        localizer.CultureChanged += (_, _) => eventCount++;
+        using var monitor = localizer.Monitor();
 
         // Both the very same instance and a distinct-but-equal culture must be treated as "no change".
         var sameInstance = localizer.CurrentCulture;
         localizer.CurrentCulture = sameInstance;
         localizer.CurrentCulture = new("en");
 
-        eventCount.Should().Be(0);
+        monitor.EventLog().Should().BeEmpty();
         localizer.CurrentCulture.Should().BeSameAs(sameInstance);
     }
 
@@ -46,27 +44,35 @@ public class LocalizerContractTests
     public void CultureChange_RaisesCurrentCulture_ThenIndexer_ThenCultureChanged()
     {
         var localizer = this.resources.CreateLocalizer();
-        var events = new List<string>();
-        localizer.PropertyChanged += (_, args) => events.Add($"PropertyChanged({args.PropertyName})");
-        localizer.CultureChanged += (_, _) => events.Add("CultureChanged");
+        using var monitor = localizer.Monitor();
 
         localizer.CurrentCulture = TestResources.German;
 
-        events.Should().Equal("PropertyChanged(CurrentCulture)", "PropertyChanged(Item[])", "CultureChanged");
+        monitor
+            .EventLog()
+            .Should()
+            .Equal(
+                "PropertyChanged(CurrentCulture)",
+                "PropertyChanged(RefreshTriggeringRevision)",
+                "PropertyChanged(Item[])",
+                "CultureChanged"
+            );
     }
 
     [Fact]
     public void CultureChanged_CarriesOldAndNewCulture()
     {
         var localizer = this.resources.CreateLocalizer();
-        CultureChangedEventArgs? captured = null;
-        localizer.CultureChanged += (_, args) => captured = args;
+        using var monitor = localizer.Monitor();
 
         localizer.CurrentCulture = TestResources.German;
 
-        captured.Should().NotBeNull();
-        captured.OldCulture.Should().Be(TestResources.English);
-        captured.NewCulture.Should().Be(TestResources.German);
+        monitor
+            .Should()
+            .Raise(nameof(ILocalizer.CultureChanged))
+            .WithArgs<CultureChangedEventArgs>(args =>
+                args.OldCulture.Equals(TestResources.English) && args.NewCulture.Equals(TestResources.German)
+            );
     }
 
     [Fact]
