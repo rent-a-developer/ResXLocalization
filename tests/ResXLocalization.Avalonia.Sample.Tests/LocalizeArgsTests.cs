@@ -1,4 +1,5 @@
 using Avalonia.Controls.Templates;
+using RentADeveloper.ResXLocalization.Core.Tests;
 
 namespace RentADeveloper.ResXLocalization.Avalonia.Sample.Tests;
 
@@ -51,6 +52,28 @@ public class LocalizeArgsTests
         Localizer.Current.CurrentCulture = TestSupport.German;
         TestSupport.PumpUi();
         textBlock.Text.Should().Be("3 Personen eingeladen");
+    }
+
+    [AvaloniaFact]
+    public void FormattingFailure_RendersTheFailureText_AndRaisesLookupFailed()
+    {
+        TestSupport.ResetToEnglishWithTestCatalogs();
+        using var monitor = Localizer.Current.Monitor();
+
+        var textBlock = TestSupport.BindLocalizedTextWithTarget(new("FormatBroken"));
+        LocalizeArgs.SetArg0(textBlock, 1);
+        TestSupport.PumpUi();
+
+        textBlock.Text.Should().Be("!FormatBroken!");
+        monitor
+            .LookupFailures()
+            .Should()
+            .NotBeEmpty()
+            .And.OnlyContain(failure =>
+                failure.Reason == LookupFailureReason.MessageFormatFailed
+                && failure.Key == "FormatBroken"
+                && failure.Exception is FormatException
+            );
     }
 
     [AvaloniaFact]

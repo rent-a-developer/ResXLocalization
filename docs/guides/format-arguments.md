@@ -13,8 +13,8 @@ view model. Add the entry as usual:
 Localizer.Current.Get(AppStringsKeys.PeopleInvited, peopleCount);
 ```
 
-The resolved text and the arguments go to `string.Format` in the localizer's current culture, so a
-number or a date formats the way that culture writes it.
+The resolved text and the arguments go to the localizer's formatter - by default `string.Format` in
+the localizer's current culture, so a number or a date formats the way that culture writes it.
 
 ## In XAML
 
@@ -39,9 +39,35 @@ place as `5 Personen eingeladen`.
   when they need different arguments.
 - **Per-argument format specifiers belong in the resource string** — `{0:N0} people invited` — where
   a translator can adjust them per language.
-- **No arguments set, no formatting.** An element without any `ArgN` resolves without composite
-  formatting at all, so a resource value containing a literal `{` or `}` keeps working without `{{`
-  escaping. The missing-key sentinel is likewise never formatted.
+- **No arguments, no formatting.** Under the default formatter, a lookup without arguments returns the
+  resource value unchanged - in code `Localizer.Current.Get(key, args)` with an empty array, like
+  `Get(key)`, and in XAML an element without any `ArgN`. A resource value containing a literal `{` or
+  `}` keeps working without `{{` escaping. The failure text of a missing key is never formatted.
+- **Formatter exceptions are caught.** When a value cannot be formatted - `Broken {0`, or
+  `File {0} of {1}` with one argument - the localizer raises `LookupFailed` and returns the
+  failure text (by default `!key!`), in code and in XAML alike, provided the event handlers and
+  `LookupFailureTextBuilder` complete successfully. An exception from an event handler or from
+  `LookupFailureTextBuilder`, and a `null` result of the builder, propagate. See
+  [Lookup modes and culture fallback](lookup-and-fallback.md#failure-text).
+- **The formatter is replaceable.** Assign `Localizer.Current.MessageFormatter = ...`, usually at
+  startup; changing it later re-resolves bound text like a language switch
+  (`RefreshTriggeringRevision`). The default is `string.Format` in the localizer's current culture.
+  The formatter sees **every** resolved value, in code and in XAML, also lookups without arguments
+  (with an empty array), so it is the one place to post-process all translated texts; a missing key's
+  failure text does not pass through it. A custom formatter should return the value unchanged when
+  `arguments` is empty, unless it means to handle plain texts:
+
+  ```csharp
+  Localizer.Current.MessageFormatter = new MyFormatter();
+
+  sealed class MyFormatter : IMessageFormatter
+  {
+      public string Format(string pattern, MessageArgument[] arguments, CultureInfo culture) =>
+          arguments.Length == 0
+              ? pattern // no arguments: do not format, so a literal { keeps working
+              : string.Format(culture, pattern, arguments.Select(argument => argument.Value).ToArray());
+  }
+  ```
 - **Keep it simple.** For a very complex string, compose the text in the view model with
   `Get(key, args…)` rather than wiring many argument slots.
 - **Composite formatting does not pluralize.** `1 people invited` is on the resource author; use

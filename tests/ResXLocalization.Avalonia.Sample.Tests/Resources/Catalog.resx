@@ -9,6 +9,7 @@
       * FormatPair        - a two-argument composite format string, for the LocalizeArgs tests.
       * FormatGap         - references {0} and {2}, to test a higher argument slot used alone.
       * CurlyNoArgs       - literal braces, to prove the no-argument path never composite-formats.
+      * FormatBroken      - a malformed composite format string, to test the formatting-failure path.
   -->
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -39,5 +40,8 @@
   </data>
   <data name="CurlyNoArgs" xml:space="preserve">
     <value>Literal {braces} stay</value>
+  </data>
+  <data name="FormatBroken" xml:space="preserve">
+    <value>Broken {0</value>
   </data>
 </root>

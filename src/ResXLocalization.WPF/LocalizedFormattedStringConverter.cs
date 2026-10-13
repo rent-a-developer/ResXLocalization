@@ -31,11 +31,7 @@ internal sealed class LocalizedFormattedStringConverter(Func<string> resolve, Fu
     /// <see cref="Localizer.Current" />).
     /// </param>
     /// <returns>
-    /// The localized, possibly formatted string, or <see cref="DependencyProperty.UnsetValue" /> when
-    /// the format string does not (yet) match the supplied arguments - routine while multi-argument
-    /// bindings still deliver their values one by one - so the mismatch never throws into the
-    /// property system mid-delivery and the text resolves cleanly on the next argument or culture
-    /// change.
+    /// The localized, possibly formatted string, or the failure text (see <see cref="ILocalizer" />).
     /// </returns>
     public object Convert(object?[] values, Type targetType, object? parameter, CultureInfo culture)
     {
@@ -44,16 +40,9 @@ internal sealed class LocalizedFormattedStringConverter(Func<string> resolve, Fu
             return resolve();
         }
 
-        try
-        {
-            var arguments = LocalizeArgs.GetArguments(element);
+        var arguments = LocalizeArgs.GetArguments(element);
 
-            return arguments is null ? resolve() : resolveFormatted(arguments);
-        }
-        catch (FormatException)
-        {
-            return DependencyProperty.UnsetValue;
-        }
+        return arguments is null ? resolve() : resolveFormatted(arguments);
     }
 
     /// <summary>Not supported; this converter is one-way.</summary>

@@ -26,15 +26,14 @@ public class IsolatedInstanceTests
     {
         var first = this.resources.CreateLocalizer();
         var second = this.resources.CreateLocalizer();
-        var secondNotified = false;
-        second.CultureChanged += (_, _) => secondNotified = true;
+        using var secondMonitor = second.Monitor();
 
         first.CurrentCulture = TestResources.German;
 
         first.Get("Greeting").Should().Be("Hallo und willkommen!");
         second.Get("Greeting").Should().Be("Hello and welcome!");
         second.CurrentCulture.Should().Be(TestResources.English);
-        secondNotified.Should().BeFalse();
+        secondMonitor.Should().NotRaise(nameof(ILocalizer.CultureChanged));
     }
 
     [Fact]

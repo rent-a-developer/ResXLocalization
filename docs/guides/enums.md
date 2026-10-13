@@ -81,5 +81,5 @@ own instance in resources:
 ## When a member has no entry
 
 An enum member with no matching resource entry resolves like any other missing key: the
-`!Enum_FileSortOrder_Ascending!` sentinel, and a `TranslationNotFound` event. See
+`!Enum_FileSortOrder_Ascending!` failure text, and a `LookupFailed` event. See
 [Lookup modes and culture fallback](lookup-and-fallback.md).

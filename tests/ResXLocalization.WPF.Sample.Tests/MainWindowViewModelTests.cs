@@ -35,8 +35,7 @@ public class MainWindowViewModelTests
             TestSupport.ResetToEnglishWithTestCatalogs();
             using var viewModel = new MainWindowViewModel(Localizer.Current);
 
-            var changed = new List<string>();
-            viewModel.PropertyChanged += (_, args) => changed.Add(args.PropertyName ?? string.Empty);
+            using var monitor = viewModel.Monitor();
 
             viewModel.SelectedLanguage = TestSupport.German;
 
@@ -44,9 +43,9 @@ public class MainWindowViewModelTests
             viewModel.SortOrderViaSearchAllDefaultPrefix.Should().Be("Aufsteigend");
             viewModel.PoweredByViaTypedKey.Should().Be("Bereitgestellt von rent-a-developer");
 
-            changed.Should().Contain(nameof(MainWindowViewModel.GreetingViaSearchAll));
-            changed.Should().Contain(nameof(MainWindowViewModel.SortOrderViaSearchAllDefaultPrefix));
-            changed.Should().Contain(nameof(MainWindowViewModel.PoweredByViaTypedKey));
+            monitor.Should().RaisePropertyChangeFor(model => model.GreetingViaSearchAll);
+            monitor.Should().RaisePropertyChangeFor(model => model.SortOrderViaSearchAllDefaultPrefix);
+            monitor.Should().RaisePropertyChangeFor(model => model.PoweredByViaTypedKey);
         });
 
     [Fact]
@@ -68,15 +67,14 @@ public class MainWindowViewModelTests
             TestSupport.ResetToEnglishWithTestCatalogs();
             using var viewModel = new MainWindowViewModel(Localizer.Current);
 
-            var changed = new List<string>();
-            viewModel.PropertyChanged += (_, args) => changed.Add(args.PropertyName ?? string.Empty);
+            using var monitor = viewModel.Monitor();
 
             viewModel.SelectedFileSortOrder = FileSortOrder.Descending;
 
             viewModel.SortOrderViaSearchAllDefaultPrefix.Should().Be("Descending");
             viewModel.SortOrderViaSearchAllCustomPrefix.Should().Be("Z to A");
-            changed.Should().Contain(nameof(MainWindowViewModel.SortOrderViaSearchAllDefaultPrefix));
-            changed.Should().Contain(nameof(MainWindowViewModel.SortOrderViaScopedCustomPrefix));
+            monitor.Should().RaisePropertyChangeFor(model => model.SortOrderViaSearchAllDefaultPrefix);
+            monitor.Should().RaisePropertyChangeFor(model => model.SortOrderViaScopedCustomPrefix);
         });
 
     [Fact]

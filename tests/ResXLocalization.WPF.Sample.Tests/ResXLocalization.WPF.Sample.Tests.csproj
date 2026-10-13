@@ -9,4 +9,10 @@
     <ProjectReference Include="..\..\samples\ResXLocalization.WPF.Sample\ResXLocalization.WPF.Sample.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Shared test helpers, compiled into this suite from the Core suite rather than copied. -->
+    <Compile Include="..\ResXLocalization.Core.Tests\CapturingFormatter.cs" Link="CapturingFormatter.cs" />
+    <Compile Include="..\ResXLocalization.Core.Tests\LocalizerMonitorExtensions.cs" Link="LocalizerMonitorExtensions.cs" />
+  </ItemGroup>
+
 </Project>

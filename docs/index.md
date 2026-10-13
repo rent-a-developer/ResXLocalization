@@ -15,6 +15,7 @@ installation and a quick start. These pages are the full documentation.
 | [Localizing enum values](guides/enums.md) | The naming convention, item templates, the converter, custom prefixes and scoping |
 | [Dynamic format arguments](guides/format-arguments.md) | `Get(key, args…)` and the `LocalizeArgs.Arg0`…`Arg8` attached properties |
 | [Native AOT and trimming](guides/native-aot.md) | What to declare, how to publish, and why the repository's own gate runs the native binary |
+| [Migrating to 2.0](guides/migration-2.0.md) | Each breaking change of 2.0, with what to do |
 
 ## Reference
 

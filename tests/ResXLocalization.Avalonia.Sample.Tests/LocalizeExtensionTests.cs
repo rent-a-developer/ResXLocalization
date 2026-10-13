@@ -1,3 +1,5 @@
+using RentADeveloper.ResXLocalization.Core.Tests;
+
 namespace RentADeveloper.ResXLocalization.Avalonia.Sample.Tests;
 
 /// <summary>
@@ -38,6 +40,35 @@ public class LocalizeExtensionTests
         );
 
         textBlock.Text.Should().Be("Hello and welcome!");
+    }
+
+    [AvaloniaFact]
+    public void NoArguments_PassesTheValueThroughTheFormatter()
+    {
+        TestSupport.ResetToEnglishWithTestCatalogs();
+        var previous = Localizer.Current.MessageFormatter;
+        var formatter = new CapturingFormatter();
+        Localizer.Current.MessageFormatter = formatter;
+
+        try
+        {
+            var textBlock = TestSupport.BindLocalizedText(new("CurlyNoArgs"));
+            TestSupport.PumpUi();
+
+            textBlock.Text.Should().Be("Literal {braces} stay");
+            formatter.Calls.Should().NotBeEmpty();
+            formatter
+                .Calls.Should()
+                .AllSatisfy(call =>
+                {
+                    call.Pattern.Should().Be("Literal {braces} stay");
+                    call.Arguments.Should().BeEmpty();
+                });
+        }
+        finally
+        {
+            Localizer.Current.MessageFormatter = previous;
+        }
     }
 
     [AvaloniaFact]
