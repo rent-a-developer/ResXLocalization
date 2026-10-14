@@ -1,1 +1,5 @@
 #nullable enable
+*REMOVED*RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter.KeyPrefix.get -> string!
+*REMOVED*RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension.KeyPrefix.get -> string!
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter.KeyPrefix.get -> string?
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension.KeyPrefix.get -> string?

@@ -5,6 +5,12 @@ IL2xxx or IL3xxx diagnostic — not from the library, not from a package in the 
 your own call sites. There is no `[RequiresUnreferencedCode]` or `[RequiresDynamicCode]` on any
 public member, so nothing about a trimmed publish is a warning you have to read and dismiss.
 
+One annotation reaches your code: `MessageArguments.FromObject<T>` reads the public properties of `T`,
+which carries `[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]`. Calling it
+with a concrete type, such as an anonymous object, needs nothing. A generic method of your own that
+forwards its type parameter to `FromObject` must carry the same annotation on that parameter, or the
+trimmer reports IL2091 at that call.
+
 **`ResXLocalization.WPF` is out of scope.** WPF is Windows-only and does not support Native AOT; that
 is a WPF limitation, not one of this library.
 
@@ -54,7 +60,8 @@ suite passes throughout.
 
 This repository's own gate therefore publishes a package-only consumer natively and **runs** it,
 asserting exact strings before and after a culture change, through the typed, scoped and search-all
-lookups, the enum convention, composite formatting, and the fallback to the neutral culture. See
+lookups, the enum convention, composite formatting, named arguments built by reflection with
+`MessageArguments.FromObject`, and the fallback to the neutral culture. See
 `scripts/verify-package-aot.ps1`. A check that only asserts the executable exists proves that the
 linker ran, and nothing else.
 

@@ -1,6 +1,3 @@
-using System.ComponentModel;
-using System.Reflection;
-
 namespace RentADeveloper.ResXLocalization.Core.Tests;
 
 /// <summary>
@@ -19,10 +16,10 @@ public class LocalizerFormatTests
         var localizer = this.resources.CreateLocalizer();
         using var monitor = localizer.Monitor();
 
-        localizer.Get("EscapedBraces", Array.Empty<object?>()).Should().Be("Literal {{braces}} for {0}");
+        localizer.Get("EscapedBraces", MessageArguments.FromValues()).Should().Be("Literal {{braces}} for {0}");
         monitor.Should().NotRaise(nameof(ILocalizer.LookupFailed));
 
-        localizer.Get("EscapedBraces", "x").Should().Be("Literal {braces} for x");
+        localizer.Get("EscapedBraces", MessageArguments.FromValues("x")).Should().Be("Literal {braces} for x");
     }
 
     [Fact]
@@ -30,7 +27,7 @@ public class LocalizerFormatTests
     {
         var localizer = this.resources.CreateLocalizer();
 
-        localizer.Get(string.Empty, 1, 2).Should().BeEmpty();
+        localizer.Get(string.Empty, MessageArguments.FromValues(1, 2)).Should().BeEmpty();
     }
 
     [Fact]
@@ -41,7 +38,7 @@ public class LocalizerFormatTests
         localizer.MessageFormatter = new ThrowingFormatter(exception);
         using var monitor = localizer.Monitor();
 
-        localizer.Get("Greeting", 1).Should().Be("!Greeting!");
+        localizer.Get("Greeting", MessageArguments.FromValues(1)).Should().Be("!Greeting!");
 
         monitor.LookupFailures().Should().ContainSingle().Which.Exception.Should().BeSameAs(exception);
     }
@@ -55,7 +52,7 @@ public class LocalizerFormatTests
         using var monitor = localizer.Monitor();
 
         localizer.Get("Greeting").Should().Be("!Greeting!");
-        localizer.Get("Greeting", this.resources.Catalog).Should().Be("!Greeting!");
+        localizer.Get("Greeting", resourceManager: this.resources.Catalog).Should().Be("!Greeting!");
 
         var raised = monitor.LookupFailures();
         raised.Should().HaveCount(2);
@@ -78,7 +75,7 @@ public class LocalizerFormatTests
         var formatter = new CapturingFormatter();
         localizer.MessageFormatter = formatter;
 
-        localizer.Get("ItemsFound", 1, "x");
+        localizer.Get("ItemsFound", MessageArguments.FromValues(1, "x"));
 
         var call = formatter.Calls.Should().ContainSingle().Subject;
         call.Pattern.Should().Be("Found {0:N1} items in {1}.");
@@ -93,7 +90,7 @@ public class LocalizerFormatTests
         localizer.CurrentCulture = TestResources.German;
         using var monitor = localizer.Monitor();
 
-        localizer.Get("Malformed", 1).Should().Be("!Malformed!");
+        localizer.Get("Malformed", MessageArguments.FromValues(1)).Should().Be("!Malformed!");
 
         var failure = monitor.LookupFailures().Should().ContainSingle().Subject;
         failure.Culture.Should().Be(TestResources.German);
@@ -107,7 +104,7 @@ public class LocalizerFormatTests
         using var monitor = localizer.Monitor();
 
         // The template needs two arguments; one is a resource defect. It is reported, not thrown.
-        localizer.Get("ItemsFound", "only-one").Should().Be("!ItemsFound!");
+        localizer.Get("ItemsFound", MessageArguments.FromValues("only-one")).Should().Be("!ItemsFound!");
 
         var failure = monitor.LookupFailures().Should().ContainSingle().Subject;
         failure.Reason.Should().Be(LookupFailureReason.MessageFormatFailed);
@@ -125,8 +122,11 @@ public class LocalizerFormatTests
         var localizer = this.resources.CreateLocalizer();
         using var monitor = localizer.Monitor();
 
-        localizer.Get("Malformed", this.resources.Catalog, 1).Should().Be("!Malformed!");
-        localizer.Get(new ResourceKey("Malformed", this.resources.Catalog), 1).Should().Be("!Malformed!");
+        localizer.Get("Malformed", MessageArguments.FromValues(1), this.resources.Catalog).Should().Be("!Malformed!");
+        localizer
+            .Get(new ResourceKey("Malformed", this.resources.Catalog), MessageArguments.FromValues(1))
+            .Should()
+            .Be("!Malformed!");
 
         monitor
             .LookupFailures()
@@ -155,8 +155,11 @@ public class LocalizerFormatTests
         var localizer = this.resources.CreateLocalizer();
         using var monitor = localizer.Monitor();
 
-        localizer.Get("ThisKeyDoesNotExist", 1, 2).Should().Be("!ThisKeyDoesNotExist!");
-        localizer.Get("ThisKeyDoesNotExist", this.resources.Catalog, 1, 2).Should().Be("!ThisKeyDoesNotExist!");
+        localizer.Get("ThisKeyDoesNotExist", MessageArguments.FromValues(1, 2)).Should().Be("!ThisKeyDoesNotExist!");
+        localizer
+            .Get("ThisKeyDoesNotExist", MessageArguments.FromValues(1, 2), this.resources.Catalog)
+            .Should()
+            .Be("!ThisKeyDoesNotExist!");
 
         monitor
             .LookupFailures()
@@ -166,12 +169,15 @@ public class LocalizerFormatTests
     }
 
     [Fact]
-    public void MissingKey_ReturnsTheSentinelUnformatted()
+    public void MissingKey_ReturnsTheFailureTextUnformatted()
     {
         var localizer = this.resources.CreateLocalizer();
 
-        localizer.Get("ThisKeyDoesNotExist", 1, 2).Should().Be("!ThisKeyDoesNotExist!");
-        localizer.Get("ThisKeyDoesNotExist", this.resources.Catalog, 1, 2).Should().Be("!ThisKeyDoesNotExist!");
+        localizer.Get("ThisKeyDoesNotExist", MessageArguments.FromValues(1, 2)).Should().Be("!ThisKeyDoesNotExist!");
+        localizer
+            .Get("ThisKeyDoesNotExist", MessageArguments.FromValues(1, 2), this.resources.Catalog)
+            .Should()
+            .Be("!ThisKeyDoesNotExist!");
     }
 
     [Fact]
@@ -183,7 +189,7 @@ public class LocalizerFormatTests
         localizer.MessageFormatter = formatter;
         using var monitor = localizer.Monitor();
 
-        localizer.Get("ThisKeyDoesNotExist", 1).Should().Be("{ThisKeyDoesNotExist}");
+        localizer.Get("ThisKeyDoesNotExist", MessageArguments.FromValues(1)).Should().Be("{ThisKeyDoesNotExist}");
 
         formatter.Calls.Should().BeEmpty();
         monitor
@@ -206,10 +212,10 @@ public class LocalizerFormatTests
         [
             localizer.Get("Greeting"),
             localizer["Greeting"],
-            localizer.Get("Greeting", catalog),
+            localizer.Get("Greeting", resourceManager: catalog),
             localizer.Get(new ResourceKey("Greeting", catalog)),
             localizer.Get(TestSortOrder.Ascending),
-            localizer.Get(TestSortOrder.Ascending, catalog),
+            localizer.Get(TestSortOrder.Ascending, resourceManager: catalog),
         ];
         localizer.Get("ThisKeyDoesNotExist");
         localizer.Get(string.Empty);
@@ -236,101 +242,79 @@ public class LocalizerFormatTests
     }
 
     [Fact]
-    public void NullArgumentsArray_Throws()
+    public void NoArguments_InEveryForm_PassEmptyArgumentsToTheFormatter()
     {
         var localizer = this.resources.CreateLocalizer();
+        var formatter = new CapturingFormatter();
+        localizer.MessageFormatter = formatter;
 
-        var act = () => localizer.Get("Greeting", (object?[])null!);
+        string[] results =
+        [
+            localizer.Get("Greeting"),
+            localizer.Get("Greeting", null),
+            localizer.Get("Greeting", MessageArguments.Empty),
+            localizer.Get("Greeting", null, null),
+            localizer.Get("Greeting", resourceManager: this.resources.Catalog),
+            localizer["Greeting"],
+        ];
 
-        act.Should().Throw<ArgumentNullException>();
+        results.Should().AllBe("Hello and welcome!");
+        formatter.Calls.Should().HaveCount(6).And.AllSatisfy(call => call.Arguments.Should().NotBeNull().And.BeEmpty());
     }
 
     [Fact]
-    public void NullArgumentsArray_Throws_ForEveryOverloadWithArguments()
-    {
-        var localizer = this.resources.CreateLocalizer();
-        var catalog = this.resources.Catalog;
-
-        var searchAll = () => localizer.Get("Greeting", (object?[])null!);
-        var scoped = () => localizer.Get("Greeting", catalog, (object?[])null!);
-        var typed = () => localizer.Get(new ResourceKey("Greeting", catalog), (object?[])null!);
-
-        searchAll.Should().Throw<ArgumentNullException>();
-        scoped.Should().Throw<ArgumentNullException>();
-        typed.Should().Throw<ArgumentNullException>();
-    }
-
-    [Fact]
-    public void NullManagerOrDefaultResourceKey_Throws_InsteadOfSearchingAll()
+    public void NullManager_MeansSearchAll_ButADefaultResourceKeyThrows()
     {
         var localizer = this.resources.CreateLocalizer();
 
-        var scoped = () => localizer.Get("Greeting", (ResourceManager)null!);
+        localizer.Get("Greeting", resourceManager: null).Should().Be("Hello and welcome!");
+        localizer.Get(TestSortOrder.Ascending, resourceManager: null).Should().Be("Ascending");
+
         var typed = () => localizer.Get(default(ResourceKey));
-        var typedWithArguments = () => localizer.Get(default(ResourceKey), 1);
-        var enumScoped = () => localizer.Get(TestSortOrder.Ascending, (ResourceManager)null!, "Enum_");
+        var typedWithArguments = () => localizer.Get(default(ResourceKey), MessageArguments.FromValues(1));
 
-        scoped.Should().Throw<ArgumentNullException>();
         typed.Should().Throw<ArgumentNullException>();
         typedWithArguments.Should().Throw<ArgumentNullException>();
-        enumScoped.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
-    public void Primitive_DefaultFormatter_UsesPositions_AndIgnoresNames()
+    public void PositionalAndNamedArguments_FormatByPosition_UnderTheDefaultFormatter()
     {
         var localizer = this.resources.CreateLocalizer();
 
+        localizer.Get("FilePosition", MessageArguments.FromValues(3, 10)).Should().Be("File 3 of 10");
         localizer
-            .Get("ItemsFound", [new(0, "Count", 1.5), new(1, "Where", "x")], null)
+            .Get("ItemsFound", MessageArguments.FromObject(new { Count = 1.5, Where = "x" }))
+            .Should()
+            .Be("Found 1.5 items in x.");
+        localizer
+            .Get(
+                new ResourceKey("ItemsFound", this.resources.Catalog),
+                MessageArguments.FromTuples(("Count", 1.5), ("Where", "x"))
+            )
             .Should()
             .Be("Found 1.5 items in x.");
     }
 
     [Fact]
-    public void Primitive_IsHiddenFromIntelliSense()
-    {
-        Type[] parameters = [typeof(string), typeof(MessageArgument[]), typeof(ResourceManager)];
-
-        foreach (var type in new[] { typeof(ILocalizer), typeof(Localizer) })
-        {
-            type.GetMethod(nameof(ILocalizer.Get), parameters)!
-                .GetCustomAttribute<EditorBrowsableAttribute>()!
-                .State.Should()
-                .Be(EditorBrowsableState.Never);
-        }
-    }
-
-    [Fact]
-    public void Primitive_RejectsNullArguments_ReturnsEmptyForAnEmptyKey_AndResolvesWithoutArguments()
+    public void Positions_NotTheEnumerationIndex_DecideWhichPlaceholderAValueFills()
     {
         var localizer = this.resources.CreateLocalizer();
 
-        // The cast is required: Get("Greeting", null, null) is ambiguous with the scoped params overload.
-        var act = () => localizer.Get("Greeting", (MessageArgument[])null!, null);
-
-        act.Should().Throw<ArgumentNullException>();
-        localizer.Get(string.Empty, [new(0, null, 1)], null).Should().BeEmpty();
-        localizer.Get("Greeting", Array.Empty<MessageArgument>(), null).Should().Be("Hello and welcome!");
+        localizer
+            .Get("FilePosition", MessageArguments.FromArguments(new(1, null, 10), new(0, null, 3)))
+            .Should()
+            .Be("File 3 of 10");
     }
 
     [Fact]
-    public void Primitive_ValidatesPositionsAndEmptyNames_Only()
+    public void Primitive_TreatsNullArgumentsAsNone_AndReturnsEmptyForAnEmptyKey()
     {
         var localizer = this.resources.CreateLocalizer();
 
-        var wrongPosition = () => localizer.Get("Greeting", [new(1, null, 1)], null);
-        var repeatedPosition = () => localizer.Get("Greeting", [new(0, null, 1), new(0, null, 2)], null);
-        var emptyName = () => localizer.Get("Greeting", [new(0, "", 1)], null);
-
-        wrongPosition.Should().Throw<ArgumentException>().WithParameterName("arguments");
-        repeatedPosition.Should().Throw<ArgumentException>().WithParameterName("arguments");
-        emptyName.Should().Throw<ArgumentException>().WithParameterName("arguments");
-
-        // Duplicate names and a name that looks like a position are not the primitive's concern, and a
-        // null value is fine.
-        localizer.Get("Greeting", [new(0, "A", 1), new(1, "A", 2)], null).Should().Be("Hello and welcome!");
-        localizer.Get("Greeting", [new(0, "0", null)], null).Should().Be("Hello and welcome!");
+        localizer.Get("Greeting", null, null).Should().Be("Hello and welcome!");
+        localizer.Get(string.Empty, MessageArguments.FromValues(1), null).Should().BeEmpty();
+        localizer.Get("Greeting", MessageArguments.Empty, null).Should().Be("Hello and welcome!");
     }
 
     [Fact]
@@ -338,7 +322,10 @@ public class LocalizerFormatTests
     {
         var localizer = this.resources.CreateLocalizer();
 
-        localizer.Get("ItemsFound", this.resources.Catalog, 2.0, "Music").Should().Be("Found 2.0 items in Music.");
+        localizer
+            .Get("ItemsFound", MessageArguments.FromValues(2.0, "Music"), this.resources.Catalog)
+            .Should()
+            .Be("Found 2.0 items in Music.");
     }
 
     [Fact]
@@ -347,11 +334,17 @@ public class LocalizerFormatTests
         var localizer = this.resources.CreateLocalizer();
 
         // {0:N1} renders 1234.5 with an English decimal point...
-        localizer.Get("ItemsFound", 1234.5, "Downloads").Should().Be("Found 1,234.5 items in Downloads.");
+        localizer
+            .Get("ItemsFound", MessageArguments.FromValues(1234.5, "Downloads"))
+            .Should()
+            .Be("Found 1,234.5 items in Downloads.");
 
         // ...and with a German decimal comma after the switch, using the German template.
         localizer.CurrentCulture = TestResources.German;
-        localizer.Get("ItemsFound", 1234.5, "Downloads").Should().Be("1.234,5 Elemente in Downloads gefunden.");
+        localizer
+            .Get("ItemsFound", MessageArguments.FromValues(1234.5, "Downloads"))
+            .Should()
+            .Be("1.234,5 Elemente in Downloads gefunden.");
     }
 
     [Fact]
@@ -360,7 +353,7 @@ public class LocalizerFormatTests
         var localizer = this.resources.CreateLocalizer();
         var key = new ResourceKey("ItemsFound", this.resources.Catalog);
 
-        localizer.Get(key, 2.0, "Music").Should().Be("Found 2.0 items in Music.");
+        localizer.Get(key, MessageArguments.FromValues(2.0, "Music")).Should().Be("Found 2.0 items in Music.");
     }
 
     /// <summary>A formatter that throws the given exception for every call.</summary>
@@ -369,6 +362,6 @@ public class LocalizerFormatTests
     {
         private readonly Exception exception = exception;
 
-        public string Format(string pattern, MessageArgument[] arguments, CultureInfo culture) => throw this.exception;
+        public string Format(string pattern, MessageArguments arguments, CultureInfo culture) => throw this.exception;
     }
 }

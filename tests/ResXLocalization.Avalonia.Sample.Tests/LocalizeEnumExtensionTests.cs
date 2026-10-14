@@ -21,6 +21,26 @@ public class LocalizeEnumExtensionTests
     }
 
     [AvaloniaFact]
+    public void CustomEnumKeyBuilder_AppliesToTheExtension()
+    {
+        TestSupport.ResetToEnglishWithTestCatalogs();
+        var original = Localizer.Current.EnumKeyBuilder;
+        Localizer.Current.EnumKeyBuilder = static (value, keyPrefix) =>
+            (keyPrefix ?? "Text_") + value.GetType().Name + "." + value;
+
+        try
+        {
+            var textBlock = TestSupport.BindLocalizedEnum(new(), FileSortOrder.Ascending);
+
+            textBlock.Text.Should().Be("Custom ascending");
+        }
+        finally
+        {
+            Localizer.Current.EnumKeyBuilder = original;
+        }
+    }
+
+    [AvaloniaFact]
     public void CustomPrefix_NoManager_ResolvesViaSearchAll()
     {
         TestSupport.ResetToEnglishWithTestCatalogs();

@@ -16,11 +16,24 @@ resolve.
 Localizer.Current.Get(AppStringsKeys.Greeting);
 
 // Scoped: this key, in this file.
-Localizer.Current.Get("Greeting", AppStrings.ResourceManager);
+Localizer.Current.Get("Greeting", resourceManager: AppStrings.ResourceManager);
 
 // Search-all: this key, in whichever registered file has it first.
 Localizer.Current.Get("Greeting");
 ```
+
+`ILocalizer` has one `Get` per key kind - a string key, a typed `ResourceKey` and an enum value - and
+each takes optional [format arguments](format-arguments.md) as its second parameter:
+
+```csharp
+string Get(string key, MessageArguments? arguments = null, ResourceManager? resourceManager = null);
+string Get(ResourceKey key, MessageArguments? arguments = null);
+string Get(Enum value, MessageArguments? arguments = null, ResourceManager? resourceManager = null, string? keyPrefix = null);
+```
+
+A scoped lookup therefore names the manager: `Get("Greeting", resourceManager: rm)`, or
+`Get("Greeting", MessageArguments.FromValues(a), rm)` with arguments. Without a manager, or with
+`null`, the lookup searches all registered managers.
 
 The same three modes exist in XAML:
 
@@ -120,8 +133,11 @@ re-resolves bound text.
 ## Refreshing localized text
 
 `ILocalizer.RefreshTriggeringRevision` changes whenever something changes that can change the result
-of a lookup: the culture, the formatter, the lookup-failure text builder, or the registered resource
-managers (a manager registered or unregistered, or the registrations cleared). Only whether the value
+of a lookup: the culture, the formatter, the lookup-failure text builder, the enum key builder
+(`EnumKeyBuilder`, see [Localizing enum values](enums.md#changing-the-key-convention)), or the registered
+resource managers (a manager registered or unregistered, or the registrations cleared). For the
+formatter and the two builders, assigning a different instance counts; assigning the current instance
+again does nothing. Only whether the value
 differs is meaningful, never the number itself.
 
 Bound text re-resolves on each of these changes. Strings fetched in code with `Get` are not

@@ -31,6 +31,62 @@
   </Suppression>
   <Suppression>
     <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.ILocalizer.Get(RentADeveloper.ResXLocalization.ResourceKey,System.Object[])</Target>
+    <Left>lib/net10.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net10.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.ILocalizer.Get(RentADeveloper.ResXLocalization.ResourceKey)</Target>
+    <Left>lib/net10.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net10.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.ILocalizer.Get(System.Enum,System.Resources.ResourceManager,System.String)</Target>
+    <Left>lib/net10.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net10.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.ILocalizer.Get(System.Enum,System.String)</Target>
+    <Left>lib/net10.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net10.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.ILocalizer.Get(System.String,System.Object[])</Target>
+    <Left>lib/net10.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net10.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.ILocalizer.Get(System.String,System.Resources.ResourceManager,System.Object[])</Target>
+    <Left>lib/net10.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net10.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.ILocalizer.Get(System.String,System.Resources.ResourceManager)</Target>
+    <Left>lib/net10.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net10.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.ILocalizer.Get(System.String)</Target>
+    <Left>lib/net10.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net10.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
     <Target>M:RentADeveloper.ResXLocalization.ILocalizer.remove_TranslationNotFound(System.EventHandler{RentADeveloper.ResXLocalization.TranslationNotFoundEventArgs})</Target>
     <Left>lib/net10.0/ResXLocalization.Core.dll</Left>
     <Right>lib/net10.0/ResXLocalization.Core.dll</Right>
@@ -53,6 +109,62 @@
   <Suppression>
     <DiagnosticId>CP0002</DiagnosticId>
     <Target>M:RentADeveloper.ResXLocalization.Localizer.get_MissingTranslationFormat</Target>
+    <Left>lib/net10.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net10.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.Localizer.Get(RentADeveloper.ResXLocalization.ResourceKey,System.Object[])</Target>
+    <Left>lib/net10.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net10.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.Localizer.Get(RentADeveloper.ResXLocalization.ResourceKey)</Target>
+    <Left>lib/net10.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net10.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.Localizer.Get(System.Enum,System.Resources.ResourceManager,System.String)</Target>
+    <Left>lib/net10.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net10.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.Localizer.Get(System.Enum,System.String)</Target>
+    <Left>lib/net10.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net10.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.Localizer.Get(System.String,System.Object[])</Target>
+    <Left>lib/net10.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net10.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.Localizer.Get(System.String,System.Resources.ResourceManager,System.Object[])</Target>
+    <Left>lib/net10.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net10.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.Localizer.Get(System.String,System.Resources.ResourceManager)</Target>
+    <Left>lib/net10.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net10.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.Localizer.Get(System.String)</Target>
     <Left>lib/net10.0/ResXLocalization.Core.dll</Left>
     <Right>lib/net10.0/ResXLocalization.Core.dll</Right>
     <IsBaselineSuppression>true</IsBaselineSuppression>
@@ -87,6 +199,62 @@
   </Suppression>
   <Suppression>
     <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.ILocalizer.Get(RentADeveloper.ResXLocalization.ResourceKey,System.Object[])</Target>
+    <Left>lib/net8.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net8.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.ILocalizer.Get(RentADeveloper.ResXLocalization.ResourceKey)</Target>
+    <Left>lib/net8.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net8.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.ILocalizer.Get(System.Enum,System.Resources.ResourceManager,System.String)</Target>
+    <Left>lib/net8.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net8.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.ILocalizer.Get(System.Enum,System.String)</Target>
+    <Left>lib/net8.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net8.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.ILocalizer.Get(System.String,System.Object[])</Target>
+    <Left>lib/net8.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net8.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.ILocalizer.Get(System.String,System.Resources.ResourceManager,System.Object[])</Target>
+    <Left>lib/net8.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net8.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.ILocalizer.Get(System.String,System.Resources.ResourceManager)</Target>
+    <Left>lib/net8.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net8.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.ILocalizer.Get(System.String)</Target>
+    <Left>lib/net8.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net8.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
     <Target>M:RentADeveloper.ResXLocalization.ILocalizer.remove_TranslationNotFound(System.EventHandler{RentADeveloper.ResXLocalization.TranslationNotFoundEventArgs})</Target>
     <Left>lib/net8.0/ResXLocalization.Core.dll</Left>
     <Right>lib/net8.0/ResXLocalization.Core.dll</Right>
@@ -115,6 +283,62 @@
   </Suppression>
   <Suppression>
     <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.Localizer.Get(RentADeveloper.ResXLocalization.ResourceKey,System.Object[])</Target>
+    <Left>lib/net8.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net8.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.Localizer.Get(RentADeveloper.ResXLocalization.ResourceKey)</Target>
+    <Left>lib/net8.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net8.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.Localizer.Get(System.Enum,System.Resources.ResourceManager,System.String)</Target>
+    <Left>lib/net8.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net8.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.Localizer.Get(System.Enum,System.String)</Target>
+    <Left>lib/net8.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net8.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.Localizer.Get(System.String,System.Object[])</Target>
+    <Left>lib/net8.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net8.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.Localizer.Get(System.String,System.Resources.ResourceManager,System.Object[])</Target>
+    <Left>lib/net8.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net8.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.Localizer.Get(System.String,System.Resources.ResourceManager)</Target>
+    <Left>lib/net8.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net8.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.Localizer.Get(System.String)</Target>
+    <Left>lib/net8.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net8.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
     <Target>M:RentADeveloper.ResXLocalization.Localizer.remove_TranslationNotFound(System.EventHandler{RentADeveloper.ResXLocalization.TranslationNotFoundEventArgs})</Target>
     <Left>lib/net8.0/ResXLocalization.Core.dll</Left>
     <Right>lib/net8.0/ResXLocalization.Core.dll</Right>
@@ -136,7 +360,28 @@
   </Suppression>
   <Suppression>
     <DiagnosticId>CP0006</DiagnosticId>
-    <Target>M:RentADeveloper.ResXLocalization.ILocalizer.Get(System.String,RentADeveloper.ResXLocalization.MessageArgument[],System.Resources.ResourceManager)</Target>
+    <Target>M:RentADeveloper.ResXLocalization.ILocalizer.Get(RentADeveloper.ResXLocalization.ResourceKey,RentADeveloper.ResXLocalization.MessageArguments)</Target>
+    <Left>lib/net10.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net10.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0006</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.ILocalizer.Get(System.Enum,RentADeveloper.ResXLocalization.MessageArguments,System.Resources.ResourceManager,System.String)</Target>
+    <Left>lib/net10.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net10.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0006</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.ILocalizer.Get(System.String,RentADeveloper.ResXLocalization.MessageArguments,System.Resources.ResourceManager)</Target>
+    <Left>lib/net10.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net10.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0006</DiagnosticId>
+    <Target>P:RentADeveloper.ResXLocalization.ILocalizer.EnumKeyBuilder</Target>
     <Left>lib/net10.0/ResXLocalization.Core.dll</Left>
     <Right>lib/net10.0/ResXLocalization.Core.dll</Right>
     <IsBaselineSuppression>true</IsBaselineSuppression>
@@ -171,7 +416,28 @@
   </Suppression>
   <Suppression>
     <DiagnosticId>CP0006</DiagnosticId>
-    <Target>M:RentADeveloper.ResXLocalization.ILocalizer.Get(System.String,RentADeveloper.ResXLocalization.MessageArgument[],System.Resources.ResourceManager)</Target>
+    <Target>M:RentADeveloper.ResXLocalization.ILocalizer.Get(RentADeveloper.ResXLocalization.ResourceKey,RentADeveloper.ResXLocalization.MessageArguments)</Target>
+    <Left>lib/net8.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net8.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0006</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.ILocalizer.Get(System.Enum,RentADeveloper.ResXLocalization.MessageArguments,System.Resources.ResourceManager,System.String)</Target>
+    <Left>lib/net8.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net8.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0006</DiagnosticId>
+    <Target>M:RentADeveloper.ResXLocalization.ILocalizer.Get(System.String,RentADeveloper.ResXLocalization.MessageArguments,System.Resources.ResourceManager)</Target>
+    <Left>lib/net8.0/ResXLocalization.Core.dll</Left>
+    <Right>lib/net8.0/ResXLocalization.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0006</DiagnosticId>
+    <Target>P:RentADeveloper.ResXLocalization.ILocalizer.EnumKeyBuilder</Target>
     <Left>lib/net8.0/ResXLocalization.Core.dll</Left>
     <Right>lib/net8.0/ResXLocalization.Core.dll</Right>
     <IsBaselineSuppression>true</IsBaselineSuppression>

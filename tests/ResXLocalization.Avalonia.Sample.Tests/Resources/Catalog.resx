@@ -44,4 +44,7 @@
   <data name="FormatBroken" xml:space="preserve">
     <value>Broken {0</value>
   </data>
+  <data name="Text_FileSortOrder.Ascending" xml:space="preserve">
+    <value>Custom ascending</value>
+  </data>
 </root>

@@ -71,20 +71,21 @@ public sealed class LocalizeExtension : MarkupExtension
         {
             var resourceKey = this.ResourceKey.Value;
             resolve = () => Localizer.Current.Get(resourceKey);
-            resolveFormatted = arguments => Localizer.Current.Get(resourceKey, arguments);
+            resolveFormatted = arguments => Localizer.Current.Get(resourceKey, MessageArguments.FromValues(arguments));
         }
         else if (this.ResourceManager is not null)
         {
             var key = this.Key;
             var resourceManager = this.ResourceManager;
-            resolve = () => Localizer.Current.Get(key, resourceManager);
-            resolveFormatted = arguments => Localizer.Current.Get(key, resourceManager, arguments);
+            resolve = () => Localizer.Current.Get(key, resourceManager: resourceManager);
+            resolveFormatted = arguments =>
+                Localizer.Current.Get(key, MessageArguments.FromValues(arguments), resourceManager);
         }
         else
         {
             var key = this.Key;
             resolve = () => Localizer.Current.Get(key);
-            resolveFormatted = arguments => Localizer.Current.Get(key, arguments);
+            resolveFormatted = arguments => Localizer.Current.Get(key, MessageArguments.FromValues(arguments));
         }
 
         // The target element is where the LocalizeArgs arguments live. ProvideValue runs during XAML

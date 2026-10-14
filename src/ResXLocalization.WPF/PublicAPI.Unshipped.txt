@@ -1,1 +1,5 @@
 #nullable enable
+*REMOVED*RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter.KeyPrefix.get -> string!
+*REMOVED*RentADeveloper.ResXLocalization.WPF.LocalizeEnumExtension.KeyPrefix.get -> string!
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter.KeyPrefix.get -> string?
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumExtension.KeyPrefix.get -> string?

@@ -4,8 +4,8 @@ namespace RentADeveloper.ResXLocalization.Avalonia;
 /// Multi-value converter that localizes an enumeration value bound as a real value (rather than as a
 /// <c>DataContext</c>). Use it in a <c>MultiBinding</c> whose first binding is the enumeration value
 /// and whose second binding is <see cref="Localizer.CurrentCulture" />, so the result re-converts on
-/// every culture change. The value is mapped to a resource key using the convention
-/// <c>{KeyPrefix}{EnumTypeName}_{Value}</c>.
+/// every culture change. The value is mapped to a resource key by
+/// <see cref="ILocalizer.EnumKeyBuilder" />, by default <c>{KeyPrefix}{EnumTypeName}_{Value}</c>.
 /// </summary>
 public sealed class LocalizeEnumConverter : IMultiValueConverter
 {
@@ -33,22 +33,22 @@ public sealed class LocalizeEnumConverter : IMultiValueConverter
     public static LocalizeEnumConverter Default { get; } = new(isSharedInstance: true);
 
     /// <summary>
-    /// Gets or sets the prefix prepended to the generated resource key. Defaults to <c>Enum_</c>.
+    /// Gets or sets the key prefix passed to <see cref="ILocalizer.EnumKeyBuilder" />.
+    /// <see langword="null" /> (the default) means "the <see cref="ILocalizer.EnumKeyBuilder" /> decides",
+    /// which by default is <c>Enum_</c>; a value overrides the prefix for this converter.
     /// </summary>
-    /// <exception cref="ArgumentNullException">The supplied value is <see langword="null" />.</exception>
     /// <exception cref="InvalidOperationException">
     /// The converter is the shared <see cref="Default" /> instance, which is read-only.
     /// </exception>
-    public string KeyPrefix
+    public string? KeyPrefix
     {
         get;
         set
         {
-            ArgumentNullException.ThrowIfNull(value);
             this.ThrowIfShared();
             field = value;
         }
-    } = EnumKeyConvention.DefaultEnumKeyPrefix;
+    }
 
     /// <summary>
     /// Gets or sets the resource manager that scopes the lookup to a single <c>.resx</c> file. When
@@ -92,11 +92,11 @@ public sealed class LocalizeEnumConverter : IMultiValueConverter
             return string.Empty;
         }
 
-        var key = EnumKeyConvention.BuildEnumKey(enumValue, this.KeyPrefix);
+        var key = Localizer.Current.BuildEnumKey(enumValue, this.KeyPrefix);
 
         return this.ResourceManager is null
             ? Localizer.Current.Get(key)
-            : Localizer.Current.Get(key, this.ResourceManager);
+            : Localizer.Current.Get(key, resourceManager: this.ResourceManager);
     }
 
     /// <summary>Guards property setters against mutating the shared <see cref="Default" /> instance.</summary>

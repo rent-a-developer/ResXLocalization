@@ -9,14 +9,17 @@ namespace RentADeveloper.ResXLocalization.Avalonia;
 /// localizer lives on.
 /// </summary>
 /// <param name="dataContextSource">The live stream of the control's <c>DataContext</c> values.</param>
-/// <param name="keyPrefix">The prefix prepended to the generated resource key.</param>
+/// <param name="keyPrefix">
+/// The key prefix passed to <see cref="ILocalizer.EnumKeyBuilder" />, or <see langword="null" /> to let
+/// the builder decide.
+/// </param>
 /// <param name="resourceManager">
 /// The resource manager that scopes the lookup to a single <c>.resx</c> file, or
 /// <see langword="null" /> to search all registered resource managers.
 /// </param>
 internal sealed class LocalizedEnumObservable(
     IObservable<object?> dataContextSource,
-    string keyPrefix,
+    string? keyPrefix,
     ResourceManager? resourceManager
 ) : IObservable<object?>
 {
@@ -40,7 +43,7 @@ internal sealed class LocalizedEnumObservable(
         private readonly IDisposable dataContextSubscription;
 
         /// <summary>The prefix prepended to the generated resource key.</summary>
-        private readonly string keyPrefix;
+        private readonly string? keyPrefix;
 
         /// <summary>The observer receiving the localized enumeration text.</summary>
         private readonly IObserver<object?> observer;
@@ -63,7 +66,9 @@ internal sealed class LocalizedEnumObservable(
         /// changes of the ambient localizer.
         /// </summary>
         /// <param name="dataContextSource">The live stream of the control's <c>DataContext</c> values.</param>
-        /// <param name="keyPrefix">The prefix prepended to the generated resource key.</param>
+        /// <param name="keyPrefix">
+        /// The key prefix passed to <see cref="ILocalizer.EnumKeyBuilder" />, or <see langword="null" />.
+        /// </param>
         /// <param name="resourceManager">
         /// The resource manager that scopes the lookup to a single <c>.resx</c> file, or
         /// <see langword="null" /> to search all registered resource managers.
@@ -71,7 +76,7 @@ internal sealed class LocalizedEnumObservable(
         /// <param name="observer">The observer receiving the localized enumeration text.</param>
         public Subscription(
             IObservable<object?> dataContextSource,
-            string keyPrefix,
+            string? keyPrefix,
             ResourceManager? resourceManager,
             IObserver<object?> observer
         )
@@ -115,11 +120,11 @@ internal sealed class LocalizedEnumObservable(
                 return;
             }
 
-            var key = EnumKeyConvention.BuildEnumKey(this.currentValue, this.keyPrefix);
+            var key = Localizer.Current.BuildEnumKey(this.currentValue, this.keyPrefix);
             this.observer.OnNext(
                 this.resourceManager is null
                     ? Localizer.Current.Get(key)
-                    : Localizer.Current.Get(key, this.resourceManager)
+                    : Localizer.Current.Get(key, resourceManager: this.resourceManager)
             );
         }
     }

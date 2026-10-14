@@ -5,7 +5,8 @@
 //
 // This program is also the assertion set the Native AOT gate runs. Everything a trimmer can break and a
 // JIT cannot is here: satellite discovery, resource lookup by name, the typed keys' captured resource
-// managers, the enum key convention, and composite formatting driven by an attached property.
+// managers, the enum key convention, composite formatting driven by an attached property, and named
+// arguments read by reflection in MessageArguments.FromObject.
 
 using System.Globalization;
 using Avalonia.Controls;
@@ -41,11 +42,16 @@ Check("typed key (generated StringsKeys)", Localizer.Current.Get(StringsKeys.Gre
 Check("search-all lookup", Localizer.Current.Get("Greeting"), "Hello from the package!");
 Check(
     "scoped lookup into an unregistered resource manager",
-    Localizer.Current.Get("ScopedOnly", Catalog.ResourceManager),
+    Localizer.Current.Get("ScopedOnly", resourceManager: Catalog.ResourceManager),
     "Scoped to the catalog"
 );
 Check("search-all cannot reach the unregistered manager", Localizer.Current.Get("ScopedOnly"), "!ScopedOnly!");
 Check("enum localization by convention", Localizer.Current.Get(ConsumerSortOrder.Ascending), "Ascending");
+Check(
+    "named arguments from an object's properties",
+    Localizer.Current.Get(StringsKeys.ArgumentPair, MessageArguments.FromObject(new { A = "x", B = 2 })),
+    "x 2"
+);
 
 // --- The compiled XAML, in English ------------------------------------------------------------------
 
@@ -96,7 +102,7 @@ Check(
 );
 Check(
     "scoped key falls back to the neutral culture",
-    Localizer.Current.Get("ScopedNeutralOnly", Catalog.ResourceManager),
+    Localizer.Current.Get("ScopedNeutralOnly", resourceManager: Catalog.ResourceManager),
     "Catalog value with no German translation"
 );
 Check("compiled XAML typed fallback", localizedView.FallbackText.Text ?? "<null>", "Only in the neutral file");

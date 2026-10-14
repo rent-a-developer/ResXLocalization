@@ -36,7 +36,7 @@ public readonly record struct LookupFailure(
     string Key,
     CultureInfo Culture,
     ResourceManager? ResourceManager,
-    MessageArgument[] Arguments,
+    MessageArguments Arguments,
     string? Pattern,
     Exception? Exception
 );

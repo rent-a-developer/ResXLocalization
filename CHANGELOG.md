@@ -18,7 +18,12 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 - `LookupFailure` and `LookupFailureReason`, which describe a failed lookup to `LookupFailed` and to
   `ILocalizer.LookupFailureTextBuilder`.
 - `ILocalizer.RefreshTriggeringRevision`, which changes on every change that can change a lookup's
-  result (culture, formatter, lookup-failure text builder, registered resource managers).
+  result (culture, formatter, lookup-failure text builder, enum key builder, registered resource
+  managers).
+- `MessageArguments`, the arguments of a lookup, built with `FromValues`, `FromTuples`,
+  `FromDictionary` or `FromObject` and checked when they are built: positional, named or mixed.
+- Enum lookups with format arguments: `Get(sortOrder, MessageArguments.FromValues(count))`.
+- `ILocalizer.EnumKeyBuilder`, one replaceable enum key convention for code and XAML.
 
 ### Changed
 
@@ -30,8 +35,7 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 - **BREAKING:** `Get(key, args)` with an empty array returns the resource value unformatted: `{{x}}`
   stays `{{x}}`. See the [migration guide](docs/guides/migration-2.0.md).
 - **BREAKING:** A custom `ILocalizer` implementation must implement `LookupFailed`,
-  `MessageFormatter`, `RefreshTriggeringRevision`, `LookupFailureTextBuilder` and the hidden
-  `Get(string key, MessageArgument[] arguments, ResourceManager? resourceManager)`. See the
+  `MessageFormatter`, `RefreshTriggeringRevision` and `LookupFailureTextBuilder`. See the
   [migration guide](docs/guides/migration-2.0.md).
 - **BREAKING:** `ILocalizer.MissingTranslationFormat` is replaced by `ILocalizer.LookupFailureTextBuilder`,
   a `Func<LookupFailure, string>` that also produces the failure text for a formatting failure. See the
@@ -39,6 +43,23 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 - **BREAKING:** `ILocalizer.TranslationNotFound` and `TranslationNotFoundEventArgs` are replaced by
   `ILocalizer.LookupFailed` and `LookupFailedEventArgs`, which report formatting failures too. See the
   [migration guide](docs/guides/migration-2.0.md).
+- **BREAKING:** Format arguments are built with `MessageArguments`: `Get("Key", a, b)` becomes
+  `Get("Key", MessageArguments.FromValues(a, b))`; the `params object?[]` overloads are removed. See the [migration guide](docs/guides/migration-2.0.md).
+- **BREAKING:** A scoped lookup names the manager: `Get("Key", rm)` becomes
+  `Get("Key", resourceManager: rm)`, and `Get("Key", rm, a, b)` becomes
+  `Get("Key", MessageArguments.FromValues(a, b), rm)`.
+  See the [migration guide](docs/guides/migration-2.0.md).
+- **BREAKING:** An enum key prefix is named: `Get(sortOrder, "Display_")` becomes
+  `Get(sortOrder, keyPrefix: "Display_")`. See the [migration guide](docs/guides/migration-2.0.md).
+- **BREAKING:** A `null` resource manager means search-all and a `null` key prefix the default of
+  `ILocalizer.EnumKeyBuilder`, instead of throwing `ArgumentNullException`;
+  `LocalizeEnumExtension.KeyPrefix` and `LocalizeEnumConverter.KeyPrefix` are `string?` and default to
+  `null`. See the [migration guide](docs/guides/migration-2.0.md).
+- **BREAKING:** Every 1.x `Get` signature is removed, including `Get(string)` and `Get(ResourceKey)`;
+  assemblies compiled against 1.x throw `MissingMethodException` until recompiled. See the [migration guide](docs/guides/migration-2.0.md).
+- **BREAKING:** A custom `ILocalizer` implementation has exactly three `Get` overloads - string,
+  `ResourceKey` and enum keys, each with an optional `MessageArguments` - and implements
+  `EnumKeyBuilder`. See the [migration guide](docs/guides/migration-2.0.md).
 
 ## [1.1.0] - 2026-07-20
 

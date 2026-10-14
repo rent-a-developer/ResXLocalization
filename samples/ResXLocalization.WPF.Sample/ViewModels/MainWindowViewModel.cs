@@ -58,8 +58,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     /// <summary>Gets the greeting via the indexer, which is shorthand for the search-all <c>Get(string)</c>.</summary>
     public string GreetingViaIndexer => this.localizer["Greeting"];
 
-    /// <summary>Gets the greeting via the scoped overload that names one file: <c>Get(string, ResourceManager)</c>.</summary>
-    public string GreetingViaScopedManager => this.localizer.Get("Greeting", ApplicationStrings.ResourceManager);
+    /// <summary>Gets the greeting via the scoped lookup that names one file: <c>Get(string, resourceManager:)</c>.</summary>
+    public string GreetingViaScopedManager =>
+        this.localizer.Get("Greeting", resourceManager: ApplicationStrings.ResourceManager);
 
     // ---- Code-behind string lookups (each maps to one ILocalizer member) ------------------------------
 
@@ -82,7 +83,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     /// Gets the branding text scoped to the internal <c>BrandingStrings</c> file from code-behind. XAML cannot
     /// name an internal <c>ResourceManager</c>, but ordinary C# in the same assembly can.
     /// </summary>
-    public string PoweredByViaScopedInternalManager => this.localizer.Get("PoweredBy", BrandingStrings.ResourceManager);
+    public string PoweredByViaScopedInternalManager =>
+        this.localizer.Get("PoweredBy", resourceManager: BrandingStrings.ResourceManager);
 
     /// <summary>
     /// Gets the branding text via a typed key. This resolves even though <c>BrandingStrings</c> has an internal
@@ -90,16 +92,21 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     /// </summary>
     public string PoweredByViaTypedKey => this.localizer.Get(BrandingStringsKeys.PoweredBy);
 
-    /// <summary>Gets the selection via <c>Get(Enum, ResourceManager, keyPrefix)</c>: scoped, custom prefix.</summary>
+    /// <summary>Gets the selection via <c>Get(Enum, resourceManager:, keyPrefix:)</c>: scoped, custom prefix.</summary>
     public string SortOrderViaScopedCustomPrefix =>
-        this.localizer.Get(this.SelectedFileSortOrder, SortingStrings.ResourceManager, "Display_");
+        this.localizer.Get(
+            this.SelectedFileSortOrder,
+            resourceManager: SortingStrings.ResourceManager,
+            keyPrefix: "Display_"
+        );
 
-    /// <summary>Gets the selection via <c>Get(Enum, ResourceManager)</c>: scoped, default prefix.</summary>
+    /// <summary>Gets the selection via <c>Get(Enum, resourceManager:)</c>: scoped, default prefix.</summary>
     public string SortOrderViaScopedDefaultPrefix =>
-        this.localizer.Get(this.SelectedFileSortOrder, ApplicationStrings.ResourceManager);
+        this.localizer.Get(this.SelectedFileSortOrder, resourceManager: ApplicationStrings.ResourceManager);
 
-    /// <summary>Gets the selection via <c>Get(Enum, keyPrefix)</c>: search-all with a custom prefix.</summary>
-    public string SortOrderViaSearchAllCustomPrefix => this.localizer.Get(this.SelectedFileSortOrder, "Display_");
+    /// <summary>Gets the selection via <c>Get(Enum, keyPrefix:)</c>: search-all with a custom prefix.</summary>
+    public string SortOrderViaSearchAllCustomPrefix =>
+        this.localizer.Get(this.SelectedFileSortOrder, keyPrefix: "Display_");
 
     // ---- Code-behind enum lookups (the selected FileSortOrder via each enum Get overload) --------------
 

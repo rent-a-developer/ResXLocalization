@@ -9,7 +9,7 @@ namespace RentADeveloper.ResXLocalization;
 /// <para>
 /// <b>Lookups.</b> Every <c>Get</c> overload and the indexer resolve the key in
 /// <see cref="CurrentCulture" />, with .NET's own parent and neutral fallback, and pass the resolved value
-/// to <see cref="MessageFormatter" /> together with the lookup's arguments - an empty array when the
+/// to <see cref="MessageFormatter" /> together with the lookup's arguments - empty arguments when the
 /// lookup has none. The default formatter (<see cref="StringFormatMessageFormatter"/>) returns a value without
 /// arguments unchanged and formats one with arguments with
 /// <see cref="string.Format(IFormatProvider, string, object[])" />. A <see langword="null" /> or empty key returns
@@ -59,13 +59,15 @@ public interface ILocalizer : INotifyPropertyChanged
 
     /// <summary>
     /// Gets a value that changes whenever something changes that can change the result of a lookup -
-    /// the culture, the formatter, the lookup-failure text builder or the registered resource managers.
-    /// Bind to it to re-resolve localized text; only whether the value differs is meaningful.
+    /// the culture, the formatter, the lookup-failure text builder, the enum key builder or the registered
+    /// resource managers. Bind to it to re-resolve localized text; only whether the value differs is
+    /// meaningful.
     /// </summary>
     /// <remarks>
     /// <para>
     /// The value advances after each real change of <see cref="CurrentCulture" />,
-    /// <see cref="MessageFormatter" /> or <see cref="LookupFailureTextBuilder" />, and after
+    /// <see cref="MessageFormatter" />, <see cref="LookupFailureTextBuilder" /> or
+    /// <see cref="EnumKeyBuilder" />, and after
     /// <see cref="RegisterResourceManager" />, <see cref="UnregisterResourceManager" /> and
     /// <see cref="ClearResourceManagers" /> when they change the registered set. Each advance raises
     /// <see cref="INotifyPropertyChanged.PropertyChanged" /> for this property and then for the indexer
@@ -94,6 +96,47 @@ public interface ILocalizer : INotifyPropertyChanged
     /// <value>The active culture. Defaults to <see cref="CultureInfo.CurrentUICulture" />.</value>
     /// <exception cref="ArgumentNullException">The supplied value is <see langword="null" />.</exception>
     CultureInfo CurrentCulture { get; set; }
+
+    /// <summary>
+    /// Gets or sets the function that builds the resource key of an enum lookup from the enumeration value
+    /// and an optional key prefix.
+    /// </summary>
+    /// <remarks>
+    /// <para>The function receives, in order:</para>
+    /// <list type="number">
+    /// <item>
+    /// <description>
+    /// The enumeration value of the lookup (<see cref="Enum" />); never <see langword="null" />.
+    /// </description>
+    /// </item>
+    /// <item>
+    /// <description>
+    /// The key prefix the lookup passed (<c>keyPrefix</c>, <c>KeyPrefix</c>; <see cref="string" />?), or
+    /// <see langword="null" /> when it passed none. <see langword="null" /> means "use your own default"; a
+    /// non-null value is an explicit override.
+    /// </description>
+    /// </item>
+    /// </list>
+    /// <para>
+    /// It returns the resource key, never <see langword="null" /> or empty. The default builds
+    /// <c>{keyPrefix ?? "Enum_"}{EnumTypeName}_{Value}</c>, for example
+    /// <c>Enum_FileSortOrder_Ascending</c>. A custom convention might look like this:
+    /// <c>Localizer.Current.EnumKeyBuilder = (value, keyPrefix) =&gt; (keyPrefix ?? "Text_") + value.GetType().Name + "." + value;</c>
+    /// </para>
+    /// <para>
+    /// The builder applies to every enum lookup: <c>Get(Enum, …)</c>, <c>{l:LocalizeEnum}</c> and
+    /// <c>LocalizeEnumConverter</c>. It must not throw or return <see langword="null" /> or an empty
+    /// string: an exception it throws propagates out of the lookup, and a <see langword="null" /> or empty
+    /// result makes the lookup throw <see cref="InvalidOperationException" />.
+    /// </para>
+    /// <para>
+    /// Assigning a different delegate instance advances <see cref="RefreshTriggeringRevision" />, so bound
+    /// text re-resolves; assigning the current instance again does nothing.
+    /// </para>
+    /// </remarks>
+    /// <value>The enum key function. Defaults to the <c>Enum_{EnumTypeName}_{Value}</c> convention.</value>
+    /// <exception cref="ArgumentNullException">The supplied value is <see langword="null" />.</exception>
+    Func<Enum, string?, string> EnumKeyBuilder { get; set; }
 
     /// <summary>
     /// Gets or sets the function that produces the failure text: the text a lookup returns instead of a
@@ -164,146 +207,86 @@ public interface ILocalizer : INotifyPropertyChanged
     void ClearResourceManagers();
 
     /// <summary>
-    /// Resolves the localized string for the specified key by searching every registered
-    /// <see cref="ResourceManager" /> in registration order.
-    /// </summary>
-    /// <param name="key">The resource key to resolve.</param>
-    /// <returns>
-    /// The localized string, <see cref="string.Empty" /> for a <see langword="null" /> or empty key, or the
-    /// failure text (see <see cref="ILocalizer" />).
-    /// </returns>
-    string Get(string key);
-
-    /// <summary>
-    /// Resolves the localized string for the specified key by searching every registered
-    /// <see cref="ResourceManager" /> in registration order, and formats it with the supplied arguments -
-    /// for example a resource value of <c>Downloading {0} of {1}…</c>.
-    /// </summary>
-    /// <param name="key">The resource key to resolve.</param>
-    /// <param name="arguments">The values to format into the resolved string; empty for none.</param>
-    /// <returns>
-    /// The formatted string, <see cref="string.Empty" /> for a <see langword="null" /> or empty key, or the
-    /// failure text (see <see cref="ILocalizer" />).
-    /// </returns>
-    /// <exception cref="ArgumentNullException"><paramref name="arguments" /> is <see langword="null" />.</exception>
-    string Get(string key, params object?[] arguments);
-
-    /// <summary>
-    /// Resolves the localized string for the specified key and formats it with the supplied arguments -
-    /// the one entry point every lookup goes through.
+    /// Resolves the localized string for the specified key - searching every registered
+    /// <see cref="ResourceManager" /> in registration order, or reading a single, explicit one - and
+    /// passes it to <see cref="MessageFormatter" /> with the supplied arguments.
     /// </summary>
     /// <remarks>
-    /// This member is infrastructure and hidden from IntelliSense: code callers use the ordinary
-    /// <c>Get</c> overloads, which all delegate to it. It is an interface member because
-    /// <see cref="Localizer.Current" /> may hold a custom implementation and the UI packages call it
-    /// from other assemblies.
+    /// This is the lookup every other <c>Get</c> overload, the indexer and the XAML markup extensions go
+    /// through. Every resolved value passes through <see cref="MessageFormatter" />; a formatting failure
+    /// returns the failure text and raises <see cref="LookupFailed" /> (see <see cref="ILocalizer" />).
     /// </remarks>
     /// <param name="key">The resource key to resolve.</param>
     /// <param name="arguments">
-    /// The arguments of the lookup; empty for none. Argument <c>i</c> must have
-    /// <see cref="MessageArgument.Position" /> <c>i</c>, and a <see cref="MessageArgument.Name" /> must not
-    /// be an empty string.
+    /// The arguments of the lookup, built with <see cref="MessageArguments" />, for example
+    /// <c>MessageArguments.FromValues(3, 10)</c>; <see langword="null" /> or empty for none.
     /// </param>
     /// <param name="resourceManager">
-    /// The single resource manager to read the key from, or <see langword="null" /> to search every
-    /// registered resource manager in registration order.
+    /// The single resource manager to read the key from, or <see langword="null" /> (the default) to
+    /// search every registered resource manager in registration order. Pass it by name:
+    /// <c>Get("Key", resourceManager: rm)</c>.
     /// </param>
     /// <returns>
-    /// The formatted string, <see cref="string.Empty" /> for a <see langword="null" /> or empty key, or the
-    /// failure text (see <see cref="ILocalizer" />).
+    /// The localized (or formatted) string, <see cref="string.Empty" /> for a <see langword="null" /> or
+    /// empty key, or the failure text (see <see cref="ILocalizer" />) in case the lookup failed.
     /// </returns>
-    /// <exception cref="ArgumentNullException"><paramref name="arguments" /> is <see langword="null" />.</exception>
-    /// <exception cref="ArgumentException">
-    /// An argument's <see cref="MessageArgument.Position" /> is not its index, or its
-    /// <see cref="MessageArgument.Name" /> is an empty string.
-    /// </exception>
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    string Get(string key, MessageArgument[] arguments, ResourceManager? resourceManager);
+    string Get(string key, MessageArguments? arguments = null, ResourceManager? resourceManager = null);
 
     /// <summary>
-    /// Resolves the localized string for an enumeration value by mapping it to a resource key using
-    /// the convention <c>{keyPrefix}{EnumTypeName}_{Value}</c>, then searching every registered
-    /// <see cref="ResourceManager" /> in registration order.
+    /// Resolves the localized string for a typed <see cref="ResourceKey" />, which carries both the key
+    /// name and the owning <see cref="ResourceManager" />, and passes it to <see cref="MessageFormatter" />
+    /// with the supplied arguments.
     /// </summary>
-    /// <param name="value">The enumeration value to resolve.</param>
-    /// <param name="keyPrefix">The prefix prepended to the generated key. Defaults to <c>Enum_</c>.</param>
-    /// <returns>The localized string, or the failure text (see <see cref="ILocalizer" />).</returns>
-    /// <exception cref="ArgumentNullException">
-    /// <paramref name="value" /> or <paramref name="keyPrefix" /> is <see langword="null" />.
-    /// </exception>
-    string Get(Enum value, string keyPrefix = EnumKeyConvention.DefaultEnumKeyPrefix);
-
-    /// <summary>
-    /// Resolves the localized string for the specified key from a single, explicit
-    /// <see cref="ResourceManager" />.
-    /// </summary>
-    /// <param name="key">The resource key to resolve.</param>
-    /// <param name="resourceManager">The resource manager to read the key from.</param>
-    /// <returns>
-    /// The localized string, <see cref="string.Empty" /> for a <see langword="null" /> or empty key, or the
-    /// failure text (see <see cref="ILocalizer" />).
-    /// </returns>
-    /// <exception cref="ArgumentNullException">
-    /// <paramref name="resourceManager" /> is <see langword="null" />.
-    /// </exception>
-    string Get(string key, ResourceManager resourceManager);
-
-    /// <summary>
-    /// Resolves the localized string for the specified key from a single, explicit
-    /// <see cref="ResourceManager" />, and formats it with the supplied arguments.
-    /// </summary>
-    /// <param name="key">The resource key to resolve.</param>
-    /// <param name="resourceManager">The resource manager to read the key from.</param>
-    /// <param name="arguments">The values to format into the resolved string; empty for none.</param>
-    /// <returns>
-    /// The formatted string, <see cref="string.Empty" /> for a <see langword="null" /> or empty key, or the
-    /// failure text (see <see cref="ILocalizer" />).
-    /// </returns>
-    /// <exception cref="ArgumentNullException">
-    /// <paramref name="resourceManager" /> or <paramref name="arguments" /> is <see langword="null" />.
-    /// </exception>
-    string Get(string key, ResourceManager resourceManager, params object?[] arguments);
-
-    /// <summary>
-    /// Resolves the localized string for an enumeration value from a single, explicit
-    /// <see cref="ResourceManager" />, mapping the value to a key using the convention
-    /// <c>{keyPrefix}{EnumTypeName}_{Value}</c>.
-    /// </summary>
-    /// <param name="value">The enumeration value to resolve.</param>
-    /// <param name="resourceManager">The resource manager to read the generated key from.</param>
-    /// <param name="keyPrefix">The prefix prepended to the generated key. Defaults to <c>Enum_</c>.</param>
-    /// <returns>The localized string, or the failure text (see <see cref="ILocalizer" />).</returns>
-    /// <exception cref="ArgumentNullException">
-    /// <paramref name="value" />, <paramref name="resourceManager" />, or
-    /// <paramref name="keyPrefix" /> is <see langword="null" />.
-    /// </exception>
-    string Get(Enum value, ResourceManager resourceManager, string keyPrefix = EnumKeyConvention.DefaultEnumKeyPrefix);
-
-    /// <summary>
-    /// Resolves the localized string for a typed <see cref="ResourceKey" />, which carries both the
-    /// key name and the owning <see cref="ResourceManager" />.
-    /// </summary>
+    /// <remarks>
+    /// Every resolved value passes through <see cref="MessageFormatter" />; a formatting failure returns
+    /// the failure text and raises <see cref="LookupFailed" /> (see <see cref="ILocalizer" />).
+    /// </remarks>
     /// <param name="key">The typed key identifying the resource and its resource manager.</param>
-    /// <returns>The localized string, or the failure text (see <see cref="ILocalizer" />).</returns>
+    /// <param name="arguments">
+    /// The arguments of the lookup, built with <see cref="MessageArguments" />; <see langword="null" /> or
+    /// empty for none.
+    /// </param>
+    /// <returns>The localized (or formatted) string, or the failure text (see <see cref="ILocalizer" />).</returns>
     /// <exception cref="ArgumentNullException">
-    /// <paramref name="key" /> is a default or otherwise uninitialized <see cref="ResourceKey" />,
-    /// whose <see cref="ResourceKey.Manager" /> is <see langword="null" />.
-    /// </exception>
-    string Get(ResourceKey key);
-
-    /// <summary>
-    /// Resolves the localized string for a typed <see cref="ResourceKey" />, and formats it with the
-    /// supplied arguments.
-    /// </summary>
-    /// <param name="key">The typed key identifying the resource and its resource manager.</param>
-    /// <param name="arguments">The values to format into the resolved string; empty for none.</param>
-    /// <returns>The formatted string, or the failure text (see <see cref="ILocalizer" />).</returns>
-    /// <exception cref="ArgumentNullException">
-    /// <paramref name="arguments" /> is <see langword="null" />, or <paramref name="key" /> is a
-    /// default or otherwise uninitialized <see cref="ResourceKey" /> whose
+    /// <paramref name="key" /> is a default or otherwise uninitialized <see cref="ResourceKey" />, whose
     /// <see cref="ResourceKey.Manager" /> is <see langword="null" />.
     /// </exception>
-    string Get(ResourceKey key, params object?[] arguments);
+    string Get(ResourceKey key, MessageArguments? arguments = null);
+
+    /// <summary>
+    /// Resolves the localized string for an enumeration value: <see cref="EnumKeyBuilder" /> builds the
+    /// resource key from the value, which is then resolved like a string key and passed to
+    /// <see cref="MessageFormatter" /> with the supplied arguments.
+    /// </summary>
+    /// <remarks>
+    /// Every resolved value passes through <see cref="MessageFormatter" />; a formatting failure returns
+    /// the failure text and raises <see cref="LookupFailed" /> (see <see cref="ILocalizer" />).
+    /// </remarks>
+    /// <param name="value">The enumeration value to resolve.</param>
+    /// <param name="arguments">
+    /// The arguments of the lookup, built with <see cref="MessageArguments" />, for example
+    /// <c>MessageArguments.FromValues(count)</c>; <see langword="null" /> or empty for none.
+    /// </param>
+    /// <param name="resourceManager">
+    /// The single resource manager to read the key from, or <see langword="null" /> (the default) to
+    /// search every registered resource manager in registration order.
+    /// </param>
+    /// <param name="keyPrefix">
+    /// A key prefix passed to <see cref="EnumKeyBuilder" />, overriding only its default prefix (by default
+    /// <c>Enum_</c>); <see langword="null" /> (the default) lets the builder decide. Pass it by name:
+    /// <c>Get(sortOrder, keyPrefix: "Display_")</c>.
+    /// </param>
+    /// <returns>The localized (or formatted) string, or the failure text (see <see cref="ILocalizer" />).</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="value" /> is <see langword="null" />.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// <see cref="EnumKeyBuilder" /> returned <see langword="null" /> or an empty string.
+    /// </exception>
+    string Get(
+        Enum value,
+        MessageArguments? arguments = null,
+        ResourceManager? resourceManager = null,
+        string? keyPrefix = null
+    );
 
     /// <summary>
     /// Discovers the cultures for which any registered <see cref="ResourceManager" /> ships its own

@@ -794,8 +794,8 @@
                             <StackPanel Grid.Column="0"
                                         VerticalAlignment="Center">
                                 <TextBlock Style="{StaticResource SectionRowTechnique}"
-                                           Text="Get(string, ResourceManager)" />
-                                <controls:SyntaxTextBlock Code="localizer.Get(&quot;Greeting&quot;, ApplicationStrings.ResourceManager)"
+                                           Text="Get(string, resourceManager:)" />
+                                <controls:SyntaxTextBlock Code="localizer.Get(&quot;Greeting&quot;, resourceManager: ApplicationStrings.ResourceManager)"
                                                           Style="{StaticResource SectionRowSyntax}" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
@@ -839,7 +839,7 @@
                                         VerticalAlignment="Center">
                                 <TextBlock Style="{StaticResource SectionRowTechnique}"
                                            Text="Internal file: scoped Get" />
-                                <controls:SyntaxTextBlock Code="localizer.Get(&quot;PoweredBy&quot;, BrandingStrings.ResourceManager)"
+                                <controls:SyntaxTextBlock Code="localizer.Get(&quot;PoweredBy&quot;, resourceManager: BrandingStrings.ResourceManager)"
                                                           Style="{StaticResource SectionRowSyntax}" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
@@ -882,8 +882,8 @@
                             <StackPanel Grid.Column="0"
                                         VerticalAlignment="Center">
                                 <TextBlock Style="{StaticResource SectionRowTechnique}"
-                                           Text="Get(Enum, keyPrefix)" />
-                                <controls:SyntaxTextBlock Code="localizer.Get(selectedSortOrder, &quot;Display_&quot;)"
+                                           Text="Get(Enum, keyPrefix:)" />
+                                <controls:SyntaxTextBlock Code="localizer.Get(selectedSortOrder, keyPrefix: &quot;Display_&quot;)"
                                                           Style="{StaticResource SectionRowSyntax}" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
@@ -904,8 +904,8 @@
                             <StackPanel Grid.Column="0"
                                         VerticalAlignment="Center">
                                 <TextBlock Style="{StaticResource SectionRowTechnique}"
-                                           Text="Get(Enum, ResourceManager)" />
-                                <controls:SyntaxTextBlock Code="localizer.Get(selectedSortOrder, ApplicationStrings.ResourceManager)"
+                                           Text="Get(Enum, resourceManager:)" />
+                                <controls:SyntaxTextBlock Code="localizer.Get(selectedSortOrder, resourceManager: ApplicationStrings.ResourceManager)"
                                                           Style="{StaticResource SectionRowSyntax}" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
@@ -926,8 +926,8 @@
                             <StackPanel Grid.Column="0"
                                         VerticalAlignment="Center">
                                 <TextBlock Style="{StaticResource SectionRowTechnique}"
-                                           Text="Get(Enum, ResourceManager, keyPrefix)" />
-                                <controls:SyntaxTextBlock Code="localizer.Get(selectedSortOrder, SortingStrings.ResourceManager, &quot;Display_&quot;)"
+                                           Text="Get(Enum, resourceManager:, keyPrefix:)" />
+                                <controls:SyntaxTextBlock Code="localizer.Get(selectedSortOrder, resourceManager: SortingStrings.ResourceManager, keyPrefix: &quot;Display_&quot;)"
                                                           Style="{StaticResource SectionRowSyntax}" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">

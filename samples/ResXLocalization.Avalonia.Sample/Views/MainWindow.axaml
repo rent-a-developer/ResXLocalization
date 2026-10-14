@@ -695,9 +695,9 @@
                             <StackPanel Grid.Column="0"
                                         VerticalAlignment="Center">
                                 <TextBlock Classes="sectionRowTechnique"
-                                           Text="Get(string, ResourceManager)" />
+                                           Text="Get(string, resourceManager:)" />
                                 <controls:SyntaxTextBlock Classes="sectionRowSyntax"
-                                                          Code="localizer.Get(&quot;Greeting&quot;, ApplicationStrings.ResourceManager)" />
+                                                          Code="localizer.Get(&quot;Greeting&quot;, resourceManager: ApplicationStrings.ResourceManager)" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
                                 <TextBlock Classes="sectionRowResultTitle"
@@ -733,7 +733,7 @@
                                 <TextBlock Classes="sectionRowTechnique"
                                            Text="Internal file: scoped Get" />
                                 <controls:SyntaxTextBlock Classes="sectionRowSyntax"
-                                                          Code="localizer.Get(&quot;PoweredBy&quot;, BrandingStrings.ResourceManager)" />
+                                                          Code="localizer.Get(&quot;PoweredBy&quot;, resourceManager: BrandingStrings.ResourceManager)" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
                                 <TextBlock Classes="sectionRowResultTitle"
@@ -767,9 +767,9 @@
                             <StackPanel Grid.Column="0"
                                         VerticalAlignment="Center">
                                 <TextBlock Classes="sectionRowTechnique"
-                                           Text="Get(Enum, keyPrefix)" />
+                                           Text="Get(Enum, keyPrefix:)" />
                                 <controls:SyntaxTextBlock Classes="sectionRowSyntax"
-                                                          Code="localizer.Get(selectedSortOrder, &quot;Display_&quot;)" />
+                                                          Code="localizer.Get(selectedSortOrder, keyPrefix: &quot;Display_&quot;)" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
                                 <TextBlock Classes="sectionRowResultTitle"
@@ -785,9 +785,9 @@
                             <StackPanel Grid.Column="0"
                                         VerticalAlignment="Center">
                                 <TextBlock Classes="sectionRowTechnique"
-                                           Text="Get(Enum, ResourceManager)" />
+                                           Text="Get(Enum, resourceManager:)" />
                                 <controls:SyntaxTextBlock Classes="sectionRowSyntax"
-                                                          Code="localizer.Get(selectedSortOrder, ApplicationStrings.ResourceManager)" />
+                                                          Code="localizer.Get(selectedSortOrder, resourceManager: ApplicationStrings.ResourceManager)" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
                                 <TextBlock Classes="sectionRowResultTitle"
@@ -803,9 +803,9 @@
                             <StackPanel Grid.Column="0"
                                         VerticalAlignment="Center">
                                 <TextBlock Classes="sectionRowTechnique"
-                                           Text="Get(Enum, ResourceManager, keyPrefix)" />
+                                           Text="Get(Enum, resourceManager:, keyPrefix:)" />
                                 <controls:SyntaxTextBlock Classes="sectionRowSyntax"
-                                                          Code="localizer.Get(selectedSortOrder, SortingStrings.ResourceManager, &quot;Display_&quot;)" />
+                                                          Code="localizer.Get(selectedSortOrder, resourceManager: SortingStrings.ResourceManager, keyPrefix: &quot;Display_&quot;)" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
                                 <TextBlock Classes="sectionRowResultTitle"
