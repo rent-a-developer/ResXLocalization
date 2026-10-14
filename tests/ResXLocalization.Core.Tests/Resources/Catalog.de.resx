@@ -37,4 +37,7 @@
   <data name="EscapedBraces" xml:space="preserve">
     <value>Wörtliche {{Klammern}} für {0}</value>
   </data>
+  <data name="Count_TestSortOrder_Ascending" xml:space="preserve">
+    <value>{0} Elemente, aufsteigend</value>
+  </data>
 </root>

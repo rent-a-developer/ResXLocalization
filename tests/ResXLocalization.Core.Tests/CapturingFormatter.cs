@@ -9,15 +9,13 @@ namespace RentADeveloper.ResXLocalization.Core.Tests;
 internal sealed class CapturingFormatter : IMessageFormatter
 {
     /// <summary>Gets the recorded calls, in order.</summary>
-    public List<(string Pattern, MessageArgument[] Arguments, CultureInfo Culture)> Calls { get; } = [];
+    public List<(string Pattern, MessageArguments Arguments, CultureInfo Culture)> Calls { get; } = [];
 
     /// <inheritdoc />
-    public string Format(string pattern, MessageArgument[] arguments, CultureInfo culture)
+    public string Format(string pattern, MessageArguments arguments, CultureInfo culture)
     {
         this.Calls.Add((pattern, arguments, culture));
 
-        return arguments.Length == 0
-            ? pattern
-            : string.Format(culture, pattern, arguments.Select(argument => argument.Value).ToArray());
+        return StringFormatMessageFormatter.Instance.Format(pattern, arguments, culture);
     }
 }

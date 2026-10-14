@@ -7,6 +7,27 @@ namespace RentADeveloper.ResXLocalization.WPF.Sample.Tests;
 public class LocalizeEnumConverterTests
 {
     [Fact]
+    public void CustomEnumKeyBuilder_AppliesToTheConverter() =>
+        WpfThread.Invoke(() =>
+        {
+            TestSupport.ResetToEnglishWithTestCatalogs();
+            var original = Localizer.Current.EnumKeyBuilder;
+            Localizer.Current.EnumKeyBuilder = static (value, keyPrefix) =>
+                (keyPrefix ?? "Text_") + value.GetType().Name + "." + value;
+
+            try
+            {
+                Convert(new LocalizeEnumConverter(), FileSortOrder.Ascending, TestSupport.English)
+                    .Should()
+                    .Be("Custom ascending");
+            }
+            finally
+            {
+                Localizer.Current.EnumKeyBuilder = original;
+            }
+        });
+
+    [Fact]
     public void CustomPrefix_NoManager_ResolvesViaSearchAll() =>
         WpfThread.Invoke(() =>
         {
@@ -50,6 +71,22 @@ public class LocalizeEnumConverterTests
             TestSupport.ResetToEnglishWithTestCatalogs();
 
             Convert(LocalizeEnumConverter.Default, FileSortOrder.Ascending).Should().Be("Ascending");
+        });
+
+    [Fact]
+    public void KeyPrefix_DefaultsToNull_AndAcceptsNull_ButNotOnTheSharedInstance() =>
+        WpfThread.Invoke(() =>
+        {
+            var converter = new LocalizeEnumConverter();
+            converter.KeyPrefix.Should().BeNull();
+
+            converter.KeyPrefix = "Display_";
+            converter.KeyPrefix = null;
+
+            converter.KeyPrefix.Should().BeNull();
+            ((Action)(() => LocalizeEnumConverter.Default.KeyPrefix = null))
+                .Should()
+                .Throw<InvalidOperationException>();
         });
 
     [Fact]

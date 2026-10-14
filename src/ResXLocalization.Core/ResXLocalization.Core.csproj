@@ -18,9 +18,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- The UI-specific engines need the shared internal helpers (EnumKeyConvention, …). -->
+    <!-- The UI-specific engines need the shared internal helpers (EnumKeyBuilding, …). -->
     <InternalsVisibleTo Include="ResXLocalization.Avalonia" />
     <InternalsVisibleTo Include="ResXLocalization.WPF" />
+    <!-- The tests build arguments whose enumeration order is not their position (MessageArguments.FromArguments). -->
+    <InternalsVisibleTo Include="ResXLocalization.Core.Tests" />
   </ItemGroup>
 
 </Project>

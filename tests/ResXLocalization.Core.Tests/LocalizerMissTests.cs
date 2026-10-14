@@ -36,7 +36,10 @@ public class LocalizerMissTests
         localizer.LookupFailureTextBuilder = failure => $"[missing: {failure.Key}]";
 
         localizer.Get("ThisKeyDoesNotExist").Should().Be("[missing: ThisKeyDoesNotExist]");
-        localizer.Get("ThisKeyDoesNotExist", this.resources.Catalog).Should().Be("[missing: ThisKeyDoesNotExist]");
+        localizer
+            .Get("ThisKeyDoesNotExist", resourceManager: this.resources.Catalog)
+            .Should()
+            .Be("[missing: ThisKeyDoesNotExist]");
         localizer.Get(TestSortOrder.Descending).Should().Be("[missing: Enum_TestSortOrder_Descending]");
         localizer.Get(string.Empty).Should().BeEmpty();
     }
@@ -47,7 +50,17 @@ public class LocalizerMissTests
         var first = new Localizer().LookupFailureTextBuilder;
 
         first.Should().BeSameAs(new Localizer().LookupFailureTextBuilder);
-        first(new(LookupFailureReason.TranslationNotFound, "Key", CultureInfo.InvariantCulture, null, [], null, null))
+        first(
+                new(
+                    LookupFailureReason.TranslationNotFound,
+                    "Key",
+                    CultureInfo.InvariantCulture,
+                    null,
+                    MessageArguments.Empty,
+                    null,
+                    null
+                )
+            )
             .Should()
             .Be("!Key!");
     }
@@ -67,7 +80,7 @@ public class LocalizerMissTests
             return "[broken]";
         };
 
-        localizer.Get("Malformed", this.resources.Catalog, 1).Should().Be("[broken]");
+        localizer.Get("Malformed", MessageArguments.FromValues(1), this.resources.Catalog).Should().Be("[broken]");
 
         eventRaisedBeforeCall.Should().BeTrue();
         var call = calls.Should().ContainSingle().Subject;
@@ -86,7 +99,7 @@ public class LocalizerMissTests
     {
         var localizer = this.resources.CreateLocalizer();
 
-        localizer.Get("Malformed", 1).Should().Be("!Malformed!");
+        localizer.Get("Malformed", MessageArguments.FromValues(1)).Should().Be("!Malformed!");
     }
 
     [Fact]
@@ -111,7 +124,7 @@ public class LocalizerMissTests
         localizer.LookupFailureTextBuilder = _ => null!;
 
         var miss = () => localizer.Get("ThisKeyDoesNotExist");
-        var formatFailure = () => localizer.Get("Malformed", 1);
+        var formatFailure = () => localizer.Get("Malformed", MessageArguments.FromValues(1));
 
         miss.Should()
             .Throw<InvalidOperationException>()
@@ -139,9 +152,9 @@ public class LocalizerMissTests
         var catalog = this.resources.Catalog;
 
         localizer.Get("ThisKeyDoesNotExist");
-        localizer.Get("ThisKeyDoesNotExist", catalog);
+        localizer.Get("ThisKeyDoesNotExist", resourceManager: catalog);
         localizer.Get(new ResourceKey("ThisKeyDoesNotExist", catalog));
-        localizer.Get(TestSortOrder.Descending, catalog);
+        localizer.Get(TestSortOrder.Descending, resourceManager: catalog);
 
         calls
             .Select(call => (call.Key, call.Culture, call.ResourceManager))
@@ -185,7 +198,7 @@ public class LocalizerMissTests
         using var monitor = localizer.Monitor();
 
         var miss = () => localizer.Get("ThisKeyDoesNotExist");
-        var formatFailure = () => localizer.Get("Malformed", 1);
+        var formatFailure = () => localizer.Get("Malformed", MessageArguments.FromValues(1));
 
         miss.Should().Throw<InvalidOperationException>().Which.Should().BeSameAs(exception);
         monitor.LookupFailures().Should().ContainSingle();
@@ -200,7 +213,7 @@ public class LocalizerMissTests
         localizer.CurrentCulture = TestResources.German;
         using var monitor = localizer.Monitor();
 
-        localizer.Get("NeutralOnly", this.resources.Catalog).Should().Be("Neutral fallback value");
+        localizer.Get("NeutralOnly", resourceManager: this.resources.Catalog).Should().Be("Neutral fallback value");
         monitor.Should().NotRaise(nameof(ILocalizer.LookupFailed));
     }
 
@@ -210,7 +223,7 @@ public class LocalizerMissTests
         var localizer = this.resources.CreateLocalizer();
         using var monitor = localizer.Monitor();
 
-        localizer.Get("ThisKeyDoesNotExist", this.resources.Catalog);
+        localizer.Get("ThisKeyDoesNotExist", resourceManager: this.resources.Catalog);
 
         var miss = monitor.LookupFailures().Should().ContainSingle().Subject;
         miss.ResourceManager.Should().BeSameAs(this.resources.Catalog);
@@ -237,7 +250,7 @@ public class LocalizerMissTests
         localizer.CurrentCulture = new("de-DE");
         using var monitor = localizer.Monitor();
 
-        localizer.Get("Greeting", this.resources.Catalog).Should().Be("Hallo und willkommen!");
+        localizer.Get("Greeting", resourceManager: this.resources.Catalog).Should().Be("Hallo und willkommen!");
         monitor.Should().NotRaise(nameof(ILocalizer.LookupFailed));
     }
 
@@ -248,7 +261,7 @@ public class LocalizerMissTests
         using var monitor = localizer.Monitor();
 
         localizer.Get("Greeting");
-        localizer.Get("Greeting", this.resources.Catalog);
+        localizer.Get("Greeting", resourceManager: this.resources.Catalog);
         localizer.Get(string.Empty);
         _ = localizer["Greeting"];
 

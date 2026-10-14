@@ -27,4 +27,7 @@
   <data name="PeopleInvited" xml:space="preserve">
     <value>{0} people invited</value>
   </data>
+  <data name="ArgumentPair" xml:space="preserve">
+    <value>{0} {1}</value>
+  </data>
 </root>

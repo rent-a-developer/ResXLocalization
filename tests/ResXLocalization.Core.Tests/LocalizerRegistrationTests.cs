@@ -18,7 +18,7 @@ public class LocalizerRegistrationTests
         localizer.Get("Greeting").Should().Be("!Greeting!");
 
         // Scoped and typed lookups never consult the registration set.
-        localizer.Get("Greeting", this.resources.Catalog).Should().Be("Hello and welcome!");
+        localizer.Get("Greeting", resourceManager: this.resources.Catalog).Should().Be("Hello and welcome!");
         localizer.Get(new ResourceKey("Greeting", this.resources.Catalog)).Should().Be("Hello and welcome!");
     }
 

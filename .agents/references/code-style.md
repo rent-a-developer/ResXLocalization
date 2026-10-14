@@ -92,6 +92,11 @@ public and wants it first in its group — but counts an explicit **event** as p
 `ResXLocalization.slnx.DotSettings` has one "Explicit interface …" entry per kind and none for events:
 giving events one puts an explicit event ahead of a public one and breaks `SA1202`.
 
+Public static methods have an entry of their own, ahead of "Explicit interface methods". StyleCop counts
+an explicit method as a public instance method, so a public static method after it breaks `SA1204`; the
+extra entry keeps a class that has both - such as `MessageArguments`, with its factory methods and
+`IEnumerable.GetEnumerator` - in an order both tools accept.
+
 ## XAML
 
 XamlStyler owns `.xaml` and `.axaml`, and CSharpier is kept away from them by `.csharpierignore`.

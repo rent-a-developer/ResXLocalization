@@ -45,4 +45,13 @@
   <data name="EscapedBraces" xml:space="preserve">
     <value>Literal {{braces}} for {0}</value>
   </data>
+  <data name="Count_TestSortOrder_Ascending" xml:space="preserve">
+    <value>{0} items, ascending</value>
+  </data>
+  <data name="Text_TestSortOrder.Ascending" xml:space="preserve">
+    <value>Custom ascending</value>
+  </data>
+  <data name="FilePosition" xml:space="preserve">
+    <value>File {0} of {1}</value>
+  </data>
 </root>

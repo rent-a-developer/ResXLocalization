@@ -10,6 +10,16 @@ public class RefreshTriggeringRevisionTests
     private readonly TestResources resources = new();
 
     [Fact]
+    public void EnumKeyBuilder_ANewInstanceAdvances_TheSameInstanceAgainDoesNot()
+    {
+        var localizer = this.resources.CreateLocalizer();
+        Func<Enum, string?, string> builder = static (value, keyPrefix) => $"{keyPrefix}{value}";
+
+        AssertAdvances(localizer, () => localizer.EnumKeyBuilder = builder);
+        AssertDoesNotAdvance(localizer, () => localizer.EnumKeyBuilder = builder);
+    }
+
+    [Fact]
     public void EveryNoOp_DoesNotAdvance()
     {
         var localizer = this.resources.CreateLocalizer();

@@ -22,6 +22,27 @@ public class LocalizeEnumExtensionTests
         });
 
     [Fact]
+    public void CustomEnumKeyBuilder_AppliesToTheExtension() =>
+        WpfThread.Invoke(() =>
+        {
+            TestSupport.ResetToEnglishWithTestCatalogs();
+            var original = Localizer.Current.EnumKeyBuilder;
+            Localizer.Current.EnumKeyBuilder = static (value, keyPrefix) =>
+                (keyPrefix ?? "Text_") + value.GetType().Name + "." + value;
+
+            try
+            {
+                var textBlock = TestSupport.BindLocalizedEnum(new(), FileSortOrder.Ascending);
+
+                textBlock.Text.Should().Be("Custom ascending");
+            }
+            finally
+            {
+                Localizer.Current.EnumKeyBuilder = original;
+            }
+        });
+
+    [Fact]
     public void CustomPrefix_NoManager_ResolvesViaSearchAll() =>
         WpfThread.Invoke(() =>
         {

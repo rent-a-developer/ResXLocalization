@@ -7,6 +7,26 @@ namespace RentADeveloper.ResXLocalization.Avalonia.Sample.Tests;
 public class LocalizeEnumConverterTests
 {
     [AvaloniaFact]
+    public void CustomEnumKeyBuilder_AppliesToTheConverter()
+    {
+        TestSupport.ResetToEnglishWithTestCatalogs();
+        var original = Localizer.Current.EnumKeyBuilder;
+        Localizer.Current.EnumKeyBuilder = static (value, keyPrefix) =>
+            (keyPrefix ?? "Text_") + value.GetType().Name + "." + value;
+
+        try
+        {
+            Convert(new LocalizeEnumConverter(), FileSortOrder.Ascending, TestSupport.English)
+                .Should()
+                .Be("Custom ascending");
+        }
+        finally
+        {
+            Localizer.Current.EnumKeyBuilder = original;
+        }
+    }
+
+    [AvaloniaFact]
     public void CustomPrefix_NoManager_ResolvesViaSearchAll()
     {
         TestSupport.ResetToEnglishWithTestCatalogs();
@@ -46,6 +66,19 @@ public class LocalizeEnumConverterTests
         TestSupport.ResetToEnglishWithTestCatalogs();
 
         Convert(LocalizeEnumConverter.Default, FileSortOrder.Ascending).Should().Be("Ascending");
+    }
+
+    [AvaloniaFact]
+    public void KeyPrefix_DefaultsToNull_AndAcceptsNull_ButNotOnTheSharedInstance()
+    {
+        var converter = new LocalizeEnumConverter();
+        converter.KeyPrefix.Should().BeNull();
+
+        converter.KeyPrefix = "Display_";
+        converter.KeyPrefix = null;
+
+        converter.KeyPrefix.Should().BeNull();
+        ((Action)(() => LocalizeEnumConverter.Default.KeyPrefix = null)).Should().Throw<InvalidOperationException>();
     }
 
     [AvaloniaFact]

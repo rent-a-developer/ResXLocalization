@@ -13,7 +13,7 @@ installation and a quick start. These pages are the full documentation.
 | --- | --- |
 | [Lookup modes and culture fallback](guides/lookup-and-fallback.md) | Typed, scoped and search-all lookups, registration order, the fallback chain, missing-translation diagnostics, dependency injection and subscription lifetime |
 | [Localizing enum values](guides/enums.md) | The naming convention, item templates, the converter, custom prefixes and scoping |
-| [Dynamic format arguments](guides/format-arguments.md) | `Get(key, args…)` and the `LocalizeArgs.Arg0`…`Arg8` attached properties |
+| [Dynamic format arguments](guides/format-arguments.md) | `Get(key, MessageArguments.FromValues(…))`, the `MessageArguments` factory and the `LocalizeArgs.Arg0`…`Arg8` attached properties |
 | [Native AOT and trimming](guides/native-aot.md) | What to declare, how to publish, and why the repository's own gate runs the native binary |
 | [Migrating to 2.0](guides/migration-2.0.md) | Each breaking change of 2.0, with what to do |
 

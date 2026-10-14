@@ -8,11 +8,19 @@ namespace RentADeveloper.ResXLocalization;
 /// <remarks>
 /// Like the UI frameworks it serves, this class is designed for UI-thread use and is not
 /// synchronized: register resource managers once at startup and set <see cref="CurrentCulture" />,
-/// <see cref="MessageFormatter" /> and <see cref="LookupFailureTextBuilder" /> from the UI thread, so
-/// change notifications reach bindings on the thread WPF and Avalonia expect.
+/// <see cref="MessageFormatter" />, <see cref="LookupFailureTextBuilder" /> and <see cref="EnumKeyBuilder" />
+/// from the UI thread, so change notifications reach bindings on the thread WPF and Avalonia expect.
 /// </remarks>
 public sealed class Localizer : ILocalizer
 {
+    /// <summary>
+    /// The default of <see cref="EnumKeyBuilder" />: the convention
+    /// <c>{keyPrefix ?? "Enum_"}{EnumTypeName}_{Value}</c>. One shared instance, so every new localizer
+    /// starts with the same delegate.
+    /// </summary>
+    private static readonly Func<Enum, string?, string> DefaultEnumKeyBuilder = static (value, keyPrefix) =>
+        (keyPrefix ?? "Enum_") + value.GetType().Name + "_" + value;
+
     /// <summary>
     /// The default of <see cref="LookupFailureTextBuilder" />: produces <c>!key!</c>. One shared instance,
     /// so every new localizer starts with the same delegate.
@@ -90,6 +98,24 @@ public sealed class Localizer : ILocalizer
     }
 
     /// <inheritdoc />
+    public Func<Enum, string?, string> EnumKeyBuilder
+    {
+        get;
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+
+            if (ReferenceEquals(field, value))
+            {
+                return;
+            }
+
+            field = value;
+            this.AdvanceRefreshTriggeringRevision();
+        }
+    } = DefaultEnumKeyBuilder;
+
+    /// <inheritdoc />
     public Func<LookupFailure, string> LookupFailureTextBuilder
     {
         get;
@@ -144,21 +170,9 @@ public sealed class Localizer : ILocalizer
     }
 
     /// <inheritdoc />
-    public string Get(string key) => this.Get(key, Array.Empty<MessageArgument>(), null);
-
-    /// <inheritdoc />
-    public string Get(string key, params object?[] arguments)
+    public string Get(string key, MessageArguments? arguments = null, ResourceManager? resourceManager = null)
     {
-        ArgumentNullException.ThrowIfNull(arguments);
-
-        return this.Get(key, ToMessageArguments(arguments), null);
-    }
-
-    /// <inheritdoc />
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public string Get(string key, MessageArgument[] arguments, ResourceManager? resourceManager)
-    {
-        ValidateArguments(arguments);
+        arguments ??= MessageArguments.Empty;
 
         // One lookup uses one culture throughout: for the lookup, the format and the failure.
         var culture = this.currentCulture;
@@ -195,66 +209,26 @@ public sealed class Localizer : ILocalizer
     }
 
     /// <inheritdoc />
-    public string Get(Enum value, string keyPrefix = EnumKeyConvention.DefaultEnumKeyPrefix)
+    public string Get(ResourceKey key, MessageArguments? arguments = null)
     {
-        ArgumentNullException.ThrowIfNull(value);
-        ArgumentNullException.ThrowIfNull(keyPrefix);
+        // An uninitialized ResourceKey, such as default(ResourceKey), has no Manager. Without this check the
+        // lookup below would receive a null manager and search all registered managers instead of throwing.
+        ArgumentNullException.ThrowIfNull(key.Manager);
 
-        return this.Get(EnumKeyConvention.BuildEnumKey(value, keyPrefix), Array.Empty<MessageArgument>(), null);
-    }
-
-    /// <inheritdoc />
-    public string Get(string key, ResourceManager resourceManager)
-    {
-        // Explicit: the primitive treats a null manager as search-all.
-        ArgumentNullException.ThrowIfNull(resourceManager);
-
-        return this.Get(key, Array.Empty<MessageArgument>(), resourceManager);
-    }
-
-    /// <inheritdoc />
-    public string Get(string key, ResourceManager resourceManager, params object?[] arguments)
-    {
-        ArgumentNullException.ThrowIfNull(resourceManager);
-        ArgumentNullException.ThrowIfNull(arguments);
-
-        return this.Get(key, ToMessageArguments(arguments), resourceManager);
+        return this.Get(key.Name, arguments, key.Manager);
     }
 
     /// <inheritdoc />
     public string Get(
         Enum value,
-        ResourceManager resourceManager,
-        string keyPrefix = EnumKeyConvention.DefaultEnumKeyPrefix
+        MessageArguments? arguments = null,
+        ResourceManager? resourceManager = null,
+        string? keyPrefix = null
     )
     {
         ArgumentNullException.ThrowIfNull(value);
-        ArgumentNullException.ThrowIfNull(resourceManager);
-        ArgumentNullException.ThrowIfNull(keyPrefix);
 
-        return this.Get(
-            EnumKeyConvention.BuildEnumKey(value, keyPrefix),
-            Array.Empty<MessageArgument>(),
-            resourceManager
-        );
-    }
-
-    /// <inheritdoc />
-    public string Get(ResourceKey key)
-    {
-        // Explicit: a default ResourceKey would otherwise fall through to search-all.
-        ArgumentNullException.ThrowIfNull(key.Manager);
-
-        return this.Get(key.Name, Array.Empty<MessageArgument>(), key.Manager);
-    }
-
-    /// <inheritdoc />
-    public string Get(ResourceKey key, params object?[] arguments)
-    {
-        ArgumentNullException.ThrowIfNull(key.Manager);
-        ArgumentNullException.ThrowIfNull(arguments);
-
-        return this.Get(key.Name, ToMessageArguments(arguments), key.Manager);
+        return this.Get(this.BuildEnumKey(value, keyPrefix), arguments, resourceManager);
     }
 
     /// <inheritdoc />
@@ -363,46 +337,6 @@ public sealed class Localizer : ILocalizer
     /// <returns>The sorted list.</returns>
     private static IReadOnlyList<CultureInfo> SortCultures(HashSet<CultureInfo> cultures) =>
         [.. cultures.OrderBy(static culture => culture.Name, StringComparer.OrdinalIgnoreCase)];
-
-    /// <summary>Wraps positional format arguments as <see cref="MessageArgument" />s without names.</summary>
-    /// <param name="arguments">The format arguments.</param>
-    /// <returns>One <see cref="MessageArgument" /> per argument, with its index as position.</returns>
-    private static MessageArgument[] ToMessageArguments(object?[] arguments) =>
-        [.. arguments.Select((value, index) => new MessageArgument(index, null, value))];
-
-    /// <summary>
-    /// Validates the arguments of a lookup: the array must not be <see langword="null" />, argument
-    /// <c>i</c> must have position <c>i</c>, and a name must not be an empty string. Duplicate names are
-    /// not checked here; that is the concern of whoever builds the array and of the formatter.
-    /// </summary>
-    /// <param name="arguments">The arguments to validate.</param>
-    /// <exception cref="ArgumentNullException"><paramref name="arguments" /> is <see langword="null" />.</exception>
-    /// <exception cref="ArgumentException">An argument has a wrong position or an empty name.</exception>
-    private static void ValidateArguments(MessageArgument[] arguments)
-    {
-        ArgumentNullException.ThrowIfNull(arguments);
-
-        for (var index = 0; index < arguments.Length; index++)
-        {
-            if (arguments[index].Position != index)
-            {
-                throw new ArgumentException(
-                    $"The argument at index {index} has the position {arguments[index].Position}; "
-                        + "an argument's position must be its index in the array.",
-                    nameof(arguments)
-                );
-            }
-
-            if (arguments[index].Name is { Length: 0 })
-            {
-                throw new ArgumentException(
-                    $"The argument at index {index} has an empty name; an empty string is not an argument "
-                        + "name. Use null for a positional-only argument.",
-                    nameof(arguments)
-                );
-            }
-        }
-    }
 
     /// <summary>
     /// Advances <see cref="RefreshTriggeringRevision" /> (wrapping around harmlessly) and raises

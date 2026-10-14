@@ -175,6 +175,18 @@
         &lt;Name /&gt;
       &lt;/Entry.SortBy&gt;
     &lt;/Entry&gt;
+    &lt;Entry DisplayName="Public static methods"&gt;
+      &lt;Entry.Match&gt;
+        &lt;And&gt;
+          &lt;Kind Is="Method" /&gt;
+          &lt;Access Is="Public" /&gt;
+          &lt;Static /&gt;
+        &lt;/And&gt;
+      &lt;/Entry.Match&gt;
+      &lt;Entry.SortBy&gt;
+        &lt;Name /&gt;
+      &lt;/Entry.SortBy&gt;
+    &lt;/Entry&gt;
     &lt;Entry DisplayName="Explicit interface methods"&gt;
       &lt;Entry.Match&gt;
         &lt;And&gt;

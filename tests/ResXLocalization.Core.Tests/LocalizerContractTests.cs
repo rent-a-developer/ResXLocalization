@@ -1,3 +1,6 @@
+using System.ComponentModel;
+using System.Reflection;
+
 namespace RentADeveloper.ResXLocalization.Core.Tests;
 
 /// <summary>
@@ -84,6 +87,37 @@ public class LocalizerContractTests
     {
         Localizer.Current.Should().BeSameAs(Localizer.Current);
         Localizer.Current.Should().BeAssignableTo<ILocalizer>();
+    }
+
+    [Fact]
+    public void GetOverloads_AreExactlyOnePerKeyKind_WithoutParamsOrEditorBrowsable()
+    {
+        string[] expected =
+        [
+            "Get(Enum, MessageArguments, ResourceManager, String)",
+            "Get(ResourceKey, MessageArguments)",
+            "Get(String, MessageArguments, ResourceManager)",
+        ];
+
+        foreach (var type in new[] { typeof(ILocalizer), typeof(Localizer) })
+        {
+            var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                .Where(method => method.Name == nameof(ILocalizer.Get))
+                .ToArray();
+
+            methods
+                .Select(method =>
+                    $"Get({string.Join(", ", method.GetParameters().Select(parameter => parameter.ParameterType.Name))})"
+                )
+                .Order(StringComparer.Ordinal)
+                .Should()
+                .Equal(expected);
+            methods
+                .SelectMany(method => method.GetParameters())
+                .Should()
+                .NotContain(parameter => parameter.IsDefined(typeof(ParamArrayAttribute)));
+            methods.Should().NotContain(method => method.IsDefined(typeof(EditorBrowsableAttribute)));
+        }
     }
 
     [Fact]
