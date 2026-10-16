@@ -88,18 +88,22 @@ The script names them, with their trigger and their command, in its own summary 
 | Run it when the change touches | Command |
 | --- | --- |
 | Resource lookup, culture fallback, satellite discovery, the generated keys, or the packaging that carries them | `pwsh -File scripts/verify-package-aot.ps1 -Pack` |
-| What the packages contain, the `buildTransitive` wiring, or a dependency version | `pwsh -File scripts/pre-release-gate.ps1 -SkipNativeAot -SkipDocumentation`, which packs and then runs every consumer, on both of AvaloniaConsumer's target frameworks |
+| What the packages contain, the `buildTransitive` wiring, the generated keys, or a dependency version | `pwsh -File scripts/pre-release-gate.ps1 -SkipNativeAot -SkipDocumentation`, which packs and then runs every consumer on the pinned SDK, on both of AvaloniaConsumer's target frameworks, and again on the .NET 8 SDK, on net8.0 |
 
 **`pre-release-gate.ps1`** is everything CI checks that can honestly be checked on your machine, in CI's
 order, stopping at the first failure: the ignored-revision check, line endings, tidiness, a Release build,
 every test suite, the DocFX metadata and site build with `--warningsAsErrors`, the pack with package
-validation, each Native AOT leg this host can run, and the package consumers against the packages just
-packed. It ends in one line: `PASSED: All checks passed.` or `FAILED: Check <name> failed. See output.`
+validation, the Native AOT gate for each framework and runtime this host can build, and the package
+consumers against the packages just packed - on the pinned SDK, and again on the .NET 8 SDK, the way CI's
+minimum-SDK job builds them. The SDKs differ in more than their compiler - for example in WPF's
+temporary markup-compile pass, see the comment "WPF's temporary markup-compile pass" in `build/ResXLocalization.Resx.targets`. It ends in one line:
+`PASSED: All checks passed.` or `FAILED: Check <name> failed. See output.`
 
 Its comment-based help lists every CI job it does **not** reproduce, and why. Read that before treating a
 green run as a promise that CI will be green.
 
-`-SkipNativeAot`, `-SkipConsumers` and `-SkipDocumentation` cover the checks with heavy prerequisites.
+`-SkipNativeAot`, `-SkipConsumers`, `-SkipMinimumSdk` and `-SkipDocumentation` cover the checks with heavy
+prerequisites.
 
 ## Checking versus fixing
 

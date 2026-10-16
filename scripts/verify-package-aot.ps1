@@ -196,9 +196,9 @@ try
 
         # The build server is asked to stop before EVERY attempt, not once. It is the usual holder - an
         # MSBuild or ILC node from the previous run keeps package assemblies loaded - and when this gate
-        # runs both frameworks back to back, the first leg's nodes are still exiting while the second
-        # leg starts. One shutdown up front is not enough for that; measured, it needs a few seconds
-        # and another ask.
+        # runs both frameworks back to back, the nodes of the first framework's run are still exiting
+        # while the second run starts. One shutdown up front is not enough for that; measured, it needs a
+        # few seconds and another ask.
         $removed = $false
 
         for ($attempt = 1; $attempt -le 8; $attempt++)
@@ -231,6 +231,12 @@ try
 
             exit 1
         }
+    }
+    else
+    {
+        # No cache to empty, so the loop above did not stop the build server. Stop it anyway: a reused
+        # MSBuild node keeps evaluating the targets of a previous pack of the same version.
+        & dotnet build-server shutdown 2>&1 | Out-Null
     }
 
     # --- The artifact set, validated from the nuspec --------------------------------------------------

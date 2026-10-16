@@ -64,8 +64,9 @@
 
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'ResXLocalization.SourceGenerators'">
     <!-- The SHIPPED analyzer is built against the lowest Roslyn that carries the APIs it uses
-         (IIncrementalGenerator, AdditionalTextsProvider, SymbolDisplay.FormatLiteral - all present
-         since 4.8). A generator built against a newer Roslyn only loads in compilers of that version
+         (IIncrementalGenerator, AdditionalTextsProvider, AnalyzerConfigOptionsProvider with
+         GetOptions(AdditionalText) and AnalyzerConfigOptions.TryGetValue, SymbolDisplay.FormatLiteral -
+         all present since 4.8). A generator built against a newer Roslyn only loads in compilers of that version
          or later, so a consumer on the .NET 8 or 9 SDK would get CS9057 and no generated keys.
          4.8.0 == VS 2022 17.8 / the .NET 8 SDK baseline. Every other Roslyn reference in the
          repository, including the generator's own test project, uses the version above. -->

@@ -24,6 +24,14 @@ this project adheres to [Semantic Versioning](https://semver.org/).
   `FromDictionary` or `FromObject` and checked when they are built: positional, named or mixed.
 - Enum lookups with format arguments: `Get(sortOrder, MessageArguments.FromValues(count))`.
 - `ILocalizer.EnumKeyBuilder`, one replaceable enum key convention for code and XAML.
+- Typed keys for every neutral `.resx`, with or without a `.Designer.cs`: files without a designer,
+  neutral files with a dot in their name and projects using `GenerateResxSource` produce keys classes.
+  Without a designer, the keys class takes its namespace from the file's `CustomToolNamespace` when it
+  is set.
+- The generated `<Name>Keys.ResourceManager` property: the resource manager of that `.resx`, which every
+  key of the class uses. Register it for search-all lookups and pass it for scoped lookups.
+- Generator warnings `RXLGEN003` (a `.resx` reached the generator without its MSBuild resource name)
+  and `RXLGEN004` (two neutral `.resx` files would produce the same keys class).
 
 ### Changed
 
@@ -60,6 +68,20 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 - **BREAKING:** A custom `ILocalizer` implementation has exactly three `Get` overloads - string,
   `ResourceKey` and enum keys, each with an optional `MessageArguments` - and implements
   `EnumKeyBuilder`. See the [migration guide](docs/guides/migration-2.0.md).
+- **BREAKING:** Typed keys use the generated `<Name>Keys.ResourceManager`, no longer the designer's
+  `<Name>.ResourceManager`; `ReferenceEquals(AppStringsKeys.Greeting.Manager, AppStrings.ResourceManager)`
+  is now `false`. See the [migration guide](docs/guides/migration-2.0.md).
+- **BREAKING:** Files without a designer, neutral files with a dot in their name and projects using
+  `GenerateResxSource` now produce keys classes, which can collide with types of your own. See the
+  [migration guide](docs/guides/migration-2.0.md).
+- **BREAKING:** Two neutral `.resx` files that produce the same keys class report `RXLGEN004` and
+  generate neither class, instead of merging into one partial class. See the
+  [migration guide](docs/guides/migration-2.0.md).
+
+### Removed
+
+- The generator warning `RXLGEN002` (a `.resx` without a recognized classic designer): a designer is no
+  longer required.
 
 ## [1.1.0] - 2026-07-20
 

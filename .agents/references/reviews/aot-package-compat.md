@@ -64,6 +64,28 @@ than published, so trimming cannot reach them — but packaging can drop them.
   generator carries `PrivateAssets="all"` and `ReferenceOutputAssembly="false"` for that reason;
   losing either leaks `Microsoft.CodeAnalysis.CSharp` into the package's dependency list.
 
+## The build wiring on every supported SDK
+
+`build/ResXLocalization.Resx.targets` runs inside every consumer's build, on whichever SDK that consumer
+has - the .NET 8 SDK as much as the one this repository pins - and inside WPF's temporary markup-compile
+pass, a copy of the project named `<Name>_<random>_wpftmp` that WPF builds before the real one. Neither
+is visible to a test suite here, which builds on the pinned SDK with the repository's own
+`Directory.Build.props`.
+
+- **Anything the wiring or the generator derives from a project property must hold in the temporary
+  pass, on every supported SDK.** `MSBuildProjectName`, and every `RootNamespace` computed from it,
+  differ there; the whole mechanism, the fix and its limits are explained in the comment "WPF's temporary markup-compile pass" in `build/ResXLocalization.Resx.targets`. The fix
+  changes only `ManifestResourceName`, `LogicalName` and `CustomToolNamespace` of the targets file's own
+  copies of the `.resx` items. A change that removes it, widens it to `RootNamespace` or to other items
+  or metadata, or adds a new dependency on a property derived from the project name, is a finding.
+- **A claim about what an SDK does is checked, not assumed.** Cite the targets file or the task of each
+  supported SDK that the claim is about, with file and line - for example
+  `sdk/<version>/Sdks/Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.WinFX.targets`. A claim you
+  could not check is reported as unchecked, never as a fact.
+- **What catches it:** the "Package consumers (.NET 8 SDK)" step of `scripts/pre-release-gate.ps1`,
+  and CI's "Consume packages on .NET 8 SDK" job, through `WpfConsumer` and `WpfDerivedNamespaceConsumer`
+  (the second also on the pinned SDK).
+
 ## What the tooling cannot tell you
 
 - **`TrimmerSingleWarn`.** Left at its default, ILC collapses every diagnostic from an assembly into
@@ -86,6 +108,7 @@ name the command:
 ```text
 pwsh -File scripts/verify-package-aot.ps1 -Pack                     # both frameworks, from a fresh pack
 pwsh -File scripts/verify-package-aot.ps1 -Framework net8.0         # the LTS floor alone
+pwsh -File scripts/pre-release-gate.ps1 -SkipNativeAot -SkipDocumentation   # every consumer, pinned SDK and .NET 8 SDK
 ```
 
 Do not run them yourself, and do not fix what you found.

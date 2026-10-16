@@ -14,10 +14,9 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
   </ItemGroup>
 
-  <ItemGroup>
-    <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
-    <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
-  </ItemGroup>
+  <!-- AnalyzerReleases.Shipped.md and AnalyzerReleases.Unshipped.md reach the release-tracking analyzer as
+       AdditionalFiles through Microsoft.CodeAnalysis.Analyzers' own build targets. Listing them here too
+       adds each one twice. -->
 
   <!-- This is a build-time analyzer (netstandard2.0), never published or AOT-compiled. When the
        consuming app runs `dotnet publish /p:PublishAot=true`, that global property flows into this
