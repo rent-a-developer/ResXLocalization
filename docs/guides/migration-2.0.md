@@ -363,8 +363,8 @@ Resources/My.Strings.resx             ->  My_StringsKeys
 
 Two neutral `.resx` files that produce the same namespace and class name - for example two
 `Strings.resx` in different folders whose designers declare the same namespace - were merged into one
-partial class. They now report `RXLGEN004`, and neither class is generated. Rename one of the files or
-change its designer's namespace.
+partial class. They now report `RXLGEN004`, and neither class is generated. Rename one of the files, or
+change its designer's namespace or its `CustomToolNamespace`.
 
 Before:
 

@@ -18,6 +18,7 @@ using AvaloniaConsumer;
 using AvaloniaConsumer.Convention;
 using AvaloniaConsumer.Custom;
 using AvaloniaConsumer.Resources;
+using AvaloniaConsumer.Texts;
 using RentADeveloper.ResXLocalization;
 using RentADeveloper.ResXLocalization.Avalonia;
 
@@ -63,6 +64,11 @@ Check(
     "typed key named by the DependentUpon convention",
     Localizer.Current.Get(ConventionalKeys.Title),
     "By convention"
+);
+Check(
+    "typed key in the namespace CustomToolNamespace names",
+    Localizer.Current.Get(NamedKeys.Title),
+    "Custom tool namespace"
 );
 Check(
     "named arguments from an object's properties",
@@ -115,6 +121,11 @@ Check(
     "live switch, typed key named by the DependentUpon convention",
     Localizer.Current.Get(ConventionalKeys.Title),
     "Nach Konvention"
+);
+Check(
+    "live switch, typed key in the namespace CustomToolNamespace names",
+    Localizer.Current.Get(NamedKeys.Title),
+    "Eigener Namespace"
 );
 Check("compiled XAML live switch", localizedView.GreetingText.Text ?? "<null>", "Hallo aus dem Paket!");
 Check("compiled XAML live switch, enum", localizedView.SortOrderText.Text ?? "<null>", "Aufsteigend");

@@ -116,7 +116,10 @@ change rendering rather than layout, are in
 | --- | --- | --- |
 | One UI package changed | mirror it into the other, and mirror the tests | `ui_parity_reviewer` |
 | Resource lookup, culture fallback, satellite discovery, the generator's output, or the packaging that carries them | `pwsh -File scripts/verify-package-aot.ps1 -Pack` | `aot_package_compat_reviewer` |
-| The package contents, the `buildTransitive` wiring, or a dependency version | pack, then run each project under `tests/package-consumption` | — |
+| The package contents, the `buildTransitive` wiring, the generator's output, or a dependency version | `pwsh -File scripts/pre-release-gate.ps1 -SkipNativeAot -SkipDocumentation`: packs, then runs every project under `tests/package-consumption` on the pinned SDK and again on the .NET 8 SDK | `aot_package_compat_reviewer` |
+
+The .NET 8 SDK step needs an 8.0 SDK installed next to the pinned one. It exists because the SDKs differ in
+more than their compiler - for example in WPF's temporary markup-compile pass, see the comment "WPF's temporary markup-compile pass" in `build/ResXLocalization.Resx.targets`.
 
 Nothing is trimmed on the just-in-time compiler, so **no test suite in this repository can see trimming
 damage**. The AOT gate publishes a package-only consumer natively and runs it; that is the only check that

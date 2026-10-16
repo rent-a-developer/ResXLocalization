@@ -8,9 +8,11 @@
 
   The generator also needs MSBuild's name for each .resx: ManifestResourceName (or LogicalName, which
   replaces it) is the name the resources are embedded under, and WithCulture says whether the file is a
-  satellite. A generator cannot read MSBuild items. The only channel is the analyzer config file that
-  GenerateMSBuildEditorConfigFile writes into obj/, as a snapshot of every CompilerVisibleItemMetadata
-  value of the @(AdditionalFiles) that exist when it runs. So the target below:
+  satellite. CustomToolNamespace, which only the IDE's designer tools read otherwise, names the
+  namespace of a keys class whose .resx has no designer. A generator cannot read MSBuild items. The only
+  channel is the analyzer config file that GenerateMSBuildEditorConfigFile writes into obj/, as a
+  snapshot of every CompilerVisibleItemMetadata value of the @(AdditionalFiles) that exist when it runs.
+  So the target below:
     * depends on PrepareResourceNames, the target that computes ManifestResourceName and WithCulture;
     * runs before GenerateMSBuildEditorConfigFileShouldRun, so the items are in the snapshot. An item
       added later (for example before CoreCompile) reaches the generator without its metadata.
@@ -23,18 +25,71 @@
       file to buildTransitive/<PackageId>.targets (the file name must equal the PackageId so NuGet
       auto-imports it for direct and transitive consumers).
 -->
+
+  <!--
+  WPF'S TEMPORARY MARKUP-COMPILE PASS. Every other comment, script and document on this topic refers
+  here.
+
+  The problem. WPF compiles XAML that uses the project's own types in a temporary copy of the project
+  first, named <project name>_<random>_wpftmp (Microsoft.WinFX.targets:374-377 in SDK 8.0.426 and
+  10.0.401). The generator runs in that pass too. There MSBuildProjectName is the temporary name, so a
+  RootNamespace computed from it carries the suffix "_<random>_wpftmp":
+    * the SDK default $(MSBuildProjectName.Replace(" ", "_")), on the .NET 8 SDK, which passes no
+      RootNamespace into the copy (8.0.426 Microsoft.WinFX.targets:440-460; 10.0.401 passes it, :457);
+    * an expression such as Company.$(MSBuildProjectName), on every SDK: the project's own assignment
+      replaces the value the .NET 10 SDK passes in (measured on 10.0.401).
+  A literal RootNamespace is never affected. Every name built from RootNamespace carries the suffix too:
+  ManifestResourceName, a LogicalName such as $(RootNamespace).Strings.resources, a CustomToolNamespace
+  such as $(RootNamespace).Texts. The keys class of a .resx without a designer then lands in a
+  namespace that exists only in that pass, and the code and XAML that use it fail with CS0234/CS0103.
+
+  The fix. Only in that pass - _TargetAssemblyProjectName is set, which WPF's
+  GenerateTemporaryTargetAssembly task does there with the real project name, and the project name is
+  that real name plus "_..._wpftmp" - the suffix is removed from ManifestResourceName, LogicalName and
+  CustomToolNamespace of OUR OWN copies of the .resx items, the ones handed to the generator.
+  RootNamespace, the EmbeddedResource items and every other tool's input stay as MSBuild computed them;
+  the temporary assembly is only used to resolve types for the XAML, never run.
+
+  Limits. A RootNamespace transform that changes the suffix itself (ToUpper(), replacing "_") is not
+  covered; a literal RootNamespace, or a CustomToolNamespace on the .resx, is the workaround. With
+  IncludePackageReferencesDuringMarkupCompilation=false no generator runs in that pass at all. If WPF
+  ever names or marks the pass differently, the conditions stop matching and nothing is changed.
+
+  Tested by tests/package-consumption: WpfConsumer (SDK default) and WpfDerivedNamespaceConsumer
+  (derived RootNamespace, LogicalName and CustomToolNamespace), which scripts/pre-release-gate.ps1 runs
+  on the pinned SDK and on the .NET 8 SDK.
+  -->
   <ItemGroup>
     <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="ManifestResourceName" />
     <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="LogicalName" />
     <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="WithCulture" />
+    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="CustomToolNamespace" />
   </ItemGroup>
 
   <Target Name="AddResxAdditionalFilesForResXLocalization"
           BeforeTargets="GenerateMSBuildEditorConfigFileShouldRun"
           DependsOnTargets="PrepareResourceNames">
+
+    <!-- WPF's temporary markup-compile pass only: see the comment of that name above. -->
+    <PropertyGroup Condition="'$(_TargetAssemblyProjectName)' != '' and $(MSBuildProjectName.EndsWith('_wpftmp')) and $(MSBuildProjectName.StartsWith('$(_TargetAssemblyProjectName)_'))">
+      <_ResXLocalizationWpfTmpSuffix>$(MSBuildProjectName.Substring($(_TargetAssemblyProjectName.Length)))</_ResXLocalizationWpfTmpSuffix>
+    </PropertyGroup>
+
+    <!--
+    The metadata is qualified with the item name: unqualified, MSBuild rejects the batch (MSB4096) as soon
+    as one item lacks the metadata, which for LogicalName and CustomToolNamespace is almost every item.
+    -->
     <ItemGroup>
-      <AdditionalFiles Include="@(EmbeddedResource)"
-                       Condition="'%(Extension)' == '.resx'" />
+      <_ResXLocalizationResx Include="@(EmbeddedResource)"
+                             Condition="'%(Extension)' == '.resx'" />
+      <_ResXLocalizationResx Condition="'$(_ResXLocalizationWpfTmpSuffix)' != ''">
+        <ManifestResourceName>$([System.String]::Copy('%(_ResXLocalizationResx.ManifestResourceName)').Replace('$(_ResXLocalizationWpfTmpSuffix)', ''))</ManifestResourceName>
+        <LogicalName>$([System.String]::Copy('%(_ResXLocalizationResx.LogicalName)').Replace('$(_ResXLocalizationWpfTmpSuffix)', ''))</LogicalName>
+        <CustomToolNamespace>$([System.String]::Copy('%(_ResXLocalizationResx.CustomToolNamespace)').Replace('$(_ResXLocalizationWpfTmpSuffix)', ''))</CustomToolNamespace>
+      </_ResXLocalizationResx>
+      <AdditionalFiles Include="@(_ResXLocalizationResx)" />
+      <_ResXLocalizationResx Remove="@(_ResXLocalizationResx)" />
+
       <AdditionalFiles Include="@(Compile)"
                        Condition="$([System.String]::new('%(Filename)').EndsWith('.Designer'))" />
       <UpToDateCheckInput Include="@(EmbeddedResource)"

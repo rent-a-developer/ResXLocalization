@@ -26,6 +26,8 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 - `ILocalizer.EnumKeyBuilder`, one replaceable enum key convention for code and XAML.
 - Typed keys for every neutral `.resx`, with or without a `.Designer.cs`: files without a designer,
   neutral files with a dot in their name and projects using `GenerateResxSource` produce keys classes.
+  Without a designer, the keys class takes its namespace from the file's `CustomToolNamespace` when it
+  is set.
 - The generated `<Name>Keys.ResourceManager` property: the resource manager of that `.resx`, which every
   key of the class uses. Register it for search-all lookups and pass it for scoped lookups.
 - Generator warnings `RXLGEN003` (a `.resx` reached the generator without its MSBuild resource name)

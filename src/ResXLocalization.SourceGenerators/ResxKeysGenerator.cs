@@ -31,8 +31,8 @@ namespace RentADeveloper.ResXLocalization.SourceGenerators;
 /// </para>
 /// <para>
 /// A paired classic <c>.Designer.cs</c> accessor - same folder, same base name - contributes the
-/// namespace of the generated class, and nothing else. Without one, the namespace is the resource name
-/// without its last segment.
+/// namespace of the generated class, and nothing else. Without one, the namespace is the file's
+/// <c>CustomToolNamespace</c> when it is set, and otherwise the resource name without its last segment.
 /// </para>
 /// <para>
 /// Member names are sanitized into valid C# identifiers: invalid characters become underscores,
@@ -51,7 +51,7 @@ public sealed class ResxKeysGenerator : IIncrementalGenerator
     private static readonly DiagnosticDescriptor DuplicateKeysClassDescriptor = new(
         "RXLGEN004",
         "Two .resx files produce the same keys class",
-        "Resource files '{0}' and '{1}' both produce the keys class '{2}'; rename one of the files or change its designer's namespace",
+        "Resource files '{0}' and '{1}' both produce the keys class '{2}'; rename one of the files, or change its designer's namespace or its CustomToolNamespace",
         "ResXLocalization.SourceGenerator",
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true
@@ -287,8 +287,9 @@ public sealed class ResxKeysGenerator : IIncrementalGenerator
 
     /// <summary>
     /// Computes the namespace and class name a neutral <c>.resx</c> file produces. The namespace is the
-    /// paired designer's; without a designer it is the resource name without its last segment, each
-    /// segment sanitized into an identifier, and the global namespace when the resource name has no dot.
+    /// paired designer's; without a designer it is the file's <c>CustomToolNamespace</c>, or else the
+    /// resource name without its last segment - each segment sanitized into an identifier, and the global
+    /// namespace when the resource name has no dot.
     /// </summary>
     /// <param name="resXFile">A parsed neutral <c>.resx</c> file that carries its resource name.</param>
     /// <param name="resXDesignerFiles">Every designer accessor found in the compilation.</param>
@@ -300,15 +301,18 @@ public sealed class ResxKeysGenerator : IIncrementalGenerator
     {
         var baseName = resXFile.BaseName ?? string.Empty;
         var lastDot = baseName.LastIndexOf('.');
+        var unsanitizedNamespace =
+            resXFile.CustomToolNamespace ?? (lastDot < 0 ? string.Empty : baseName.Substring(0, lastDot));
 
-        // MSBuild makes folder names valid identifiers but does not escape keywords, and LogicalName is
-        // free text, so every segment is sanitized; the resource name itself is used unchanged.
+        // MSBuild makes folder names valid identifiers but does not escape keywords, and LogicalName and
+        // CustomToolNamespace are free text, so every segment is sanitized; the resource name itself is used
+        // unchanged.
         var ns =
             FindResXDesignerFile(resXFile, resXDesignerFiles)?.Namespace
             ?? (
-                lastDot < 0
+                unsanitizedNamespace.Length == 0
                     ? string.Empty
-                    : string.Join(".", baseName.Substring(0, lastDot).Split('.').Select(SanitizeIdentifier))
+                    : string.Join(".", unsanitizedNamespace.Split('.').Select(SanitizeIdentifier))
             );
 
         return (ns, SanitizeIdentifier(resXFile.FileBaseName + "Keys"), resXFile.Path);
@@ -410,7 +414,7 @@ public sealed class ResxKeysGenerator : IIncrementalGenerator
     /// Parses a neutral <c>.resx</c> file into its resource name and its ordinally sorted
     /// string-resource keys, reading MSBuild's resource metadata from the analyzer config options.
     /// Satellites (<c>WithCulture</c> is <c>true</c>) are skipped, and a file without a
-    /// <c>ManifestResourceName</c> is not parsed.
+    /// <c>ManifestResourceName</c> is not parsed. The file's <c>CustomToolNamespace</c> is carried along.
     /// </summary>
     /// <param name="text">The <c>.resx</c> file, supplied as an additional text.</param>
     /// <param name="options">The file's analyzer config options, carrying the MSBuild metadata.</param>
@@ -429,6 +433,10 @@ public sealed class ResxKeysGenerator : IIncrementalGenerator
         options.TryGetValue("build_metadata.AdditionalFiles.WithCulture", out var withCulture);
         options.TryGetValue("build_metadata.AdditionalFiles.ManifestResourceName", out var manifestResourceName);
         options.TryGetValue("build_metadata.AdditionalFiles.LogicalName", out var logicalName);
+        options.TryGetValue("build_metadata.AdditionalFiles.CustomToolNamespace", out var customToolNamespace);
+
+        // A blank CustomToolNamespace counts as not set.
+        customToolNamespace = customToolNamespace?.Trim() is { Length: > 0 } trimmed ? trimmed : null;
 
         if (fileBaseName.Length == 0 || string.Equals(withCulture, "true", StringComparison.OrdinalIgnoreCase))
         {
@@ -437,7 +445,7 @@ public sealed class ResxKeysGenerator : IIncrementalGenerator
 
         if (manifestResourceName is null or "")
         {
-            return new ResXFile(text.Path, directoryPath, fileBaseName, null, [], null);
+            return new ResXFile(text.Path, directoryPath, fileBaseName, null, customToolNamespace, [], null);
         }
 
         // LogicalName replaces the computed name entirely, and names the embedded .resources stream.
@@ -455,11 +463,19 @@ public sealed class ResxKeysGenerator : IIncrementalGenerator
             var keys = ReadResXKeys(source.ToString())
                 .OrderBy(static k => k, StringComparer.Ordinal)
                 .ToImmutableArray();
-            return new ResXFile(text.Path, directoryPath, fileBaseName, baseName, new(keys), null);
+            return new ResXFile(text.Path, directoryPath, fileBaseName, baseName, customToolNamespace, new(keys), null);
         }
         catch (System.Xml.XmlException exception)
         {
-            return new ResXFile(text.Path, directoryPath, fileBaseName, baseName, [], exception.Message);
+            return new ResXFile(
+                text.Path,
+                directoryPath,
+                fileBaseName,
+                baseName,
+                customToolNamespace,
+                [],
+                exception.Message
+            );
         }
     }
 
@@ -613,6 +629,10 @@ public sealed class ResxKeysGenerator : IIncrementalGenerator
     /// The name the resources are embedded under, passed to the generated resource manager; or
     /// <see langword="null" /> when MSBuild's resource name did not reach the generator.
     /// </param>
+    /// <param name="CustomToolNamespace">
+    /// The file's <c>CustomToolNamespace</c> metadata, trimmed; <see langword="null" /> when it is not set
+    /// or blank. It names the namespace when no designer pairs with the file.
+    /// </param>
     /// <param name="Keys">The string-resource keys, ordinally sorted; empty when parsing failed or did not run.</param>
     /// <param name="ParseError">The XML parse error message, or <see langword="null" /> when parsing succeeded.</param>
     private readonly record struct ResXFile(
@@ -620,6 +640,7 @@ public sealed class ResxKeysGenerator : IIncrementalGenerator
         string DirectoryPath,
         string FileBaseName,
         string? BaseName,
+        string? CustomToolNamespace,
         EquatableArray<string> Keys,
         string? ParseError
     );

@@ -71,26 +71,46 @@ The class is `partial`, so you can add members of your own to it in a file of yo
 | The file | Namespace of the keys class |
 | --- | --- |
 | has a paired classic designer | the designer's namespace |
-| has none | the resource name without its last segment |
+| has none, and sets `CustomToolNamespace` | its `CustomToolNamespace` |
+| has none, and no `CustomToolNamespace` | the resource name without its last segment |
 
 A designer pairs when it is a `.Designer.cs` in the same folder with the same base name that declares
 a type with a static `ResourceManager` property — the accessor Visual Studio's and Rider's classic resx
 tooling writes. So a project with designers keeps its keys classes where they are, including with
 `CustomToolNamespace`.
 
-Without a designer, the resource name decides. MSBuild names `Resources/AppStrings.resx` in a project
+Without a designer, `CustomToolNamespace` decides when the project sets it on the `.resx` - the same
+setting the designer tools use for the designer's namespace:
+
+```xml
+<ItemGroup>
+  <EmbeddedResource Update="Resources\AppStrings.resx" CustomToolNamespace="MyApp.Texts" />
+</ItemGroup>
+```
+
+It changes only the namespace: the resource manager still loads the name MSBuild embeds the resources
+under. With a designer, the designer's namespace wins, which is normally the same value. A blank
+`CustomToolNamespace` counts as not set.
+
+Otherwise the resource name decides. MSBuild names `Resources/AppStrings.resx` in a project
 whose root namespace is `MyApp` `MyApp.Resources.AppStrings`, so the class lands in `MyApp.Resources`.
 A `LogicalName` replaces that name: with `LogicalName="Totally.Custom.Name.resources"` the resource
 manager loads `Totally.Custom.Name` and the class lands in `Totally.Custom`. Each namespace segment is
-sanitized into a valid identifier (`event` becomes `@event`, `My-App` becomes `My_App`); a resource
-name without a dot means the global namespace.
+sanitized into a valid identifier (`event` becomes `@event`, `My-App` becomes `My_App`), and so is each
+segment of a `CustomToolNamespace`; a resource name without a dot means the global namespace.
 
 | File, resource name | Namespace | Class | `ResourceManager` base name |
 | --- | --- | --- | --- |
 | `Resources/Strings.resx`, `N.Resources.Strings`, no designer | `N.Resources` | `StringsKeys` | `N.Resources.Strings` |
 | same, designer declares `namespace Custom.Ns` | `Custom.Ns` | `StringsKeys` | `N.Resources.Strings` |
+| same, no designer, `CustomToolNamespace=Texts.Custom` | `Texts.Custom` | `StringsKeys` | `N.Resources.Strings` |
 | `Logical.resx`, `LogicalName=Totally.Custom.Name.resources` | `Totally.Custom` | `LogicalKeys` | `Totally.Custom.Name` |
 | `My.Strings.resx`, `N.My.Strings` | `N.My` | `My_StringsKeys` | `N.My.Strings` |
+
+**WPF projects.** If the XAML build of a WPF project cannot find a keys class of a `.resx` without a
+designer - CS0234 or CS0103, reported for a project named `<YourProject>_<random>_wpftmp` - the project
+computes its `RootNamespace` in a way the build cannot map back to the real one, for example with
+`ToUpper()`. Set a literal `RootNamespace`, or a `CustomToolNamespace` on the `.resx`.
 
 ## Projects with designers
 
@@ -105,7 +125,7 @@ such as `AppStrings.Greeting`, read in `CultureInfo.CurrentUICulture`, so they d
 | --- | --- |
 | `RXLGEN001` | A neutral `.resx` file is not well-formed XML. The diagnostic points at the file |
 | `RXLGEN003` | A `.resx` file reached the generator without its MSBuild resource name, so no keys were generated. Include it as an `EmbeddedResource` of a project that references `ResXLocalization.Avalonia` or `ResXLocalization.WPF` |
-| `RXLGEN004` | Two neutral `.resx` files produce the same keys class - for example two `Strings.resx` in different folders whose designers declare the same namespace. Both files report it and neither class is generated. Rename one of the files or change its designer's namespace |
+| `RXLGEN004` | Two neutral `.resx` files produce the same keys class - for example two `Strings.resx` in different folders whose designers declare the same namespace. Both files report it and neither class is generated. Rename one of the files, or change its designer's namespace or its `CustomToolNamespace` |
 
 A file reports at most one of them, checked in this order: `RXLGEN003`, then `RXLGEN004`, then
 `RXLGEN001`. There is no `RXLGEN002`: a `.resx` no longer needs a designer.

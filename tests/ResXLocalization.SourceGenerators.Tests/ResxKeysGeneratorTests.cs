@@ -13,6 +13,44 @@ namespace RentADeveloper.ResXLocalization.SourceGenerators.Tests;
 public class ResxKeysGeneratorTests
 {
     [Fact]
+    public void BlankCustomToolNamespace_FallsBackToTheResourceNameNamespace()
+    {
+        var result = RunGenerator(
+            new TestMetadata().With("project/Resources/Strings.resx", ("CustomToolNamespace", "   ")),
+            ("project/Resources/Strings.resx", Resx(("Greeting", "Hello")))
+        );
+
+        SingleGeneratedSource(result).SourceText.ToString().Should().Contain("namespace N.Resources;");
+    }
+
+    [Fact]
+    public void ChangingOnlyCustomToolNamespace_RegeneratesTheKeysClassInTheNewNamespace()
+    {
+        var compilation = CSharpCompilation.Create("Tests");
+        GeneratorDriver driver = CreateTrackingDriver(new TestMetadata());
+
+        driver = driver
+            .AddAdditionalTexts([new InMemoryAdditionalText("project/Strings.resx", Resx(("Greeting", "Hello")))])
+            .RunGenerators(compilation)
+            // Then change only the metadata, as editing the project file does, and run again: the new
+            // namespace must not be served from the incremental cache.
+            .WithUpdatedAnalyzerConfigOptions(
+                new TestMetadata().With("project/Strings.resx", ("CustomToolNamespace", "Texts"))
+            )
+            .RunGenerators(compilation);
+
+        driver
+            .GetRunResult()
+            .Results.Single()
+            .GeneratedSources.Should()
+            .ContainSingle()
+            .Which.SourceText.ToString()
+            .Should()
+            .Contain("namespace Texts;");
+        OutputReasons(driver).Should().Contain(reason => reason != IncrementalStepRunReason.Cached);
+    }
+
+    [Fact]
     public void CollidingSanitizedNames_GetNumericSuffixes()
     {
         var result = RunGenerator(
@@ -46,6 +84,31 @@ public class ResxKeysGeneratorTests
     }
 
     [Fact]
+    public void CustomToolNamespaceSegments_AreSanitized()
+    {
+        var result = RunGenerator(
+            new TestMetadata().With("project/Strings.resx", ("CustomToolNamespace", "My-App.event")),
+            ("project/Strings.resx", Resx(("Greeting", "Hello")))
+        );
+
+        SingleGeneratedSource(result).SourceText.ToString().Should().Contain("namespace My_App.@event;");
+    }
+
+    [Fact]
+    public void CustomToolNamespace_NamesTheNamespace_OfAResxWithoutADesigner()
+    {
+        var result = RunGenerator(
+            new TestMetadata().With("project/Resources/Strings.resx", ("CustomToolNamespace", " Texts.Custom ")),
+            ("project/Resources/Strings.resx", Resx(("Greeting", "Hello")))
+        );
+
+        var code = SingleGeneratedSource(result).SourceText.ToString();
+
+        code.Should().Contain("namespace Texts.Custom;");
+        code.Should().Contain("""new("N.Resources.Strings", typeof(StringsKeys).Assembly);""");
+    }
+
+    [Fact]
     public void DesignerInADifferentFolder_DoesNotPair()
     {
         var result = RunGenerator(
@@ -73,6 +136,21 @@ public class ResxKeysGeneratorTests
         code.Should().Contain("""new("N.Resources.Strings", typeof(StringsKeys).Assembly);""");
         code.Should().NotContain("Custom.Ns.Strings");
         code.Should().NotContain("global::Custom");
+    }
+
+    [Fact]
+    public void DesignerNamespace_WinsOverCustomToolNamespace()
+    {
+        var result = RunGenerator(
+            new TestMetadata().With("project/Resources/Strings.resx", ("CustomToolNamespace", "Texts.Custom")),
+            ("project/Resources/Strings.resx", Resx(("Greeting", "Hello"))),
+            ("project/Resources/Strings.Designer.cs", Designer("Designer.Ns"))
+        );
+
+        var code = SingleGeneratedSource(result).SourceText.ToString();
+
+        code.Should().Contain("namespace Designer.Ns;");
+        code.Should().NotContain("Texts.Custom");
     }
 
     [Fact]
@@ -532,6 +610,26 @@ public class ResxKeysGeneratorTests
         reasons
             .Should()
             .Contain(reason => reason == IncrementalStepRunReason.Modified || reason == IncrementalStepRunReason.New);
+    }
+
+    [Fact]
+    public void TwoResxProducingTheSameKeysClassThroughCustomToolNamespace_ReportRXLGEN004()
+    {
+        var result = RunGenerator(
+            new TestMetadata()
+                .With("project/A/Strings.resx", ("CustomToolNamespace", "Shared"))
+                .With("project/B/Strings.resx", ("CustomToolNamespace", "Shared")),
+            ("project/A/Strings.resx", Resx(("Alpha", "a"))),
+            ("project/B/Strings.resx", Resx(("Beta", "b")))
+        );
+
+        result.Diagnostics.Select(diagnostic => diagnostic.Id).Should().Equal("RXLGEN004", "RXLGEN004");
+        result
+            .Diagnostics.Should()
+            .AllSatisfy(diagnostic =>
+                diagnostic.GetMessage(CultureInfo.InvariantCulture).Should().Contain("'Shared.StringsKeys'")
+            );
+        result.Results.Single().GeneratedSources.Should().BeEmpty();
     }
 
     [Fact]

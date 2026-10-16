@@ -26,4 +26,9 @@
     <EmbeddedResource Update="Resources\Logical.de.resx" LogicalName="AvaloniaConsumer.Custom.Logical.de.resources" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- No designer, so CustomToolNamespace names the namespace of NamedKeys. -->
+    <EmbeddedResource Update="Resources\Named.resx" CustomToolNamespace="AvaloniaConsumer.Texts" />
+  </ItemGroup>
+
 </Project>

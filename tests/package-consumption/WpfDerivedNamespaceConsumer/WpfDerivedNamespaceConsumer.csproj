@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <SatelliteResourceLanguages>en;de</SatelliteResourceLanguages>
+    <!-- THE property under test: a root namespace derived from the project name, which WPF's temporary
+         markup-compile pass evaluates again under its temporary project name. The keys class of
+         Resources/Designerless.resx takes its namespace from it. See the comment "WPF's temporary
+         markup-compile pass" in build/ResXLocalization.Resx.targets. -->
+    <RootNamespace>Derived.$(MSBuildProjectName)</RootNamespace>
+    <!-- CI overrides this with the version it just packed. -->
+    <ResXLocalizationVersion Condition="'$(ResXLocalizationVersion)' == ''">1.0.0</ResXLocalizationVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- A LogicalName built from that RootNamespace: in the temporary pass it carries the temporary name too. -->
+    <EmbeddedResource Update="Resources\Logical.resx" LogicalName="$(RootNamespace).Custom.Logical.resources" />
+    <EmbeddedResource Update="Resources\Logical.de.resx" LogicalName="$(RootNamespace).Custom.Logical.de.resources" />
+    <!-- A CustomToolNamespace built from that RootNamespace: in the temporary pass it carries the temporary name too. -->
+    <EmbeddedResource Update="Resources\Named.resx" CustomToolNamespace="$(RootNamespace).Texts" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ResXLocalization.WPF" Version="$(ResXLocalizationVersion)" />
+  </ItemGroup>
+
+</Project>

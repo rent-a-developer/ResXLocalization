@@ -1,0 +1,12 @@
+﻿<UserControl x:Class="Derived.WpfDerivedNamespaceConsumer.LocalizedView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:RentADeveloper.ResXLocalization.WPF;assembly=ResXLocalization.WPF"
+             xmlns:resources="clr-namespace:Derived.WpfDerivedNamespaceConsumer.Resources">
+    <!--
+        A typed key of a .resx without a designer, in the namespace derived from RootNamespace. Compiling
+        it needs DesignerlessKeys in WPF's temporary markup-compile pass, in this same namespace.
+    -->
+    <TextBlock x:Name="DesignerlessText"
+               Text="{l:Localize {x:Static resources:DesignerlessKeys.Title}}" />
+</UserControl>
