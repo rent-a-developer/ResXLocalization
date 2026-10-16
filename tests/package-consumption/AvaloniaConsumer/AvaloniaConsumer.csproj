@@ -19,4 +19,11 @@
     <PackageReference Include="ResXLocalization.Avalonia" Version="$(ResXLocalizationVersion)" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- LogicalName replaces the resource name MSBuild computes; the generated LogicalKeys.ResourceManager
+         must load the resources under this name, in the main assembly and in the satellite. -->
+    <EmbeddedResource Update="Resources\Logical.resx" LogicalName="AvaloniaConsumer.Custom.Logical.resources" />
+    <EmbeddedResource Update="Resources\Logical.de.resx" LogicalName="AvaloniaConsumer.Custom.Logical.de.resources" />
+  </ItemGroup>
+
 </Project>

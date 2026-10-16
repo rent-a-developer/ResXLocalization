@@ -416,6 +416,10 @@ Invoke-Step 'Pack' {
         Write-Output ''
         Write-Output 'NOT PACKED: ResXLocalization.WPF. Release packaging happens on Windows.'
     }
+
+    # The consumers below build against the packages just written, under the same version as the last
+    # pack. A reused MSBuild node keeps evaluating the previous package's targets, so stop it here.
+    & dotnet build-server shutdown 2>&1 | Out-Null
 }
 
 # --- Native AOT gate ----------------------------------------------------------------------------------
@@ -483,6 +487,30 @@ Invoke-Step 'Package consumers' {
     {
         $consumers += @{ Name = 'WpfConsumer'; Framework = $null }
         $consumers += @{ Name = 'CombinedConsumer'; Framework = $null }
+    }
+
+    # NuGet resolves by version and not by content, so a ResXLocalization package an earlier run left in the
+    # consumers' cache would satisfy the reference instead of the one just packed - the Native AOT gate empties
+    # that cache, but it can be skipped. Remove our packages from it here, whatever ran before; the build
+    # server goes first because one of its nodes can still hold a package assembly open. NuGet extracts
+    # read-only, hence the attribute reset.
+    & dotnet build-server shutdown 2>&1 | Out-Null
+
+    try
+    {
+        Get-ChildItem -LiteralPath (Join-Path $consumerDirectory '.packages') -Directory -Filter 'resxlocalization.*' -ErrorAction SilentlyContinue |
+            ForEach-Object {
+                Get-ChildItem -LiteralPath $_.FullName -Recurse -Force -File | ForEach-Object { $_.IsReadOnly = $false }
+                Remove-Item -LiteralPath $_.FullName -Recurse -Force
+            }
+    }
+    catch
+    {
+        Write-Output "FAILED - the cached ResXLocalization packages could not be removed: $($_.Exception.Message)"
+        Write-Output 'Running against them would test whatever was cached last. Close anything holding a file there and re-run.'
+        $script:stepSucceeded = $false
+
+        return
     }
 
     Push-Location -LiteralPath $consumerDirectory

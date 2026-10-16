@@ -307,3 +307,74 @@ Localizer.Current.Get(sortOrder);
 ```xml
 <TextBlock Text="{l:LocalizeEnum}" />
 ```
+
+## Typed keys use the generated `ResourceManager`
+
+Every generated `<Name>Keys` class has its own `ResourceManager` property, created from the name the
+`.resx` is embedded under, and every key of the class uses it instead of the designer's
+`<Name>.ResourceManager`. Lookups return the same text. Registering or scoping with the designer's
+instance still works, but it is a second instance of the same file with its own cache; use
+`<Name>Keys.ResourceManager`.
+
+The generator reads that name from the analyzer config file the SDK writes into `obj/`, so every keys
+class - with or without a designer - now depends on it. A project that sets
+`GenerateMSBuildEditorConfigFile` to `false` gets `RXLGEN003` and no keys classes; remove that setting.
+
+Before:
+
+```csharp
+ReferenceEquals(AppStringsKeys.Greeting.Manager, AppStrings.ResourceManager);   // true
+
+Localizer.Current.RegisterResourceManager(AppStrings.ResourceManager);
+Localizer.Current.Get("Greeting", resourceManager: AppStrings.ResourceManager);
+```
+
+After:
+
+```csharp
+ReferenceEquals(AppStringsKeys.Greeting.Manager, AppStringsKeys.ResourceManager); // true
+ReferenceEquals(AppStringsKeys.Greeting.Manager, AppStrings.ResourceManager);     // false
+
+Localizer.Current.RegisterResourceManager(AppStringsKeys.ResourceManager);
+Localizer.Current.Get("Greeting", resourceManager: AppStringsKeys.ResourceManager);
+```
+
+## More `.resx` files produce keys classes
+
+Every neutral `.resx` now produces a keys class: a file without a `.Designer.cs`, a neutral file with a
+dot in its name, and the files of a project that uses the SDK's `GenerateResxSource`. `RXLGEN002` is no
+longer reported. If a new `<Name>Keys` class collides with a type of your own, rename the `.resx`.
+
+Before:
+
+```text
+Resources/Errors.resx (no designer)   ->  no ErrorsKeys, warning RXLGEN002
+Resources/My.Strings.resx             ->  no keys class (taken for a satellite)
+```
+
+After:
+
+```text
+Resources/Errors.resx (no designer)   ->  ErrorsKeys
+Resources/My.Strings.resx             ->  My_StringsKeys
+```
+
+## Two files that produce the same keys class are no longer merged
+
+Two neutral `.resx` files that produce the same namespace and class name - for example two
+`Strings.resx` in different folders whose designers declare the same namespace - were merged into one
+partial class. They now report `RXLGEN004`, and neither class is generated. Rename one of the files or
+change its designer's namespace.
+
+Before:
+
+```text
+A/Strings.resx + B/Strings.resx, both designers in namespace MyApp  ->  one partial MyApp.StringsKeys
+```
+
+After:
+
+```text
+A/Strings.resx + B/Strings.resx, both designers in namespace MyApp  ->  RXLGEN004 at each file, no StringsKeys
+B/Strings.resx renamed to B/MoreStrings.resx                         ->  MyApp.StringsKeys and MyApp.MoreStringsKeys
+```

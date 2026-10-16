@@ -1,43 +1,64 @@
 using System.Collections.Immutable;
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
 namespace RentADeveloper.ResXLocalization.SourceGenerators;
 
 /// <summary>
 /// Incremental Roslyn source generator that emits a typed, compile-validated key class for each
-/// neutral <c>.resx</c> file that has a matching resource designer in the compilation. For a file
-/// <c>Strings.resx</c> it generates a
-/// <c>StringsKeys</c> class exposing one static
-/// <c>RentADeveloper.ResXLocalization.ResourceKey</c> per string entry, each bound to the
-/// file's <see cref="System.Resources.ResourceManager" />. The generated keys give editor
-/// auto-completion and turn missing or renamed resources into compile errors.
+/// neutral <c>.resx</c> file in the compilation. For a file <c>Strings.resx</c> it generates a
+/// <c>StringsKeys</c> class exposing a static <see cref="System.Resources.ResourceManager" /> property
+/// for that file and one static <c>RentADeveloper.ResXLocalization.ResourceKey</c> per string entry,
+/// each bound to that resource manager. The generated keys give editor auto-completion and turn
+/// missing or renamed resources into compile errors.
 /// </summary>
 /// <remarks>
 /// <para>
-/// The generator pairs each <c>.resx</c> with its <c>.Designer.cs</c> file to recover the namespace
-/// and resource manager reference; a <c>.resx</c> without a matching designer (such as a satellite
-/// translation file) produces no output. A dot-free neutral file without a recognized classic
-/// accessor reports <c>RXLGEN002</c>; malformed eligible XML reports <c>RXLGEN001</c>.
+/// The build wiring passes MSBuild's resource metadata for each <c>.resx</c> through the analyzer
+/// config file: <c>WithCulture</c> decides whether a file is neutral (it produces a class) or a
+/// satellite (it produces nothing), and <c>ManifestResourceName</c> - or <c>LogicalName</c>, which
+/// replaces it - is the name the resources are embedded under, from which the generated resource
+/// manager is created. A file whose resource name did not arrive reports <c>RXLGEN003</c>; two neutral
+/// files that would produce the same class report <c>RXLGEN004</c> and neither class is generated;
+/// malformed XML reports <c>RXLGEN001</c>.
+/// </para>
+/// <para>
+/// A paired classic <c>.Designer.cs</c> accessor - same folder, same base name - contributes the
+/// namespace of the generated class, and nothing else. Without one, the namespace is the resource name
+/// without its last segment.
 /// </para>
 /// <para>
 /// Member names are sanitized into valid C# identifiers: invalid characters become underscores,
 /// names starting with a digit are prefixed with an underscore, reserved keywords are emitted in
-/// their <c>@</c>-escaped form, and names that would collide (with each other or with the class
-/// name) get a numeric suffix. The generated classes are <c>partial</c>, so two <c>.resx</c> files
-/// with the same base name whose designers declare the same namespace merge into one class.
+/// their <c>@</c>-escaped form, and names that would collide (with each other, with the class name or
+/// with the <c>ResourceManager</c> property) get a numeric suffix.
 /// </para>
 /// </remarks>
 [Generator]
 public sealed class ResxKeysGenerator : IIncrementalGenerator
 {
     /// <summary>
-    /// <c>RXLGEN001</c> (warning): an eligible <c>.resx</c> file - neutral, with a matching designer -
+    /// <c>RXLGEN004</c> (warning): two neutral <c>.resx</c> files resolve to the same namespace and
+    /// class name, so neither keys class was generated.
+    /// </summary>
+    private static readonly DiagnosticDescriptor DuplicateKeysClassDescriptor = new(
+        "RXLGEN004",
+        "Two .resx files produce the same keys class",
+        "Resource files '{0}' and '{1}' both produce the keys class '{2}'; rename one of the files or change its designer's namespace",
+        "ResXLocalization.SourceGenerator",
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true
+    );
+
+    /// <summary>
+    /// <c>RXLGEN001</c> (warning): an eligible <c>.resx</c> file - neutral, with its resource name -
     /// contains malformed XML, so no keys were generated for it.
     /// </summary>
     private static readonly DiagnosticDescriptor InvalidResxDescriptor = new(
@@ -50,14 +71,13 @@ public sealed class ResxKeysGenerator : IIncrementalGenerator
     );
 
     /// <summary>
-    /// <c>RXLGEN002</c> (warning): a neutral <c>.resx</c> file has no same-folder classic
-    /// <c>.Designer.cs</c> accessor with a static <c>ResourceManager</c> property, so no keys were
-    /// generated for it.
+    /// <c>RXLGEN003</c> (warning): a neutral or unclassified <c>.resx</c> file reached the generator
+    /// without its MSBuild resource name, so no keys were generated for it.
     /// </summary>
-    private static readonly DiagnosticDescriptor MissingDesignerDescriptor = new(
-        "RXLGEN002",
-        "Eligible .resx has no recognized classic designer",
-        "Resource file '{0}' needs a same-folder classic .Designer.cs accessor with a static System.Resources.ResourceManager property",
+    private static readonly DiagnosticDescriptor MissingResourceNameDescriptor = new(
+        "RXLGEN003",
+        ".resx reached the generator without its resource name",
+        "Resource file '{0}' reached the generator without its MSBuild resource name (ManifestResourceName), so no keys were generated; include it as an EmbeddedResource of a project that references ResXLocalization.Avalonia or ResXLocalization.WPF",
         "ResXLocalization.SourceGenerator",
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true
@@ -72,7 +92,8 @@ public sealed class ResxKeysGenerator : IIncrementalGenerator
     {
         var resXFiles = context
             .AdditionalTextsProvider.Where(static f => f.Path.EndsWith(".resx", StringComparison.OrdinalIgnoreCase))
-            .Select(static (f, ct) => ParseResxFile(f, ct))
+            .Combine(context.AnalyzerConfigOptionsProvider)
+            .Select(static (pair, ct) => ParseResxFile(pair.Left, pair.Right.GetOptions(pair.Left), ct))
             .Where(static m => m is not null)
             .Select(static (m, _) => m!.Value);
 
@@ -85,35 +106,80 @@ public sealed class ResxKeysGenerator : IIncrementalGenerator
             .Select(static (m, _) => m!.Value)
             .Collect();
 
-        // One typed-key class per resx (incremental per file).
-        var keysPipeline = resXFiles.Combine(resXDesignerFiles);
+        var resXFilesWithDesigners = resXFiles.Combine(resXDesignerFiles);
 
-        context.RegisterSourceOutput(keysPipeline, static (spc, pair) => EmitKeysClass(spc, pair.Left, pair.Right));
+        // The class identity of every neutral file, for RXLGEN004. Strings only, never the keys: editing
+        // one file's keys leaves this array equal, so the other files' outputs stay cached.
+        var classIdentities = resXFilesWithDesigners
+            .Where(static pair => pair.Left.BaseName is not null)
+            .Select(static (pair, _) => GetClassIdentity(pair.Left, pair.Right))
+            .Collect()
+            .Select(
+                static (identities, _) =>
+                    new EquatableArray<(string Namespace, string ClassName, string Path)>(identities)
+            );
+
+        // One typed-key class per resx (incremental per file).
+        context.RegisterSourceOutput(
+            resXFilesWithDesigners.Combine(classIdentities),
+            static (spc, pair) => EmitKeysClass(spc, pair.Left.Left, pair.Left.Right, pair.Right)
+        );
     }
 
     /// <summary>
-    /// Emits the typed-key class for one parsed <c>.resx</c> file - or, instead of source, reports
-    /// <c>RXLGEN002</c> when the file has no matching designer accessor or <c>RXLGEN001</c> when
+    /// Emits the typed-key class for one parsed neutral <c>.resx</c> file - or, instead of source,
+    /// reports exactly one diagnostic, in this order: <c>RXLGEN003</c> when the file has no resource
+    /// name, <c>RXLGEN004</c> when another neutral file produces the same class, <c>RXLGEN001</c> when
     /// its XML failed to parse.
     /// </summary>
     /// <param name="context">The production context receiving the generated source and diagnostics.</param>
     /// <param name="resXFile">The parsed <c>.resx</c> file to generate keys for.</param>
     /// <param name="resXDesignerFiles">Every designer accessor found in the compilation, used for pairing.</param>
+    /// <param name="classIdentities">The class identity of every neutral file with a resource name.</param>
     private static void EmitKeysClass(
         SourceProductionContext context,
         ResXFile resXFile,
-        ImmutableArray<ResXDesignerFile> resXDesignerFiles
+        ImmutableArray<ResXDesignerFile> resXDesignerFiles,
+        EquatableArray<(string Namespace, string ClassName, string Path)> classIdentities
     )
     {
-        var resXDesignerFile = FindResXDesignerFile(resXFile, resXDesignerFiles);
+        var location = Location.Create(resXFile.Path, default, default);
 
-        if (resXDesignerFile is null)
+        if (resXFile.BaseName is null)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(MissingResourceNameDescriptor, location, resXFile.Path));
+            return;
+        }
+
+        var (ns, className, _) = GetClassIdentity(resXFile, resXDesignerFiles);
+
+        // Name the first other file in ordinal path order, so the message does not depend on the order
+        // in which the host supplies the files. Namespaces compare without the verbatim "@": Foo.@Bar
+        // from a designer and Foo.Bar from a resource name are the same C# namespace.
+        string? collidingPath = null;
+
+        foreach (var identity in classIdentities)
+        {
+            if (
+                identity.Namespace.Replace("@", string.Empty) == ns.Replace("@", string.Empty)
+                && identity.ClassName == className
+                && identity.Path != resXFile.Path
+                && (collidingPath is null || string.CompareOrdinal(identity.Path, collidingPath) < 0)
+            )
+            {
+                collidingPath = identity.Path;
+            }
+        }
+
+        if (collidingPath is not null)
         {
             context.ReportDiagnostic(
                 Diagnostic.Create(
-                    MissingDesignerDescriptor,
-                    Location.Create(resXFile.Path, default, default),
-                    resXFile.Path
+                    DuplicateKeysClassDescriptor,
+                    location,
+                    resXFile.Path,
+                    collidingPath,
+                    (ns.Length == 0 ? string.Empty : ns + ".") + className
                 )
             );
             return;
@@ -122,39 +188,29 @@ public sealed class ResxKeysGenerator : IIncrementalGenerator
         if (resXFile.ParseError is not null)
         {
             context.ReportDiagnostic(
-                Diagnostic.Create(
-                    InvalidResxDescriptor,
-                    Location.Create(resXFile.Path, default, default),
-                    resXFile.Path,
-                    resXFile.ParseError
-                )
+                Diagnostic.Create(InvalidResxDescriptor, location, resXFile.Path, resXFile.ParseError)
             );
             return;
         }
 
-        var ns = resXDesignerFile.Value.Namespace;
-        var className = SanitizeIdentifier(resXFile.FileBaseName + "Keys");
-        var resourceManagerReference =
-            "global::"
-            + (ns.Length == 0 ? string.Empty : ns + ".")
-            + resXDesignerFile.Value.AccessorType
-            + ".ResourceManager";
-
         var membersBuilder = new StringBuilder();
 
-        // Seed with the class name: a C# member must not be named like its enclosing type (CS0542),
-        // so a key equal to the class name falls into the regular numeric-suffix collision handling.
-        var usedMemberNames = new HashSet<string>(StringComparer.Ordinal) { className };
+        // Seed with the class name and the ResourceManager property: a C# member must not be named like
+        // its enclosing type (CS0542) or like another member (CS0102), so a key equal to either falls
+        // into the regular numeric-suffix collision handling.
+        var usedMemberNames = new HashSet<string>(StringComparer.Ordinal) { className, "ResourceManager" };
 
         foreach (var key in resXFile.Keys)
         {
             var memberName = SanitizeMemberName(key, usedMemberNames);
 
             membersBuilder.AppendLine(
-                $"    public static readonly global::RentADeveloper.ResXLocalization.ResourceKey {EscapeIdentifier(memberName)} = new({SymbolDisplay.FormatLiteral(key, quote: true)}, {resourceManagerReference});"
+                $"    public static readonly global::RentADeveloper.ResXLocalization.ResourceKey {EscapeIdentifier(memberName)} = new({SymbolDisplay.FormatLiteral(key, quote: true)}, ResourceManager);"
             );
         }
 
+        // ResourceManager is declared before the keys: static initializers run in declaration order, so a key
+        // initialized first would capture null.
         var classCode = $$"""
             // <auto-generated/>
             // Generated from a .resx by RentADeveloper.ResXLocalization.SourceGenerators - regenerates on build.
@@ -165,14 +221,22 @@ public sealed class ResxKeysGenerator : IIncrementalGenerator
             /// <summary>Typed, compile-validated keys generated from {{resXFile.FileBaseName}}.resx.</summary>
             public static partial class {{className}}
             {
+                /// <summary>
+                /// The resource manager of {{resXFile.FileBaseName}}.resx - the instance every key of this class uses. Register this
+                /// instance for search-all lookups, and pass it for scoped lookups.
+                /// </summary>
+                public static global::System.Resources.ResourceManager ResourceManager { get; } =
+                    new({{SymbolDisplay.FormatLiteral(
+                resXFile.BaseName,
+                quote: true
+            )}}, typeof({{className}}).Assembly);
+
             {{membersBuilder}}
             }
             """;
 
         // The namespace-qualified name keeps the hint unique across resx with the same base name in
-        // different namespaces; the directory hash disambiguates the remaining case of two resx with
-        // the same base name whose designers declare the SAME namespace (their partial classes merge,
-        // but each AddSource call still needs its own hint name).
+        // different namespaces; the directory hash keeps it unique per source folder.
         context.AddSource(
             (ns.Length == 0 ? string.Empty : ns.Replace("@", string.Empty) + ".")
                 + className
@@ -222,25 +286,54 @@ public sealed class ResxKeysGenerator : IIncrementalGenerator
     }
 
     /// <summary>
+    /// Computes the namespace and class name a neutral <c>.resx</c> file produces. The namespace is the
+    /// paired designer's; without a designer it is the resource name without its last segment, each
+    /// segment sanitized into an identifier, and the global namespace when the resource name has no dot.
+    /// </summary>
+    /// <param name="resXFile">A parsed neutral <c>.resx</c> file that carries its resource name.</param>
+    /// <param name="resXDesignerFiles">Every designer accessor found in the compilation.</param>
+    /// <returns>The namespace (empty for the global one), the class name and the file's path.</returns>
+    private static (string Namespace, string ClassName, string Path) GetClassIdentity(
+        ResXFile resXFile,
+        ImmutableArray<ResXDesignerFile> resXDesignerFiles
+    )
+    {
+        var baseName = resXFile.BaseName ?? string.Empty;
+        var lastDot = baseName.LastIndexOf('.');
+
+        // MSBuild makes folder names valid identifiers but does not escape keywords, and LogicalName is
+        // free text, so every segment is sanitized; the resource name itself is used unchanged.
+        var ns =
+            FindResXDesignerFile(resXFile, resXDesignerFiles)?.Namespace
+            ?? (
+                lastDot < 0
+                    ? string.Empty
+                    : string.Join(".", baseName.Substring(0, lastDot).Split('.').Select(SanitizeIdentifier))
+            );
+
+        return (ns, SanitizeIdentifier(resXFile.FileBaseName + "Keys"), resXFile.Path);
+    }
+
+    /// <summary>
     /// Determines whether a designer property type refers to
     /// <see cref="System.Resources.ResourceManager" /> - written fully qualified (with or without
     /// <c>global::</c>), as the bare name under a <c>using System.Resources;</c> import, or through
     /// a using alias.
     /// </summary>
     /// <param name="typeName">The property type as written in the designer source.</param>
-    /// <param name="aliases">The file's using aliases that resolve to the resource manager type.</param>
+    /// <param name="resourceManagerAliases">The file's using aliases that resolve to the resource manager type.</param>
     /// <param name="importsSystemResources">Whether the file imports <c>System.Resources</c>.</param>
     /// <returns><see langword="true" /> when the type refers to the resource manager type.</returns>
     private static bool IsResourceManagerType(
         string? typeName,
-        ImmutableHashSet<string> aliases,
+        ImmutableHashSet<string> resourceManagerAliases,
         bool importsSystemResources = false
     )
     {
         var normalized = typeName?.Replace("global::", string.Empty);
         return normalized == "System.Resources.ResourceManager"
             || (normalized == "ResourceManager" && importsSystemResources)
-            || (normalized is not null && aliases.Contains(normalized));
+            || (normalized is not null && resourceManagerAliases.Contains(normalized));
     }
 
     /// <summary>
@@ -306,8 +399,7 @@ public sealed class ResxKeysGenerator : IIncrementalGenerator
             return new ResXDesignerFile(
                 Path.GetDirectoryName(text.Path)!,
                 fileBaseName,
-                namespaceNode?.Name.ToString() ?? string.Empty,
-                EscapeIdentifier(accessor.Identifier.ValueText)
+                namespaceNode?.Name.ToString() ?? string.Empty
             );
         }
 
@@ -315,25 +407,41 @@ public sealed class ResxKeysGenerator : IIncrementalGenerator
     }
 
     /// <summary>
-    /// Parses a neutral <c>.resx</c> file into its ordinally sorted string-resource keys. Satellite
-    /// files (dotted base names such as <c>Strings.de.resx</c>) are skipped without parsing.
+    /// Parses a neutral <c>.resx</c> file into its resource name and its ordinally sorted
+    /// string-resource keys, reading MSBuild's resource metadata from the analyzer config options.
+    /// Satellites (<c>WithCulture</c> is <c>true</c>) are skipped, and a file without a
+    /// <c>ManifestResourceName</c> is not parsed.
     /// </summary>
     /// <param name="text">The <c>.resx</c> file, supplied as an additional text.</param>
+    /// <param name="options">The file's analyzer config options, carrying the MSBuild metadata.</param>
     /// <param name="ct">The token used to cancel parsing.</param>
     /// <returns>
-    /// The parsed model, carrying either the keys or - for malformed XML - the parse error to report
-    /// at emit time; or <see langword="null" /> when the file is a satellite or unreadable.
+    /// The parsed model, carrying the resource name and either the keys or - for malformed XML - the
+    /// parse error to report at emit time; without a resource name, a model whose
+    /// <see cref="ResXFile.BaseName" /> is <see langword="null" />; or <see langword="null" /> when the
+    /// file is a satellite or unreadable.
     /// </returns>
-    private static ResXFile? ParseResxFile(AdditionalText text, CancellationToken ct)
+    private static ResXFile? ParseResxFile(AdditionalText text, AnalyzerConfigOptions options, CancellationToken ct)
     {
         var fileBaseName = Path.GetFileNameWithoutExtension(text.Path);
+        var directoryPath = Path.GetDirectoryName(text.Path)!;
 
-        // Satellites (Strings1.de.resx) keep a dotted base name; they have no designer, so they get
-        // skipped at pairing time anyway. Skipping here too avoids parsing them.
-        if (fileBaseName.Length == 0 || fileBaseName.IndexOf('.') >= 0)
+        options.TryGetValue("build_metadata.AdditionalFiles.WithCulture", out var withCulture);
+        options.TryGetValue("build_metadata.AdditionalFiles.ManifestResourceName", out var manifestResourceName);
+        options.TryGetValue("build_metadata.AdditionalFiles.LogicalName", out var logicalName);
+
+        if (fileBaseName.Length == 0 || string.Equals(withCulture, "true", StringComparison.OrdinalIgnoreCase))
         {
             return null;
         }
+
+        if (manifestResourceName is null or "")
+        {
+            return new ResXFile(text.Path, directoryPath, fileBaseName, null, [], null);
+        }
+
+        // LogicalName replaces the computed name entirely, and names the embedded .resources stream.
+        var baseName = logicalName is null or "" ? manifestResourceName : StripSuffix(logicalName, ".resources");
 
         var source = text.GetText(ct);
 
@@ -347,11 +455,11 @@ public sealed class ResxKeysGenerator : IIncrementalGenerator
             var keys = ReadResXKeys(source.ToString())
                 .OrderBy(static k => k, StringComparer.Ordinal)
                 .ToImmutableArray();
-            return new ResXFile(text.Path, Path.GetDirectoryName(text.Path)!, fileBaseName, new(keys), null);
+            return new ResXFile(text.Path, directoryPath, fileBaseName, baseName, new(keys), null);
         }
         catch (System.Xml.XmlException exception)
         {
-            return new ResXFile(text.Path, Path.GetDirectoryName(text.Path)!, fileBaseName, [], exception.Message);
+            return new ResXFile(text.Path, directoryPath, fileBaseName, baseName, [], exception.Message);
         }
     }
 
@@ -454,21 +562,35 @@ public sealed class ResxKeysGenerator : IIncrementalGenerator
     }
 
     /// <summary>
-    /// Produces a short, deterministic (FNV-1a) hex digest of a path, used to keep hint names unique
-    /// per source directory. Case-normalized to match the OrdinalIgnoreCase path pairing above.
+    /// Turns a folder path into a short code - eight lowercase hex characters - that becomes part of a
+    /// generated file's hint name, for example <c>My.App.StringsKeys.3f9a01c2.g.cs</c>.
     /// </summary>
-    /// <param name="value">The path to digest.</param>
-    /// <returns>An eight-character lowercase hex digest.</returns>
+    /// <remarks>
+    /// <para>
+    /// Why it exists: every source a generator adds needs a hint name, and Roslyn requires the hint names
+    /// of one run to be unique - case-insensitively, because they become file names. A duplicate makes
+    /// <c>AddSource</c> throw, and the generator then produces nothing at all. The namespace and class name
+    /// alone are not always unique: two namespaces that differ only in case, such as <c>App.Res</c> and
+    /// <c>app.res</c>, are different to C# but equal as hint names. The folder the <c>.resx</c> lives in
+    /// tells such files apart; this method turns that folder into a short, file-name-safe code.
+    /// </para>
+    /// <para>
+    /// What it does: the first four bytes of the SHA-256 hash of the upper-cased path, as hex. The code
+    /// must be the same on every build, or the IDE would see new files each time; a .NET string hash
+    /// (<see cref="string.GetHashCode()" />, <c>HashCode</c>) changes per process, and SHA-256 is the
+    /// stable hash built into netstandard2.0. Upper-casing matches the case-insensitive path comparison
+    /// that pairs a <c>.resx</c> with its designer. Four bytes keep the name short, and two folders of one
+    /// project sharing them is practically impossible (about one chance in 860,000 for 100 folders).
+    /// </para>
+    /// </remarks>
+    /// <param name="value">The folder path to turn into a code.</param>
+    /// <returns>An eight-character lowercase hex code, the same for the same path on every build.</returns>
     private static string StableHash(string value)
     {
-        var hash = 2166136261u;
+        using var sha256 = SHA256.Create();
+        var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(value.ToUpperInvariant()));
 
-        foreach (var c in value.ToUpperInvariant())
-        {
-            hash = unchecked((hash ^ c) * 16777619u);
-        }
-
-        return hash.ToString("x8", CultureInfo.InvariantCulture);
+        return string.Concat(hash.Take(4).Select(static b => b.ToString("x2", CultureInfo.InvariantCulture)));
     }
 
     /// <summary>Removes a suffix from a file name, comparing case-insensitively.</summary>
@@ -487,12 +609,17 @@ public sealed class ResxKeysGenerator : IIncrementalGenerator
     /// <param name="Path">The full path of the <c>.resx</c> file, used in diagnostic locations.</param>
     /// <param name="DirectoryPath">The containing directory, used to pair the file with its designer.</param>
     /// <param name="FileBaseName">The file name without extension, for example <c>Strings</c>.</param>
-    /// <param name="Keys">The string-resource keys, ordinally sorted; empty when parsing failed.</param>
+    /// <param name="BaseName">
+    /// The name the resources are embedded under, passed to the generated resource manager; or
+    /// <see langword="null" /> when MSBuild's resource name did not reach the generator.
+    /// </param>
+    /// <param name="Keys">The string-resource keys, ordinally sorted; empty when parsing failed or did not run.</param>
     /// <param name="ParseError">The XML parse error message, or <see langword="null" /> when parsing succeeded.</param>
     private readonly record struct ResXFile(
         string Path,
         string DirectoryPath,
         string FileBaseName,
+        string? BaseName,
         EquatableArray<string> Keys,
         string? ParseError
     );
@@ -501,14 +628,5 @@ public sealed class ResxKeysGenerator : IIncrementalGenerator
     /// <param name="DirectoryPath">The containing directory, used to pair the designer with its <c>.resx</c>.</param>
     /// <param name="FileBaseName">The file name without the <c>.Designer.cs</c> suffix.</param>
     /// <param name="Namespace">The namespace declared in the designer; empty for the global namespace.</param>
-    /// <param name="AccessorType">
-    /// The (already <c>@</c>-escaped) name of the type exposing the static <c>ResourceManager</c>
-    /// property.
-    /// </param>
-    private readonly record struct ResXDesignerFile(
-        string DirectoryPath,
-        string FileBaseName,
-        string Namespace,
-        string AccessorType
-    );
+    private readonly record struct ResXDesignerFile(string DirectoryPath, string FileBaseName, string Namespace);
 }

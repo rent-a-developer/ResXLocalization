@@ -6,8 +6,15 @@
   @(EmbeddedResource) / @(Compile) are populated by the SDK default-item globs, so this covers
   each project's resources automatically and is benign for projects with none.
 
-  Done in a target (not a bare ItemGroup) so the per-item metadata Conditions batch correctly and run
-  before the compiler collects @(AdditionalFiles).
+  The generator also needs MSBuild's name for each .resx: ManifestResourceName (or LogicalName, which
+  replaces it) is the name the resources are embedded under, and WithCulture says whether the file is a
+  satellite. A generator cannot read MSBuild items. The only channel is the analyzer config file that
+  GenerateMSBuildEditorConfigFile writes into obj/, as a snapshot of every CompilerVisibleItemMetadata
+  value of the @(AdditionalFiles) that exist when it runs. So the target below:
+    * depends on PrepareResourceNames, the target that computes ManifestResourceName and WithCulture;
+    * runs before GenerateMSBuildEditorConfigFileShouldRun, so the items are in the snapshot. An item
+      added later (for example before CoreCompile) reaches the generator without its metadata.
+  Done in a target (not a bare ItemGroup) so the per-item metadata Conditions batch correctly.
 
   SINGLE SOURCE OF TRUTH. This file is consumed two ways:
     * In-repo: Directory.Build.targets <Import>s it (the sample/tests use ProjectReference and so do
@@ -16,8 +23,15 @@
       file to buildTransitive/<PackageId>.targets (the file name must equal the PackageId so NuGet
       auto-imports it for direct and transitive consumers).
 -->
+  <ItemGroup>
+    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="ManifestResourceName" />
+    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="LogicalName" />
+    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="WithCulture" />
+  </ItemGroup>
+
   <Target Name="AddResxAdditionalFilesForResXLocalization"
-          BeforeTargets="CoreCompile">
+          BeforeTargets="GenerateMSBuildEditorConfigFileShouldRun"
+          DependsOnTargets="PrepareResourceNames">
     <ItemGroup>
       <AdditionalFiles Include="@(EmbeddedResource)"
                        Condition="'%(Extension)' == '.resx'" />

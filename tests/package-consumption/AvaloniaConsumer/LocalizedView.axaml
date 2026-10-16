@@ -8,6 +8,10 @@
         <TextBlock x:Name="GreetingText"
                    Text="{l:Localize {x:Static resources:StringsKeys.Greeting}}" />
 
+        <!--  A typed key of a .resx without a designer: its resource name reaches the generator through the package.  -->
+        <TextBlock x:Name="DesignerlessText"
+                   Text="{l:Localize {x:Static resources:DesignerlessKeys.Title}}" />
+
         <!--  A typed key the German satellite does not carry: it must fall back to the neutral value.  -->
         <TextBlock x:Name="FallbackText"
                    Text="{l:Localize {x:Static resources:StringsKeys.NeutralOnly}}" />
