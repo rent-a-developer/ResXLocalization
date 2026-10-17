@@ -6,17 +6,17 @@ namespace RentADeveloper.ResXLocalization.Avalonia.Sample.Tests;
 /// </summary>
 internal static class TestSupport
 {
+    /// <summary>The test-only Catalog file; registered first so it wins search-all ties for "Shared".</summary>
+    public static readonly ResourceManager CatalogResources = new(
+        "RentADeveloper.ResXLocalization.Avalonia.Sample.Tests.Resources.Catalog",
+        typeof(TestSupport).Assembly
+    );
+
     /// <summary>English culture, used to reset the ambient localizer at the start of each test.</summary>
     public static readonly CultureInfo English = new("en");
 
     /// <summary>German culture. Used to assert that values switch live.</summary>
     public static readonly CultureInfo German = new("de");
-
-    /// <summary>The test-only Catalog file; registered first so it wins search-all ties for "Shared".</summary>
-    private static readonly ResourceManager CatalogResources = new(
-        "RentADeveloper.ResXLocalization.Avalonia.Sample.Tests.Resources.Catalog",
-        typeof(TestSupport).Assembly
-    );
 
     /// <summary>The test-only Fallback file; registered after <see cref="CatalogResources" />.</summary>
     private static readonly ResourceManager FallbackResources = new(
@@ -52,29 +52,19 @@ internal static class TestSupport
         return textBlock;
     }
 
-    /// <summary>Binds a <see cref="LocalizeExtension" /> to a fresh text block's Text and returns it.</summary>
+    /// <summary>
+    /// Binds a <see cref="LocalizeExtension" /> to a fresh text block's Text, then sets the text block's
+    /// <c>DataContext</c> and pumps pending UI work so that bindings settle.
+    /// </summary>
     /// <param name="extension">The markup extension that creates the localization binding.</param>
+    /// <param name="dataContext">The data context for the argument bindings, if any.</param>
     /// <returns>The bound text block.</returns>
-    public static TextBlock BindLocalizedText(LocalizeExtension extension)
+    public static TextBlock BindLocalizedText(LocalizeExtension extension, object? dataContext = null)
     {
         var textBlock = new TextBlock();
         textBlock.Bind(TextBlock.TextProperty, (BindingBase)extension.ProvideValue(null!));
-        return textBlock;
-    }
-
-    /// <summary>
-    /// Binds a <see cref="LocalizeExtension" /> to a fresh text block's Text, supplying the text block
-    /// as the extension's target - mirroring real XAML usage - so the produced binding can read the
-    /// <see cref="LocalizeArgs" /> arguments set on it.
-    /// </summary>
-    /// <param name="extension">The markup extension that creates the localization binding.</param>
-    /// <returns>The bound text block.</returns>
-    public static TextBlock BindLocalizedTextWithTarget(LocalizeExtension extension)
-    {
-        var textBlock = new TextBlock();
-        var binding = (BindingBase)
-            extension.ProvideValue(new SimpleServiceProvider(new SimpleProvideValueTarget(textBlock)));
-        textBlock.Bind(TextBlock.TextProperty, binding);
+        textBlock.DataContext = dataContext;
+        PumpUi();
         return textBlock;
     }
 

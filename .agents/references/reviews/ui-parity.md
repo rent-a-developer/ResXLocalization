@@ -17,12 +17,15 @@ both, so anything that is not framework-specific belongs there rather than in on
 | Localize a key | `LocalizeExtension` | `LocalizeExtension` |
 | Localize an enum in a template | `LocalizeEnumExtension` | `LocalizeEnumExtension` |
 | Localize an enum as a bound value | `LocalizeEnumConverter` | `LocalizeEnumConverter` |
-| Composite-format arguments | `LocalizeArgs.Arg0`…`Arg8` | `LocalizeArgs.Arg0`…`Arg8` |
+| Composite-format arguments | `Argument` children in `LocalizeExtension.Arguments` | `Argument` children in `LocalizeExtension.Arguments` |
+| Assigning a binding to `Argument.Value` instead of applying it | `[AssignBinding]` on the property | the `XamlSetMarkupExtension` handler of `Argument` |
+| An argument binding that is a `MultiBinding` or a `PriorityBinding` | accepted | rejected by `ProvideValue`: WPF's `MultiBinding` accepts only plain `Binding` children |
 
 Where the frameworks genuinely differ, the difference is expected to be **local and explained**:
-Avalonia binds through `AvaloniaProperty` and an observable, WPF through `DependencyProperty` and a
-`MultiBinding`; Avalonia subscribes with weak events, WPF relies on its own weak binding-target
-references; WPF has no Native AOT. None of those is a licence for a different public API.
+both `LocalizeExtension`s build a `MultiBinding`, but from framework-specific bindings (a
+`CompiledBinding` in Avalonia, a `Binding` in WPF); Avalonia's `LocalizeEnumExtension` binds through an
+observable that subscribes with weak events, WPF relies on its own weak binding-target references; WPF
+has no Native AOT. None of those is a licence for a different public API.
 
 ## What to check
 

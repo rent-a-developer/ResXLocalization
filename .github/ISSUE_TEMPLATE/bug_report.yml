@@ -34,7 +34,7 @@ body:
         - Scoped (Key + ResourceManager)
         - Search-all (key only)
         - Enum ({l:LocalizeEnum} / LocalizeEnumConverter)
-        - Dynamic format arguments (LocalizeArgs.Arg0…Arg8)
+        - Dynamic format arguments (<l:Argument>)
         - Culture fallback / satellite discovery
         - Source generator / build
         - Other / not applicable

@@ -7,17 +7,17 @@ namespace RentADeveloper.ResXLocalization.WPF.Sample.Tests;
 /// </summary>
 internal static class TestSupport
 {
+    /// <summary>The test-only Catalog file; registered first so it wins search-all ties for "Shared".</summary>
+    public static readonly ResourceManager CatalogResources = new(
+        "RentADeveloper.ResXLocalization.WPF.Sample.Tests.Resources.Catalog",
+        typeof(TestSupport).Assembly
+    );
+
     /// <summary>English culture, used to reset the ambient localizer at the start of each test.</summary>
     public static readonly CultureInfo English = new("en");
 
     /// <summary>German culture. Used to assert that values switch live.</summary>
     public static readonly CultureInfo German = new("de");
-
-    /// <summary>The test-only Catalog file; registered first so it wins search-all ties for "Shared".</summary>
-    private static readonly ResourceManager CatalogResources = new(
-        "RentADeveloper.ResXLocalization.WPF.Sample.Tests.Resources.Catalog",
-        typeof(TestSupport).Assembly
-    );
 
     /// <summary>The test-only Fallback file; registered after <see cref="CatalogResources" />.</summary>
     private static readonly ResourceManager FallbackResources = new(
@@ -53,16 +53,21 @@ internal static class TestSupport
         return textBlock;
     }
 
-    /// <summary>Binds a <see cref="LocalizeExtension" /> to a fresh text block's Text and returns it.</summary>
+    /// <summary>
+    /// Binds a <see cref="LocalizeExtension" /> to a fresh text block's Text, then sets the text block's
+    /// <c>DataContext</c> and flushes pending binding transfers.
+    /// </summary>
     /// <param name="extension">The markup extension that creates the localization binding.</param>
+    /// <param name="dataContext">The data context for the argument bindings, if any.</param>
     /// <returns>The bound text block after pending binding transfers have been applied.</returns>
-    public static TextBlock BindLocalizedText(LocalizeExtension extension)
+    public static TextBlock BindLocalizedText(LocalizeExtension extension, object? dataContext = null)
     {
         var textBlock = new TextBlock();
         textBlock.SetBinding(
             TextBlock.TextProperty,
             (BindingBase)extension.ProvideValue(EmptyServiceProvider.Instance)
         );
+        textBlock.DataContext = dataContext;
         Flush();
         return textBlock;
     }

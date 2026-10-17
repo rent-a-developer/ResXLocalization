@@ -86,7 +86,7 @@ internal static class Program
         );
 
         var extension = new LocalizeExtension(StringsKeys.Greeting);
-        Check("markup extension instantiation", extension.ResourceKey?.Name ?? "<null>", "Greeting");
+        Check("markup extension instantiation", extension.Key is ResourceKey key ? key.Name : "<null>", "Greeting");
 
         if (failures > 0)
         {

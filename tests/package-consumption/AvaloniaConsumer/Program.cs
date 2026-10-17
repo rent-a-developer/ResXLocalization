@@ -8,7 +8,7 @@
 //
 // This program is also the assertion set the Native AOT gate runs. Everything a trimmer can break and a
 // JIT cannot is here: satellite discovery, resource lookup by name, the typed keys' captured resource
-// managers, the enum key convention, composite formatting driven by an attached property, and named
+// managers, the enum key convention, composite formatting driven by a compiled argument binding, and named
 // arguments read by reflection in MessageArguments.FromObject.
 
 using System.Globalization;
@@ -85,9 +85,16 @@ Check("compiled XAML scoped lookup", localizedView.ScopedText.Text ?? "<null>", 
 Check("compiled XAML enum by convention", localizedView.SortOrderText.Text ?? "<null>", "Ascending");
 Check("compiled XAML typed key without a designer", localizedView.DesignerlessText.Text ?? "<null>", "Designer-less");
 Check(
-    "compiled XAML composite format, no argument set",
-    localizedView.InvitedText.Text ?? "<null>",
+    "compiled XAML composite format, no argument",
+    localizedView.InvitedWithoutArgumentsText.Text ?? "<null>",
     "{0} people invited"
+);
+
+// The compiled argument binding delivers the view model's initial value.
+Check(
+    "compiled XAML composite format, initial argument",
+    localizedView.InvitedText.Text ?? "<null>",
+    "0 people invited"
 );
 
 // An argument change, with the culture unchanged: the rendered text must re-format.
@@ -175,7 +182,7 @@ Check(
 );
 
 var extension = new LocalizeExtension(StringsKeys.Greeting);
-Check("markup extension instantiation", extension.ResourceKey?.Name ?? "<null>", "Greeting");
+Check("markup extension instantiation", extension.Key is ResourceKey key ? key.Name : "<null>", "Greeting");
 
 if (failures > 0)
 {
