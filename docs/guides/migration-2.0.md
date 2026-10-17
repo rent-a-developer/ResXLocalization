@@ -35,7 +35,7 @@ text = Localizer.Current.Get(AppStringsKeys.FilesCopied, copied);
 
 ## A formatting failure in XAML renders the failure text
 
-`{l:Localize}` with `LocalizeArgs` arguments whose resource value cannot be formatted renders the
+`{l:Localize}` with arguments whose resource value cannot be formatted renders the
 failure text, in both frameworks, and raises `LookupFailed`. In 1.x, Avalonia reported a binding
 error and kept the previous text, and WPF showed an empty text.
 
@@ -45,8 +45,13 @@ After:
 
 ```xml
 <!-- Resource "FilesCopied" = "Copied {0 files" -->
-<TextBlock l:LocalizeArgs.Arg0="{Binding Copied}"
-           Text="{l:Localize {x:Static res:AppStringsKeys.FilesCopied}}" />
+<TextBlock>
+  <TextBlock.Text>
+    <l:Localize Key="{x:Static res:AppStringsKeys.FilesCopied}">
+      <l:Argument Value="{Binding Copied}" />
+    </l:Localize>
+  </TextBlock.Text>
+</TextBlock>
 <!-- renders "!FilesCopied!" and raises Localizer.Current.LookupFailed -->
 ```
 
@@ -403,4 +408,80 @@ Localizer.Current.RegisterResourceManager(new ResourceManager("MyApp.Strngs", ty
 // ArgumentException: No resources exist under the base name 'MyApp.Strngs'. ...
 
 Localizer.Current.RegisterResourceManager(AppStringsKeys.ResourceManager);
+```
+
+## `LocalizeArgs` is replaced by `<l:Argument>`
+
+The attached properties `LocalizeArgs.Arg0`...`Arg8` are removed from both packages. Format arguments
+are `<l:Argument>` children of `{l:Localize}`, each with a constant or bound `Value` and an optional
+`Name`. A localized text with arguments is written in element syntax.
+
+Before:
+
+```xml
+<TextBlock l:LocalizeArgs.Arg0="{Binding PeopleCount}"
+           Text="{l:Localize {x:Static res:AppStringsKeys.PeopleInvited}}" />
+```
+
+After:
+
+```xml
+<TextBlock>
+  <TextBlock.Text>
+    <l:Localize Key="{x:Static res:AppStringsKeys.PeopleInvited}">
+      <l:Argument Value="{Binding PeopleCount}" />
+    </l:Localize>
+  </TextBlock.Text>
+</TextBlock>
+```
+
+## `LocalizeExtension.ResourceKey` is replaced by `Key`
+
+`LocalizeExtension.ResourceKey` is removed. `Key` takes a `string` or a `ResourceKey`; a `ResourceKey`
+resolves through its own resource manager and ignores `ResourceManager`. Code that read
+`LocalizeExtension.Key` as a `string` reads an `object?`. A constructor argument or a `Key` that is
+neither a `string` nor a `ResourceKey` throws an `InvalidOperationException` when the view loads;
+before, it produced an empty key.
+
+Before:
+
+```xml
+<TextBlock Text="{l:Localize ResourceKey={x:Static res:AppStringsKeys.Greeting}}" />
+```
+
+After:
+
+```xml
+<TextBlock Text="{l:Localize Key={x:Static res:AppStringsKeys.Greeting}}" />
+<TextBlock Text="{l:Localize {x:Static res:AppStringsKeys.Greeting}}" />
+```
+
+## Avalonia: arguments in a style setter or a resource are formatted
+
+In Avalonia, a `{l:Localize}` with arguments in a `Style` setter or in a resource resolved unformatted,
+because the arguments were read from a target element that a setter or a resource does not have. The
+arguments now live on the binding, so the text is formatted there too. Check such texts after
+upgrading.
+
+Before:
+
+```xml
+<!-- Resource "PeopleInvited" = "{0} people invited" -->
+<Style Selector="TextBlock.invited">
+  <Setter Property="Text" Value="{l:Localize {x:Static res:AppStringsKeys.PeopleInvited}}" />
+</Style>
+<!-- renders "{0} people invited", whatever LocalizeArgs.Arg0 holds -->
+```
+
+After:
+
+```xml
+<Style Selector="TextBlock.invited">
+  <Setter Property="Text">
+    <l:Localize Key="{x:Static res:AppStringsKeys.PeopleInvited}">
+      <l:Argument Value="{Binding PeopleCount}" />
+    </l:Localize>
+  </Setter>
+</Style>
+<!-- renders "5 people invited" for PeopleCount = 5 -->
 ```

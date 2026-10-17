@@ -119,7 +119,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
     /// <summary>
     /// The people count formatted into the <c>PeopleInvited</c> resource by the dynamic
-    /// format-arguments demo: the view binds it to <c>LocalizeArgs.Arg0</c>, so every change
+    /// format-arguments demo: the view binds it to the <c>Value</c> of an <c>Argument</c>, so every change
     /// re-formats the localized text live.
     /// </summary>
     [ObservableProperty]

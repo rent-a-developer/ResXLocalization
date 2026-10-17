@@ -32,6 +32,12 @@ this project adheres to [Semantic Versioning](https://semver.org/).
   key of the class uses. Register it for search-all lookups and pass it for scoped lookups.
 - Generator warnings `RXLGEN003` (a `.resx` reached the generator without its MSBuild resource name)
   and `RXLGEN004` (two neutral `.resx` files would produce the same keys class).
+- Format arguments on the binding, in both UI packages: `<l:Argument>` children of `{l:Localize}`, each
+  with a constant or bound `Value` and an optional `Name`. There is no upper limit, each localized
+  property has its own arguments, and arguments work in style setters, resources and templates.
+- `{l:Localize}` re-resolves on every change of `ILocalizer.RefreshTriggeringRevision` - a new formatter,
+  a new lookup-failure text builder, a registered or removed resource manager - not only on a language
+  switch.
 
 ### Changed
 
@@ -82,11 +88,19 @@ this project adheres to [Semantic Versioning](https://semver.org/).
   plain `ResourceManager` for which no resources exist under its base name, instead of registering it and
   letting every search-all lookup that reaches it throw `MissingManifestResourceException`. Fix the base
   name, or register `<Name>Keys.ResourceManager`. See the [migration guide](docs/guides/migration-2.0.md).
+- **BREAKING:** `LocalizeExtension.Key` is an `object?` that takes a `string` or a `ResourceKey`; a key
+  that is neither throws `InvalidOperationException` when the view loads instead of producing an empty
+  key. See the [migration guide](docs/guides/migration-2.0.md).
+- **BREAKING:** Avalonia: `{l:Localize}` with arguments in a `Style` setter or a resource is formatted;
+  it resolved unformatted. See the [migration guide](docs/guides/migration-2.0.md).
 
 ### Removed
 
 - The generator warning `RXLGEN002` (a `.resx` without a recognized classic designer): a designer is no
   longer required.
+- **BREAKING:** `LocalizeArgs` and its attached properties `Arg0`...`Arg8`, in both UI packages; give
+  `{l:Localize}` `<l:Argument>` children instead. See the [migration guide](docs/guides/migration-2.0.md).
+- **BREAKING:** `LocalizeExtension.ResourceKey`; set `Key` to the `ResourceKey` instead. See the [migration guide](docs/guides/migration-2.0.md).
 
 ## [1.1.0] - 2026-07-20
 

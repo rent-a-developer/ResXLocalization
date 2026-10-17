@@ -49,7 +49,7 @@ Localizer.Current.CurrentCulture = new CultureInfo("de");
 - 🚀 **Native AOT & trim clean (Avalonia)** - no reflection over your resources; publishes with `PublishAot=true` out of the box. *(WPF is Windows-only and does not support Native AOT.)*
 - 🗂️ **First-class multiple `.resx`** - look up by **typed key**, **scope** to one file, or **search across all** registered files in a defined order.
 - 🔤 **Enum localization built in** - localize enum members by naming convention, in item templates and as bound values.
-- 🧮 **Format arguments** - `Get(key, args…)` formats the translation in the active culture; in XAML, bind the `LocalizeArgs.Arg0`…`Arg8` attached properties.
+- 🧮 **Format arguments** - `Get(key, args…)` formats the translation in the active culture; in XAML, give `{l:Localize}` `<l:Argument>` children with constant or bound values.
 - 🩺 **Missing-translation diagnostics** - a visible `!key!` sentinel (configurable) plus a `TranslationNotFound` event for logging and coverage reports.
 - 🌐 **Language-picker ready** - `GetAvailableCultures()` discovers the cultures your app actually ships.
 - 🧩 **MVVM-friendly** - an injectable `ILocalizer` service with `INotifyPropertyChanged`, markup extensions for XAML, and a clean code-behind API.
@@ -238,7 +238,7 @@ value is not reported as missing.
 
 Enum members are localized by naming convention - one `.resx` entry per member, named
 `Enum_<EnumTypeName>_<MemberName>` - and composite-format resources take their arguments from
-`Get(key, args…)` in code or from the `LocalizeArgs.Arg0`…`Arg8` attached properties in XAML.
+`Get(key, args…)` in code or from `<l:Argument>` children of `{l:Localize}` in XAML.
 
 ## Documentation
 
@@ -246,7 +246,7 @@ Enum members are localized by naming convention - one `.resx` entry per member, 
 | --- | --- |
 | [Lookup modes and culture fallback](docs/guides/lookup-and-fallback.md) | Typed, scoped and search-all lookups, registration order, the fallback chain, missing-translation diagnostics, dependency injection, subscription lifetime |
 | [Localizing enum values](docs/guides/enums.md) | The naming convention, item templates, `LocalizeEnumConverter`, custom prefixes and scoping |
-| [Dynamic format arguments](docs/guides/format-arguments.md) | `Get(key, args…)` and the `LocalizeArgs.Arg0`…`Arg8` attached properties |
+| [Dynamic format arguments](docs/guides/format-arguments.md) | `Get(key, args…)` and `<l:Argument>` children of `{l:Localize}` |
 | [Native AOT and trimming](docs/guides/native-aot.md) | What to declare, how to publish, and what a trimming failure looks like |
 | [Generated keys](docs/reference/generated-keys.md) | Which `.resx` files qualify, what becomes a key, the generator diagnostics, the Roslyn floor |
 | [API reference](https://rent-a-developer.github.io/ResXLocalization/) | Every public type and member |

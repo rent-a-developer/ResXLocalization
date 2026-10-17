@@ -1,13 +1,15 @@
 namespace RentADeveloper.ResXLocalization.Avalonia;
 
 /// <summary>
-/// XAML markup extension that produces a binding to a localized string, re-resolving automatically
-/// whenever <see cref="Localizer.Current" /> changes culture. Usage in XAML:
-/// <c>{l:Localize {x:Static res:StringsKeys.Greeting}}</c> for a typed key,
-/// <c>{l:Localize SomeKey}</c> for a key-only lookup across all registered resource managers, or
-/// <c>{l:Localize Key=SomeKey, ResourceManager={x:Static res:StringsKeys.ResourceManager}}</c> to scope
-/// the lookup to one file. When the resource value is a composite format string, supply its
-/// arguments by binding the <see cref="LocalizeArgs" /> attached properties on the target element.
+/// XAML markup extension that produces a binding to a localized string, re-resolving automatically on every
+/// change of <see cref="ILocalizer.RefreshTriggeringRevision" /> of <see cref="Localizer.Current" /> - a
+/// language switch, a new formatter, a new lookup-failure text builder or a change of the registered resource
+/// managers. Usage in XAML: <c>{l:Localize {x:Static res:StringsKeys.Greeting}}</c> for a typed key,
+/// <c>{l:Localize Greeting}</c> for a key-only lookup across all registered resource managers, or
+/// <c>{l:Localize Key=Greeting, ResourceManager={x:Static res:StringsKeys.ResourceManager}}</c> to scope the
+/// lookup to one file. When the resource value is a composite format string, supply its arguments as
+/// <see cref="Argument" /> child elements:
+/// <c>&lt;l:Localize Key="{x:Static res:StringsKeys.PeopleInvited}"&gt;&lt;l:Argument Value="{Binding PeopleCount}" /&gt;&lt;/l:Localize&gt;</c>.
 /// </summary>
 public sealed class LocalizeExtension : MarkupExtension
 {
@@ -15,91 +17,99 @@ public sealed class LocalizeExtension : MarkupExtension
     public LocalizeExtension() { }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="LocalizeExtension" /> class from a single positional
-    /// argument. A typed <see cref="RentADeveloper.ResXLocalization.ResourceKey" /> (for example from
-    /// <c>{x:Static res:StringsKeys.Greeting}</c>) becomes <see cref="ResourceKey" />; a
-    /// <see cref="string" /> becomes <see cref="Key" />; any other value leaves <see cref="Key" /> empty.
-    /// A single object-typed constructor is used instead of overloads so Avalonia's positional-argument
-    /// resolution is never ambiguous, which also keeps the XAML previewer working.
+    /// Initializes a new instance of the <see cref="LocalizeExtension" /> class and sets <see cref="Key" />:
+    /// <c>{l:Localize Greeting}</c> is <c>{l:Localize Key=Greeting}</c>. A single object-typed constructor is
+    /// used instead of overloads so Avalonia's positional-argument resolution is never ambiguous, which also
+    /// keeps the XAML previewer working.
     /// </summary>
-    /// <param name="key">A <see cref="RentADeveloper.ResXLocalization.ResourceKey" /> or a key string.</param>
-    public LocalizeExtension(object key)
-    {
-        if (key is ResourceKey resourceKey)
-        {
-            this.ResourceKey = resourceKey;
-        }
-        else
-        {
-            this.Key = key as string ?? string.Empty;
-        }
-    }
+    /// <param name="key">The key: a <see cref="string" /> or a <see cref="RentADeveloper.ResXLocalization.ResourceKey" />.</param>
+    public LocalizeExtension(object key) => this.Key = key;
 
     /// <summary>
-    /// Gets or sets the resource key to resolve. Used when <see cref="ResourceKey" /> is not set. If
-    /// <see cref="ResourceManager" /> is also set, the lookup is scoped to that file; otherwise every
-    /// registered resource manager is searched.
+    /// Gets the format arguments, in declaration order: the <see cref="Argument" /> child elements. The first
+    /// argument is <c>{0}</c>, the second <c>{1}</c>, and so on, whether it has a name or not.
     /// </summary>
-    public string Key { get; set; } = string.Empty;
+    [Content]
+    public Collection<Argument> Arguments { get; } = [];
 
     /// <summary>
-    /// Gets or sets a typed, file-scoped key. When set, it takes precedence over <see cref="Key" />
-    /// and <see cref="ResourceManager" /> and resolves through its own resource manager.
+    /// Gets or sets the key to resolve: a <see cref="string" />, scoped to <see cref="ResourceManager" /> if
+    /// that is set and otherwise searched across all registered resource managers, or a
+    /// <see cref="RentADeveloper.ResXLocalization.ResourceKey" />, which resolves through its own resource
+    /// manager.
     /// </summary>
-    public ResourceKey? ResourceKey { get; set; }
+    // [AssignBinding] assigns a binding written for Key as its value instead of applying it, so ValidateKey
+    // rejects it with a message that names the binding type.
+    [AssignBinding]
+    public object? Key { get; set; }
 
     /// <summary>
-    /// Gets or sets the resource manager that scopes a <see cref="Key" /> lookup to a single
-    /// <c>.resx</c> file. Ignored when <see cref="ResourceKey" /> is set; when both this and
-    /// <see cref="ResourceKey" /> are unset, the key is searched across all registered resource managers.
+    /// Gets or sets the resource manager that scopes a <see cref="string" /> <see cref="Key" /> to a single
+    /// <c>.resx</c> file. Ignored when <see cref="Key" /> is a
+    /// <see cref="RentADeveloper.ResXLocalization.ResourceKey" />; when unset, a <see cref="string" /> key is
+    /// searched across all registered resource managers.
     /// </summary>
     public ResourceManager? ResourceManager { get; set; }
 
     /// <summary>
-    /// Provides the value supplied to the target property: a binding whose value is the localized
-    /// string for the configured key, updated live on every culture change - and, when the target is
-    /// an <see cref="AvaloniaObject" />, on every change of its <see cref="LocalizeArgs" /> arguments.
+    /// Provides the value supplied to the target property: a binding whose value is the localized string for
+    /// <see cref="Key" />, formatted with <see cref="Arguments" />, updated live on every change of the
+    /// arguments and of <see cref="ILocalizer.RefreshTriggeringRevision" />. It needs no target element, so
+    /// it also works in a style setter, in a resource and in a template.
     /// </summary>
-    /// <param name="serviceProvider">The service provider supplied by the XAML loader.</param>
-    /// <returns>An Avalonia binding that yields the localized string.</returns>
+    /// <param name="serviceProvider">The service provider supplied by the XAML loader; not used.</param>
+    /// <returns>An Avalonia multi-binding that yields the localized string.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// <see cref="Key" /> is <see langword="null" /> or neither a <see cref="string" /> nor a
+    /// <see cref="RentADeveloper.ResXLocalization.ResourceKey" />; or an <see cref="Argument" /> has no
+    /// <see cref="Argument.Value" />, an empty <see cref="Argument.Name" />, or the same name as another one.
+    /// </exception>
+    /// <exception cref="ArgumentNullException">
+    /// <see cref="Key" /> is a <see cref="RentADeveloper.ResXLocalization.ResourceKey" /> without a resource
+    /// manager.
+    /// </exception>
     public override object ProvideValue(IServiceProvider serviceProvider)
     {
-        Func<string> resolve;
-        Func<object?[], string> resolveFormatted;
+        this.ValidateKey();
+        LocalizedMultiBindingBuilder.ValidateArguments(this.Arguments);
 
-        if (this.ResourceKey.HasValue)
-        {
-            var resourceKey = this.ResourceKey.Value;
-            resolve = () => Localizer.Current.Get(resourceKey);
-            resolveFormatted = arguments => Localizer.Current.Get(resourceKey, MessageArguments.FromValues(arguments));
-        }
-        else if (this.ResourceManager is not null)
-        {
-            var key = this.Key;
-            var resourceManager = this.ResourceManager;
-            resolve = () => Localizer.Current.Get(key, resourceManager: resourceManager);
-            resolveFormatted = arguments =>
-                Localizer.Current.Get(key, MessageArguments.FromValues(arguments), resourceManager);
-        }
-        else
-        {
-            var key = this.Key;
-            resolve = () => Localizer.Current.Get(key);
-            resolveFormatted = arguments => Localizer.Current.Get(key, MessageArguments.FromValues(arguments));
-        }
+        return LocalizedMultiBindingBuilder.Build(this.Key!, this.Arguments, this.ResourceManager);
+    }
 
-        // The target element is where the LocalizeArgs arguments live. ProvideValue runs during XAML
-        // instantiation, before argument bindings deliver values, so the produced binding re-reads the
-        // arguments on every args-version change instead of reading them once here. Without an
-        // AvaloniaObject target (including a null service provider), argument support is unavailable
-        // and the culture-only binding preserves the exact pre-LocalizeArgs behavior.
-        var target = serviceProvider?.GetService(typeof(IProvideValueTarget)) as IProvideValueTarget;
-
-        if (target?.TargetObject is AvaloniaObject element)
+    /// <summary>Checks that <see cref="Key" /> is a <see cref="string" /> or a usable resource key.</summary>
+    /// <exception cref="InvalidOperationException">
+    /// <see cref="Key" /> is <see langword="null" /> or neither a <see cref="string" /> nor a
+    /// <see cref="RentADeveloper.ResXLocalization.ResourceKey" />.
+    /// </exception>
+    /// <exception cref="ArgumentNullException">
+    /// <see cref="Key" /> is a <see cref="RentADeveloper.ResXLocalization.ResourceKey" /> without a resource
+    /// manager.
+    /// </exception>
+    private void ValidateKey()
+    {
+        switch (this.Key)
         {
-            return new LocalizedFormattedTextObservable(element, resolve, resolveFormatted).ToBinding();
-        }
+            case null:
+                throw new InvalidOperationException(
+                    "{l:Localize} has no Key. Set the key as {l:Localize Greeting} or as Key=\"...\"."
+                );
 
-        return new LocalizedTextObservable(resolve).ToBinding();
+            case string:
+                return;
+
+            case ResourceKey { Manager: null }:
+                throw new ArgumentNullException(
+                    message: "The ResourceKey assigned to Key of {l:Localize} has no ResourceManager.",
+                    innerException: null
+                );
+
+            case ResourceKey:
+                return;
+
+            default:
+                throw new InvalidOperationException(
+                    $"Key of {{l:Localize}} must be a string or a ResourceKey, but is a {this.Key.GetType().FullName}."
+                );
+        }
     }
 }
