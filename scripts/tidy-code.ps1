@@ -341,21 +341,25 @@ function Invoke-StyleFix
 
     $verify = if ($VerifyOnly) { @('--verify-no-changes') } else { @() }
 
-    # Build the source generator in Debug first, and that is not optional either. `dotnet format` loads
-    # every project in its default configuration, Debug, and runs the source generators in memory, from
-    # the analyzer path the project reference resolves to: the generator's bin/Debug output. When that DLL
-    # does not exist, the analyzer is dropped without a warning, no <Name>Keys class exists in the
-    # compilation, and IDE0005 DELETES every using that only the generated keys classes need. A Release
-    # build does not help - it is the wrong path - and the disposable copy has no bin/ at all.
+    # Build the source generator first, and that is not optional either. `dotnet format` runs the source
+    # generators in memory, from the analyzer path the project reference resolves to: the generator's
+    # bin/<Configuration> output. When that DLL does not exist, the analyzer is dropped without a warning,
+    # no <Name>Keys class exists in the compilation, and IDE0005 DELETES every using that only the
+    # generated keys classes need. The disposable copy has no bin/ at all.
+    #
+    # Deliberately no `-c`: `dotnet format` takes its configuration from the environment - Debug by
+    # default, Release in CI, whose `CONFIGURATION: Release` becomes the MSBuild property Configuration -
+    # and a build without `-c` resolves the same one. A hard-coded configuration is right on one of them
+    # and wrong on the other.
     $generatorProject = [System.IO.Path]::Combine(
         'src',
         'ResXLocalization.SourceGenerators',
         'ResXLocalization.SourceGenerators.csproj'
     )
-    $output = Invoke-Tool -Arguments @('build', $generatorProject, '-c', 'Debug', '-v', 'q') -WorkingDirectory $Root
+    $output = Invoke-Tool -Arguments @('build', $generatorProject, '-v', 'q') -WorkingDirectory $Root
     if ($LASTEXITCODE -ne 0)
     {
-        $failures.Add("dotnet build (source generator, Debug):`n$output")
+        $failures.Add("dotnet build (source generator):`n$output")
 
         return
     }
