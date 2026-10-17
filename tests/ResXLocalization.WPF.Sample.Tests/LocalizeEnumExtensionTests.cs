@@ -60,7 +60,7 @@ public class LocalizeEnumExtensionTests
             TestSupport.ResetToEnglishWithTestCatalogs();
 
             var textBlock = TestSupport.BindLocalizedEnum(
-                new() { KeyPrefix = "Display_", ResourceManager = SortingStrings.ResourceManager },
+                new() { KeyPrefix = "Display_", ResourceManager = SortingStringsKeys.ResourceManager },
                 FileSortOrder.Ascending
             );
 
@@ -85,7 +85,7 @@ public class LocalizeEnumExtensionTests
             TestSupport.ResetToEnglishWithTestCatalogs();
 
             var textBlock = TestSupport.BindLocalizedEnum(
-                new() { ResourceManager = ApplicationStrings.ResourceManager },
+                new() { ResourceManager = ApplicationStringsKeys.ResourceManager },
                 FileSortOrder.Ascending
             );
 

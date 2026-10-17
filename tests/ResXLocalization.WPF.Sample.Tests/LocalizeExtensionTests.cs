@@ -40,7 +40,7 @@ public class LocalizeExtensionTests
             TestSupport.ResetToEnglishWithTestCatalogs();
 
             var textBlock = TestSupport.BindLocalizedText(
-                new() { Key = "Greeting", ResourceManager = ApplicationStrings.ResourceManager }
+                new() { Key = "Greeting", ResourceManager = ApplicationStringsKeys.ResourceManager }
             );
 
             textBlock.Text.Should().Be("Hello and welcome!");
@@ -110,7 +110,7 @@ public class LocalizeExtensionTests
                 {
                     ResourceKey = ApplicationStringsKeys.Greeting,
                     Key = "SortingHint",
-                    ResourceManager = SortingStrings.ResourceManager,
+                    ResourceManager = SortingStringsKeys.ResourceManager,
                 }
             );
 
@@ -135,7 +135,7 @@ public class LocalizeExtensionTests
             TestSupport.ResetToEnglishWithTestCatalogs();
 
             var textBlock = TestSupport.BindLocalizedText(
-                new("SortingHint") { ResourceManager = SortingStrings.ResourceManager }
+                new("SortingHint") { ResourceManager = SortingStringsKeys.ResourceManager }
             );
 
             textBlock.Text.Should().Be("Choose how documents are ordered.");

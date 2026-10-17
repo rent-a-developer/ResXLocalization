@@ -5,7 +5,7 @@ namespace RentADeveloper.ResXLocalization.WPF;
 /// whenever <see cref="Localizer.Current" /> changes culture. Usage in XAML:
 /// <c>{l:Localize {x:Static res:StringsKeys.Greeting}}</c> for a typed key,
 /// <c>{l:Localize SomeKey}</c> for a key-only lookup across all registered resource managers, or
-/// <c>{l:Localize Key=SomeKey, ResourceManager={x:Static res:Strings.ResourceManager}}</c> to scope
+/// <c>{l:Localize Key=SomeKey, ResourceManager={x:Static res:StringsKeys.ResourceManager}}</c> to scope
 /// the lookup to one file. When the resource value is a composite format string, supply its
 /// arguments by binding the <see cref="LocalizeArgs" /> attached properties on the target element.
 /// </summary>

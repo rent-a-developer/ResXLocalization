@@ -17,9 +17,9 @@ public sealed class TestAppBuilder
 
     public static AppBuilder BuildAvaloniaApp()
     {
-        Localizer.Current.RegisterResourceManager(ApplicationStrings.ResourceManager);
-        Localizer.Current.RegisterResourceManager(SortingStrings.ResourceManager);
-        Localizer.Current.RegisterResourceManager(BrandingStrings.ResourceManager);
+        Localizer.Current.RegisterResourceManager(ApplicationStringsKeys.ResourceManager);
+        Localizer.Current.RegisterResourceManager(SortingStringsKeys.ResourceManager);
+        Localizer.Current.RegisterResourceManager(BrandingStringsKeys.ResourceManager);
 
         return AppBuilder
             .Configure<App>()

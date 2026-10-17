@@ -378,3 +378,29 @@ After:
 A/Strings.resx + B/Strings.resx, both designers in namespace MyApp  ->  RXLGEN004 at each file, no StringsKeys
 B/Strings.resx renamed to B/MoreStrings.resx                         ->  MyApp.StringsKeys and MyApp.MoreStringsKeys
 ```
+
+## A wrong base name fails at registration
+
+`Localizer.RegisterResourceManager` checks a plain `ResourceManager` when it is registered. If no
+resources exist under its base name - usually a hand-written base name with a typo - it throws an
+`ArgumentException` that names the base name, and the manager is not registered. Before, the manager
+was registered, and every search-all lookup that reached it threw `MissingManifestResourceException`.
+A subclass of `ResourceManager` is registered without that check, as before.
+
+Fix the base name, or register the generated `<Name>Keys.ResourceManager`.
+
+Before:
+
+```csharp
+Localizer.Current.RegisterResourceManager(new ResourceManager("MyApp.Strngs", typeof(App).Assembly));  // registered
+Localizer.Current.Get("Greeting");  // MissingManifestResourceException
+```
+
+After:
+
+```csharp
+Localizer.Current.RegisterResourceManager(new ResourceManager("MyApp.Strngs", typeof(App).Assembly));
+// ArgumentException: No resources exist under the base name 'MyApp.Strngs'. ...
+
+Localizer.Current.RegisterResourceManager(AppStringsKeys.ResourceManager);
+```

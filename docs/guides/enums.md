@@ -61,7 +61,7 @@ lookup. With a `Count_FileSortOrder_Ascending` entry of `{0} files, ascending`:
 
 ```csharp
 Localizer.Current.Get(FileSortOrder.Ascending, MessageArguments.FromValues(count), keyPrefix: "Count_");   // "3 files, ascending"
-Localizer.Current.Get(FileSortOrder.Ascending, MessageArguments.FromValues(count), SortingStrings.ResourceManager, "Count_");
+Localizer.Current.Get(FileSortOrder.Ascending, MessageArguments.FromValues(count), SortingStringsKeys.ResourceManager, "Count_");
 ```
 
 The optional parameters after the value are `arguments`, `resourceManager` and `keyPrefix`; name the
@@ -76,11 +76,11 @@ the same enum carry different label sets, or keeps enum labels in a file of thei
 
 ```xml
 <TextBlock Text="{l:LocalizeEnum KeyPrefix=Display_,
-                                 ResourceManager={x:Static res:SortingStrings.ResourceManager}}" />
+                                 ResourceManager={x:Static res:SortingStringsKeys.ResourceManager}}" />
 ```
 
 ```csharp
-Localizer.Current.Get(FileSortOrder.Ascending, resourceManager: SortingStrings.ResourceManager, keyPrefix: "Display_");
+Localizer.Current.Get(FileSortOrder.Ascending, resourceManager: SortingStringsKeys.ResourceManager, keyPrefix: "Display_");
 ```
 
 `LocalizeEnumConverter.Default` is read-only, so a converter with a custom prefix is declared as its

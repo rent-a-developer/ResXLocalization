@@ -28,7 +28,7 @@ internal static class Program
             }
         }
 
-        Localizer.Current.RegisterResourceManager(Strings.ResourceManager);
+        Localizer.Current.RegisterResourceManager(StringsKeys.ResourceManager);
         Localizer.Current.CurrentCulture = new CultureInfo("en");
 
         Check(

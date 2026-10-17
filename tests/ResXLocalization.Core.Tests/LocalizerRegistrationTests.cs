@@ -1,8 +1,11 @@
+using System.ComponentModel;
+using System.Reflection;
+
 namespace RentADeveloper.ResXLocalization.Core.Tests;
 
 /// <summary>
-/// Exercises search-set maintenance: unregistering a single resource manager and clearing the set,
-/// for example when a plugin that owns its strings is unloaded.
+/// Exercises search-set maintenance: the registration probe, unregistering a single resource manager and
+/// clearing the set, for example when a plugin that owns its strings is unloaded.
 /// </summary>
 public class LocalizerRegistrationTests
 {
@@ -23,6 +26,37 @@ public class LocalizerRegistrationTests
     }
 
     [Fact]
+    public void Register_AcceptsASubclass_WithoutProbingIt()
+    {
+        var localizer = new Localizer { CurrentCulture = TestResources.English };
+
+        // The base class's probe would throw ArgumentNullException for this manager: it has no base name.
+        localizer.RegisterResourceManager(new GreetingOnlyResourceManager());
+
+        localizer.Get("Greeting").Should().Be("Hi");
+    }
+
+    [Fact]
+    public void Register_RejectsAPlainManager_WhoseResourcesDoNotExist()
+    {
+        const string baseName = "RentADeveloper.ResXLocalization.Core.Tests.Resources.DoesNotExist";
+        var localizer = new Localizer { CurrentCulture = TestResources.English };
+        var revision = localizer.RefreshTriggeringRevision;
+
+        var act = () =>
+            localizer.RegisterResourceManager(new ResourceManager(baseName, typeof(TestResources).Assembly));
+
+        act.Should()
+            .Throw<ArgumentException>()
+            .Where(exception => exception.ParamName == "resourceManager" && exception.Message.Contains(baseName))
+            .WithInnerException<MissingManifestResourceException>();
+
+        // Nothing was registered, so the search-all lookup misses instead of throwing.
+        localizer.Get("Greeting").Should().Be("!Greeting!");
+        localizer.RefreshTriggeringRevision.Should().Be(revision);
+    }
+
+    [Fact]
     public void RegisteringTwice_KeepsASingleEntry_SoOneUnregisterRemovesIt()
     {
         var localizer = new Localizer { CurrentCulture = TestResources.English };
@@ -34,6 +68,27 @@ public class LocalizerRegistrationTests
         // A second unregister finds nothing left: the duplicate registration was de-duplicated.
         localizer.UnregisterResourceManager(this.resources.Catalog).Should().BeFalse();
         localizer.Get("CatalogOnly").Should().Be("!CatalogOnly!");
+    }
+
+    [Fact]
+    public void RegistrationMembers_AreNotHiddenFromIntelliSense()
+    {
+        string[] names =
+        [
+            nameof(ILocalizer.ClearResourceManagers),
+            nameof(ILocalizer.RegisterResourceManager),
+            nameof(ILocalizer.UnregisterResourceManager),
+        ];
+
+        foreach (var type in new[] { typeof(ILocalizer), typeof(Localizer) })
+        {
+            var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                .Where(method => names.Contains(method.Name))
+                .ToArray();
+
+            methods.Should().HaveCount(names.Length);
+            methods.Should().NotContain(method => method.IsDefined(typeof(EditorBrowsableAttribute)));
+        }
     }
 
     [Fact]
@@ -65,5 +120,14 @@ public class LocalizerRegistrationTests
         var localizer = new Localizer { CurrentCulture = TestResources.English };
 
         localizer.UnregisterResourceManager(this.resources.Catalog).Should().BeFalse();
+    }
+
+    /// <summary>
+    /// A resource manager that resolves strings without manifest resources: it overrides only
+    /// <see cref="ResourceManager.GetString(string, CultureInfo?)" />.
+    /// </summary>
+    private sealed class GreetingOnlyResourceManager : ResourceManager
+    {
+        public override string? GetString(string name, CultureInfo? culture) => name == "Greeting" ? "Hi" : null;
     }
 }

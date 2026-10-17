@@ -22,12 +22,12 @@
         -->
         <TextBlock x:Name="ScopedText"
                    Text="{l:Localize Key=ScopedOnly,
-                                     ResourceManager={x:Static resources:Catalog.ResourceManager}}" />
+                                     ResourceManager={x:Static resources:CatalogKeys.ResourceManager}}" />
 
         <!--  The same, for a catalog key with no German translation.  -->
         <TextBlock x:Name="ScopedFallbackText"
                    Text="{l:Localize Key=ScopedNeutralOnly,
-                                     ResourceManager={x:Static resources:Catalog.ResourceManager}}" />
+                                     ResourceManager={x:Static resources:CatalogKeys.ResourceManager}}" />
 
         <!--
             A composite-format resource whose argument arrives through the LocalizeArgs attached

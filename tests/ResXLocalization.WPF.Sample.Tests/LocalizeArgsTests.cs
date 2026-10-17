@@ -209,7 +209,7 @@ public class LocalizeArgsTests
             TestSupport.ResetToEnglishWithTestCatalogs();
 
             var textBlock = TestSupport.BindLocalizedText(
-                new() { Key = "PeopleInvited", ResourceManager = ApplicationStrings.ResourceManager }
+                new() { Key = "PeopleInvited", ResourceManager = ApplicationStringsKeys.ResourceManager }
             );
             LocalizeArgs.SetArg0(textBlock, 4);
             TestSupport.Flush();

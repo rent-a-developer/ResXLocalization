@@ -12,6 +12,7 @@ installation and a quick start. These pages are the full documentation.
 | Guide | What it covers |
 | --- | --- |
 | [Lookup modes and culture fallback](guides/lookup-and-fallback.md) | Typed, scoped and search-all lookups, registration order, the fallback chain, missing-translation diagnostics, dependency injection and subscription lifetime |
+| [Registering resource files](guides/registration.md) | What to register for search-all lookups, where - including the WPF designer and class libraries - dependency injection, resources from other assemblies |
 | [Localizing enum values](guides/enums.md) | The naming convention, item templates, the converter, custom prefixes and scoping |
 | [Dynamic format arguments](guides/format-arguments.md) | `Get(key, MessageArguments.FromValues(…))`, the `MessageArguments` factory and the `LocalizeArgs.Arg0`…`Arg8` attached properties |
 | [Native AOT and trimming](guides/native-aot.md) | What to declare, how to publish, and why the repository's own gate runs the native binary |
