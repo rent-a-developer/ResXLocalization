@@ -85,9 +85,9 @@ internal static class TestSupport
     public static void ResetToEnglishWithTestCatalogs()
     {
         Localizer.Current.CurrentCulture = English;
-        Localizer.Current.RegisterResourceManager(ApplicationStrings.ResourceManager);
-        Localizer.Current.RegisterResourceManager(SortingStrings.ResourceManager);
-        Localizer.Current.RegisterResourceManager(BrandingStrings.ResourceManager);
+        Localizer.Current.RegisterResourceManager(ApplicationStringsKeys.ResourceManager);
+        Localizer.Current.RegisterResourceManager(SortingStringsKeys.ResourceManager);
+        Localizer.Current.RegisterResourceManager(BrandingStringsKeys.ResourceManager);
         Localizer.Current.RegisterResourceManager(CatalogResources);
         Localizer.Current.RegisterResourceManager(FallbackResources);
     }

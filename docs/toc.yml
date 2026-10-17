@@ -4,6 +4,8 @@
   items:
     - name: Lookup modes and culture fallback
       href: guides/lookup-and-fallback.md
+    - name: Registering resource files
+      href: guides/registration.md
     - name: Localizing enum values
       href: guides/enums.md
     - name: Dynamic format arguments

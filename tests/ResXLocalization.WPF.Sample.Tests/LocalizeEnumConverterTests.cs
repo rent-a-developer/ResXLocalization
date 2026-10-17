@@ -47,7 +47,7 @@ public class LocalizeEnumConverterTests
             var converter = new LocalizeEnumConverter
             {
                 KeyPrefix = "Display_",
-                ResourceManager = SortingStrings.ResourceManager,
+                ResourceManager = SortingStringsKeys.ResourceManager,
             };
 
             Convert(converter, FileSortOrder.Ascending).Should().Be("A to Z");
@@ -59,7 +59,7 @@ public class LocalizeEnumConverterTests
         {
             TestSupport.ResetToEnglishWithTestCatalogs();
 
-            var converter = new LocalizeEnumConverter { ResourceManager = ApplicationStrings.ResourceManager };
+            var converter = new LocalizeEnumConverter { ResourceManager = ApplicationStringsKeys.ResourceManager };
 
             Convert(converter, FileSortOrder.Ascending).Should().Be("Ascending");
         });
@@ -133,7 +133,7 @@ public class LocalizeEnumConverterTests
             ((Action)(() => LocalizeEnumConverter.Default.KeyPrefix = "Display_"))
                 .Should()
                 .Throw<InvalidOperationException>();
-            ((Action)(() => LocalizeEnumConverter.Default.ResourceManager = ApplicationStrings.ResourceManager))
+            ((Action)(() => LocalizeEnumConverter.Default.ResourceManager = ApplicationStringsKeys.ResourceManager))
                 .Should()
                 .Throw<InvalidOperationException>();
 

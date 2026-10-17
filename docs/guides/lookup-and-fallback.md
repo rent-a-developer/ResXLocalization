@@ -16,7 +16,7 @@ resolve.
 Localizer.Current.Get(AppStringsKeys.Greeting);
 
 // Scoped: this key, in this file.
-Localizer.Current.Get("Greeting", resourceManager: AppStrings.ResourceManager);
+Localizer.Current.Get("Greeting", resourceManager: AppStringsKeys.ResourceManager);
 
 // Search-all: this key, in whichever registered file has it first.
 Localizer.Current.Get("Greeting");
@@ -39,14 +39,14 @@ The same three modes exist in XAML:
 
 ```xml
 <TextBlock Text="{l:Localize {x:Static res:AppStringsKeys.Greeting}}" />
-<TextBlock Text="{l:Localize Key=Greeting, ResourceManager={x:Static res:AppStrings.ResourceManager}}" />
+<TextBlock Text="{l:Localize Key=Greeting, ResourceManager={x:Static res:AppStringsKeys.ResourceManager}}" />
 <TextBlock Text="{l:Localize Greeting}" />
 ```
 
 ## Registration is only for search-all
 
 ```csharp
-Localizer.Current.RegisterResourceManager(AppStrings.ResourceManager);
+Localizer.Current.RegisterResourceManager(AppStringsKeys.ResourceManager);
 ```
 
 Search-all inspects the registered managers **in registration order** and takes the first hit, so
@@ -55,6 +55,17 @@ and scoped lookups need no registration at all — they already name the file.
 
 `UnregisterResourceManager` and `ClearResourceManagers` remove managers again, for an application
 that loads resources dynamically.
+
+Register the generated `<Name>Keys.ResourceManager`, the instance the typed keys use. Where to
+register, class libraries, resources from other assemblies and the WPF designer are covered in
+[Registering resource files](registration.md).
+
+> [!WARNING]
+> A designer property such as `AppStrings.Greeting` - in code, or through
+> `{x:Static res:AppStrings.Greeting}` - reads in `CultureInfo.CurrentUICulture`, which the localizer
+> deliberately never changes. Such values do not follow `Localizer.CurrentCulture` or live switching,
+> and can show a different language from the localized bindings next to them. Read strings through
+> typed keys, `Get` or the markup extensions.
 
 > [!TIP]
 > In Avalonia, put the registration and the initial `CurrentCulture` inside `BuildAvaloniaApp()`
@@ -159,6 +170,8 @@ registered resource manager which satellite assemblies exist. It is what a langu
 
 ## Dependency injection
 
+The recommended form hands the ambient instance to the container:
+
 ```csharp
 services.AddSingleton<ILocalizer>(_ => Localizer.Current);
 ```
@@ -166,6 +179,11 @@ services.AddSingleton<ILocalizer>(_ => Localizer.Current);
 Alternatively, assign a container-owned implementation to `Localizer.Current` before any view is
 created. The property rejects `null`, and the markup extensions always read its current value, so a
 replacement is picked up everywhere.
+
+Registrations belong to the instance they were made on and do not move with the assignment. An
+application that assigns its own instance to `Localizer.Current` must register its resource managers
+on **that** instance. A registration in a `[ModuleInitializer]` of the executable always lands in the
+default instance, because it runs before `Main`.
 
 ## Lifetime and subscriptions
 

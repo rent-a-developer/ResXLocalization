@@ -255,7 +255,35 @@ public sealed class Localizer : ILocalizer
         return SortCultures(cultures);
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Registers a <see cref="ResourceManager" /> to be searched by search-all lookups. Managers are
+    /// searched in registration order, and the first match wins; registering the same instance more than
+    /// once has no effect. Adding a manager advances <see cref="RefreshTriggeringRevision" />.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Which lookups need registration, which instance to register and where to register it is described
+    /// on <see cref="ILocalizer.RegisterResourceManager" />.
+    /// </para>
+    /// <para>
+    /// The registrations belong to this instance. A localizer assigned to <see cref="Current" /> later does
+    /// not inherit them; register the resource managers on the instance that serves the lookups.
+    /// </para>
+    /// <para>
+    /// A manager whose type is exactly <see cref="ResourceManager" /> is checked once, when it is first
+    /// registered: if no resources exist under its <see cref="ResourceManager.BaseName" />, it is rejected
+    /// and not registered. A subclass of <see cref="ResourceManager" /> is registered without that check.
+    /// </para>
+    /// </remarks>
+    /// <param name="resourceManager">The resource manager to add to the search set.</param>
+    /// <exception cref="ArgumentNullException">
+    /// <paramref name="resourceManager" /> is <see langword="null" />.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="resourceManager" /> is exactly of type <see cref="ResourceManager" />, and no resources
+    /// exist under its base name - usually a hand-written base name that does not match the embedded
+    /// resource.
+    /// </exception>
     public void RegisterResourceManager(ResourceManager resourceManager)
     {
         ArgumentNullException.ThrowIfNull(resourceManager);
@@ -263,6 +291,31 @@ public sealed class Localizer : ILocalizer
         if (this.resourceManagers.Contains(resourceManager))
         {
             return;
+        }
+
+        // Only the exact type: a subclass may resolve strings without manifest resources, and the base
+        // class's probe can fail for it for unrelated reasons. The probe loads the neutral resource set,
+        // which the first lookup would load anyway, and the manager caches it.
+        if (resourceManager.GetType() == typeof(ResourceManager))
+        {
+            try
+            {
+                _ = resourceManager.GetResourceSet(
+                    CultureInfo.InvariantCulture,
+                    createIfNotExists: true,
+                    tryParents: true
+                );
+            }
+            catch (MissingManifestResourceException exception)
+            {
+                throw new ArgumentException(
+                    $"No resources exist under the base name '{resourceManager.BaseName}'. The usual cause is a "
+                        + "hand-written base name that does not match the embedded resource; register the generated "
+                        + "<Name>Keys.ResourceManager instead.",
+                    nameof(resourceManager),
+                    exception
+                );
+            }
         }
 
         // Copy-on-write: register/unregister/clear swap the whole immutable array atomically, so a

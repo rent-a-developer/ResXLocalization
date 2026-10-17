@@ -82,12 +82,15 @@ internal static class TestSupport
     public static void PumpUi() => Dispatcher.UIThread.RunJobs(DispatcherPriority.Loaded);
 
     /// <summary>
-    /// Resets the ambient localizer to English and registers the two test-only files. Registration dedups
-    /// by reference, so calling this from every test is safe.
+    /// Resets the ambient localizer to English and registers the sample and test-only files in the same
+    /// order the running app uses. Registration dedups by reference, so calling this from every test is safe.
     /// </summary>
     public static void ResetToEnglishWithTestCatalogs()
     {
         Localizer.Current.CurrentCulture = English;
+        Localizer.Current.RegisterResourceManager(ApplicationStringsKeys.ResourceManager);
+        Localizer.Current.RegisterResourceManager(SortingStringsKeys.ResourceManager);
+        Localizer.Current.RegisterResourceManager(BrandingStringsKeys.ResourceManager);
         Localizer.Current.RegisterResourceManager(CatalogResources);
         Localizer.Current.RegisterResourceManager(FallbackResources);
     }

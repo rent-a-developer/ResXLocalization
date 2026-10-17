@@ -327,11 +327,35 @@ public interface ILocalizer : INotifyPropertyChanged
     IReadOnlyList<CultureInfo> GetAvailableCultures(ResourceManager resourceManager);
 
     /// <summary>
-    /// Registers a <see cref="ResourceManager" /> to be searched by the key-only and enum lookups.
-    /// Managers are searched in registration order on a first-match-wins basis; registering the same
-    /// manager more than once has no effect. Adding a manager advances
-    /// <see cref="RefreshTriggeringRevision" />.
+    /// Registers a <see cref="ResourceManager" /> to be searched by search-all lookups. Managers are
+    /// searched in registration order, and the first match wins; registering the same instance more than
+    /// once has no effect. Adding a manager advances <see cref="RefreshTriggeringRevision" />.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Registration is needed only for search-all lookups - lookups without a resource manager:
+    /// <c>{l:Localize Key}</c> and <c>{l:LocalizeEnum}</c> without <c>ResourceManager</c> in the UI packages,
+    /// <c>ILocalizer.Get("Key")</c> and <c>ILocalizer.Get(enumValue)</c>. Typed and scoped lookups need
+    /// none.
+    /// </para>
+    /// <para>
+    /// Register the generated <c>&lt;Name&gt;Keys.ResourceManager</c>, the instance the typed keys use.
+    /// Registering the designer's <c>&lt;Name&gt;.ResourceManager</c> works too, but it is a second instance
+    /// of the same file with its own cache, and <see cref="UnregisterResourceManager" /> finds only the
+    /// instance that was registered.
+    /// </para>
+    /// <para>
+    /// Register at application startup - in <c>BuildAvaloniaApp</c> in Avalonia, in <c>App.OnStartup</c> in
+    /// WPF - or in a <c>[ModuleInitializer]</c> when search-all lookups must work in the WPF designer, which
+    /// runs no startup code. See
+    /// <see href="https://rent-a-developer.github.io/ResXLocalization/guides/registration.html">Registering resource files</see>.
+    /// </para>
+    /// <para>
+    /// <see cref="Localizer" /> rejects a manager of exactly the type <see cref="ResourceManager" /> for which
+    /// no resources exist under its base name, with an <see cref="ArgumentException" />; a custom
+    /// implementation need not follow that rule.
+    /// </para>
+    /// </remarks>
     /// <param name="resourceManager">The resource manager to add to the search set.</param>
     /// <exception cref="ArgumentNullException">
     /// <paramref name="resourceManager" /> is <see langword="null" />.
@@ -344,6 +368,11 @@ public interface ILocalizer : INotifyPropertyChanged
     /// are unaffected - they never consult the registration set. Removing a manager advances
     /// <see cref="RefreshTriggeringRevision" />.
     /// </summary>
+    /// <remarks>
+    /// Managers are compared by reference: pass the instance that was registered, normally the generated
+    /// <c>&lt;Name&gt;Keys.ResourceManager</c>. Another instance of the same file, such as the designer's
+    /// <c>&lt;Name&gt;.ResourceManager</c>, is not found.
+    /// </remarks>
     /// <param name="resourceManager">The resource manager to remove from the search set.</param>
     /// <returns>
     /// <see langword="true" /> when the manager was registered and has been removed;

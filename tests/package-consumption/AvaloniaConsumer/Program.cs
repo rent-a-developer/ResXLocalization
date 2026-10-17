@@ -39,7 +39,7 @@ void Check(string description, string actual, string expected)
 
 // Strings is registered; Catalog deliberately is NOT, so a search-all lookup cannot reach it and only
 // the scoped overloads can.
-Localizer.Current.RegisterResourceManager(Strings.ResourceManager);
+Localizer.Current.RegisterResourceManager(StringsKeys.ResourceManager);
 Localizer.Current.CurrentCulture = new CultureInfo("en");
 
 // --- The engine, in English -------------------------------------------------------------------------
@@ -48,7 +48,7 @@ Check("typed key (generated StringsKeys)", Localizer.Current.Get(StringsKeys.Gre
 Check("search-all lookup", Localizer.Current.Get("Greeting"), "Hello from the package!");
 Check(
     "scoped lookup into an unregistered resource manager",
-    Localizer.Current.Get("ScopedOnly", resourceManager: Catalog.ResourceManager),
+    Localizer.Current.Get("ScopedOnly", resourceManager: CatalogKeys.ResourceManager),
     "Scoped to the catalog"
 );
 Check("search-all cannot reach the unregistered manager", Localizer.Current.Get("ScopedOnly"), "!ScopedOnly!");
@@ -152,7 +152,7 @@ Check(
 );
 Check(
     "scoped key falls back to the neutral culture",
-    Localizer.Current.Get("ScopedNeutralOnly", resourceManager: Catalog.ResourceManager),
+    Localizer.Current.Get("ScopedNeutralOnly", resourceManager: CatalogKeys.ResourceManager),
     "Catalog value with no German translation"
 );
 Check("compiled XAML typed fallback", localizedView.FallbackText.Text ?? "<null>", "Only in the neutral file");

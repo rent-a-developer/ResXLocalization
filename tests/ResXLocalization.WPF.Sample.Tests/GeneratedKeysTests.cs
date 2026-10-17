@@ -7,6 +7,27 @@ namespace RentADeveloper.ResXLocalization.WPF.Sample.Tests;
 public class GeneratedKeysTests
 {
     [Fact]
+    public void SearchAll_FindsTheSampleFiles_ThroughTheGeneratedManagers() =>
+        WpfThread.Invoke(() =>
+        {
+            TestSupport.ResetToEnglishWithTestCatalogs();
+
+            Localizer.Current.Get("Greeting").Should().Be("Hello and welcome!");
+            Localizer.Current.Get("PoweredBy").Should().Be("Powered by rent-a-developer");
+            TestSupport.BindLocalizedText(new("Greeting")).Text.Should().Be("Hello and welcome!");
+
+            try
+            {
+                // Proves that the generated instance is the registered one.
+                Localizer.Current.UnregisterResourceManager(ApplicationStringsKeys.ResourceManager).Should().BeTrue();
+            }
+            finally
+            {
+                Localizer.Current.RegisterResourceManager(ApplicationStringsKeys.ResourceManager);
+            }
+        });
+
+    [Fact]
     public void TypedKeys_UseTheGeneratedResourceManager() =>
         WpfThread.Invoke(() =>
         {

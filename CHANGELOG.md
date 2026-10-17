@@ -78,6 +78,11 @@ this project adheres to [Semantic Versioning](https://semver.org/).
   generate neither class, instead of merging into one partial class. See the
   [migration guide](docs/guides/migration-2.0.md).
 
+- **BREAKING:** `Localizer.RegisterResourceManager` throws `ArgumentException` naming the base name for a
+  plain `ResourceManager` for which no resources exist under its base name, instead of registering it and
+  letting every search-all lookup that reaches it throw `MissingManifestResourceException`. Fix the base
+  name, or register `<Name>Keys.ResourceManager`. See the [migration guide](docs/guides/migration-2.0.md).
+
 ### Removed
 
 - The generator warning `RXLGEN002` (a `.resx` without a recognized classic designer): a designer is no
