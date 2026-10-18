@@ -38,7 +38,13 @@ RentADeveloper.ResXLocalization.WPF.Argument.Name.get -> string?
 RentADeveloper.ResXLocalization.WPF.Argument.Name.set -> void
 RentADeveloper.ResXLocalization.WPF.Argument.Value.get -> object?
 RentADeveloper.ResXLocalization.WPF.Argument.Value.set -> void
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter.ArgumentNames.get -> string?
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter.ArgumentNames.set -> void
 RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter.KeyPrefix.get -> string?
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumExtension.Arguments.get -> System.Collections.ObjectModel.Collection<RentADeveloper.ResXLocalization.WPF.Argument!>!
 RentADeveloper.ResXLocalization.WPF.LocalizeEnumExtension.KeyPrefix.get -> string?
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumExtension.LocalizeEnumExtension(object! value) -> void
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumExtension.Value.get -> object?
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumExtension.Value.set -> void
 RentADeveloper.ResXLocalization.WPF.LocalizeExtension.Arguments.get -> System.Collections.ObjectModel.Collection<RentADeveloper.ResXLocalization.WPF.Argument!>!
 RentADeveloper.ResXLocalization.WPF.LocalizeExtension.Key.get -> object?

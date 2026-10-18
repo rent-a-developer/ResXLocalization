@@ -1,35 +1,55 @@
 namespace RentADeveloper.ResXLocalization.WPF;
 
 /// <summary>
-/// Builds the <see cref="MultiBinding" /> behind <see cref="LocalizeExtension" /> and validates its
-/// <see cref="Argument" /> entries. The children of the multi-binding are: 0, the refresh trigger, bound to
-/// <see cref="ILocalizer.RefreshTriggeringRevision" /> of <see cref="Localizer.Current" />; 1, the key; 2 and
-/// up, the argument values in declaration order. Every child is a binding: a constant is wrapped in a
+/// Builds the <see cref="MultiBinding" /> behind <see cref="LocalizeExtension" /> and
+/// <see cref="LocalizeEnumExtension" /> and validates its <see cref="Argument" /> entries. The children of the
+/// multi-binding are: 0, the refresh trigger, bound to <see cref="ILocalizer.RefreshTriggeringRevision" /> of
+/// <see cref="Localizer.Current" />; 1, the key or the enumeration value; 2 and up, the argument values in
+/// declaration order. Every child is a binding: a constant is wrapped in a
 /// binding whose source is the constant, so <see cref="LocalizedMessageConverter" /> reads every value the
 /// same way.
 /// </summary>
 internal static class LocalizedMultiBindingBuilder
 {
     /// <summary>Builds the multi-binding that yields the localized, formatted text.</summary>
-    /// <param name="key">The key: a <see cref="string" /> or a <see cref="ResourceKey" />.</param>
+    /// <param name="key">
+    /// The key: a <see cref="string" /> or a <see cref="ResourceKey" />; with <paramref name="isEnumKey" />, the
+    /// enumeration value. A binding or a constant.
+    /// </param>
     /// <param name="arguments">The arguments, already validated by <see cref="ValidateArguments" />.</param>
     /// <param name="resourceManager">
     /// The resource manager that scopes a <see cref="string" /> key, or <see langword="null" /> to search all
     /// registered resource managers.
     /// </param>
+    /// <param name="isEnumKey">
+    /// <see langword="true" /> when <paramref name="key" /> is an enumeration value whose key
+    /// <see cref="ILocalizer.EnumKeyBuilder" /> builds.
+    /// </param>
+    /// <param name="enumKeyPrefix">
+    /// The key prefix passed to <see cref="ILocalizer.EnumKeyBuilder" />, or <see langword="null" /> to let the
+    /// builder decide. Used only with <paramref name="isEnumKey" />.
+    /// </param>
     /// <returns>The multi-binding.</returns>
-    internal static MultiBinding Build(object key, Collection<Argument> arguments, ResourceManager? resourceManager)
+    internal static MultiBinding Build(
+        object key,
+        Collection<Argument> arguments,
+        ResourceManager? resourceManager,
+        bool isEnumKey = false,
+        string? enumKeyPrefix = null
+    )
     {
         var multiBinding = new MultiBinding
         {
             Converter = new LocalizedMessageConverter(
                 [.. arguments.Select(argument => argument.Name)],
-                resourceManager
+                resourceManager,
+                isEnumKey,
+                enumKeyPrefix
             ),
             Mode = BindingMode.OneWay,
         };
 
-        // 0 = refresh trigger, 1 = key, 2.. = argument values. The trigger's source is the process-wide
+        // 0 = refresh trigger, 1 = key or enumeration value, 2.. = argument values. The trigger's source is the process-wide
         // localizer, an INotifyPropertyChanged, which WPF observes through the weak event listener PropertyChangedEventManager.
         multiBinding.Bindings.Add(
             new Binding(nameof(ILocalizer.RefreshTriggeringRevision)) { Source = Localizer.Current }

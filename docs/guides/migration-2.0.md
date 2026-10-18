@@ -310,7 +310,7 @@ Localizer.Current.Get(sortOrder);
 ```
 
 ```xml
-<TextBlock Text="{l:LocalizeEnum}" />
+<TextBlock Text="{l:LocalizeEnum Value={Binding}}" />
 ```
 
 ## Typed keys use the generated `ResourceManager`
@@ -484,4 +484,51 @@ After:
   </Setter>
 </Style>
 <!-- renders "5 people invited" for PeopleCount = 5 -->
+```
+
+## `{l:LocalizeEnum}` takes its value from `Value`
+
+`{l:LocalizeEnum}` no longer reads the enum value from the target's `DataContext`; `Value` is required,
+and a `{l:LocalizeEnum}` without it throws `InvalidOperationException` when the view loads. In an item
+template, where the item is the `DataContext`, write `Value={Binding}`; for a view-model property, bind
+it; for a fixed member, use `{x:Static}`.
+
+Before:
+
+```xml
+<TextBlock Text="{l:LocalizeEnum}" />
+```
+
+After:
+
+```xml
+<TextBlock Text="{l:LocalizeEnum Value={Binding}}" />                              <!-- item templates -->
+<TextBlock Text="{l:LocalizeEnum Value={Binding SortOrder}}" />                    <!-- a bound property -->
+<TextBlock Text="{l:LocalizeEnum Value={x:Static m:FileSortOrder.Ascending}}" />   <!-- a fixed member -->
+```
+
+## `LocalizeEnumConverter` has a new child order
+
+`LocalizeEnumConverter` reads child 0 as the refresh trigger, `RefreshTriggeringRevision` of
+`Localizer.Current`, child 1 as the enum value, and children from index 2 on as format arguments. A
+`MultiBinding` in the old order - the enum first, then `CurrentCulture` - renders an empty string until
+it is rewritten, and nothing reports it, so search for every use of `LocalizeEnumConverter`. Extra
+children that served only to re-trigger the conversion are now format arguments; remove them.
+
+Before:
+
+```xml
+<MultiBinding Converter="{x:Static l:LocalizeEnumConverter.Default}">
+  <Binding Path="SortOrder" />
+  <Binding Path="CurrentCulture" Source="{x:Static core:Localizer.Current}" />
+</MultiBinding>
+```
+
+After:
+
+```xml
+<MultiBinding Converter="{x:Static l:LocalizeEnumConverter.Default}">
+  <Binding Path="RefreshTriggeringRevision" Source="{x:Static core:Localizer.Current}" />
+  <Binding Path="SortOrder" />
+</MultiBinding>
 ```

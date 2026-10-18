@@ -10,12 +10,8 @@ public partial class LocalizedView : UserControl
     {
         this.InitializeComponent();
 
-        // The view model the compiled argument binding of InvitedText reads.
+        // The view model the compiled bindings of InvitedText and SortOrderText read.
         this.DataContext = this.viewModel;
-
-        // The enum the {l:LocalizeEnum} markup extension localizes: it reads the target control's
-        // DataContext, exactly as an item template would supply it.
-        this.SortOrderText.DataContext = ConsumerSortOrder.Ascending;
     }
 
     /// <summary>Supplies the composite-format argument for the "{0} people invited" resource.</summary>

@@ -61,6 +61,13 @@ public sealed class TestViewModel : INotifyPropertyChanged
         set => this.Set(ref field, value);
     }
 
+    /// <summary>Gets or sets the enumeration value of the enum tests.</summary>
+    public FileSortOrder? SortOrder
+    {
+        get;
+        set => this.Set(ref field, value);
+    }
+
     /// <summary>Assigns a property's backing field and raises <see cref="PropertyChanged" />.</summary>
     /// <typeparam name="T">The property type.</typeparam>
     /// <param name="field">The backing field.</param>

@@ -11,6 +11,8 @@
       * Twelve            - twelve placeholders, to prove there is no upper limit on arguments.
       * CurlyNoArgs       - literal braces, to prove the no-argument path never composite-formats.
       * FormatBroken      - a malformed composite format string, to test the formatting-failure path.
+      * Count_*           - an enum key with a placeholder, for the enum argument tests.
+      * Braces_*          - an enum key with literal braces, to prove two converter values never format.
   -->
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -50,5 +52,11 @@
   </data>
   <data name="Text_FileSortOrder.Ascending" xml:space="preserve">
     <value>Custom ascending</value>
+  </data>
+  <data name="Count_FileSortOrder_Ascending" xml:space="preserve">
+    <value>{0} files, ascending</value>
+  </data>
+  <data name="Braces_FileSortOrder_Ascending" xml:space="preserve">
+    <value>{Ascending}</value>
   </data>
 </root>

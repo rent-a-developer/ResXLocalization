@@ -38,6 +38,15 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 - `{l:Localize}` re-resolves on every change of `ILocalizer.RefreshTriggeringRevision` - a new formatter,
   a new lookup-failure text builder, a registered or removed resource manager - not only on a language
   switch.
+- Format arguments for enum labels in XAML (issue 11): `<l:Argument>` children of `{l:LocalizeEnum}`, and
+  `MultiBinding` children of `LocalizeEnumConverter` from index 2 on.
+- `LocalizeEnumExtension.Value`: the enum value to localize, a binding or a fixed member
+  (`Value={x:Static m:FileSortOrder.Ascending}`), and the shorthand `{l:LocalizeEnum {Binding SortOrder}}`
+  through the new constructor `LocalizeEnumExtension(object value)`.
+- `LocalizeEnumConverter.ArgumentNames`: comma-separated names for the converter's arguments, for a
+  formatter that understands named arguments.
+- `{l:LocalizeEnum}` re-resolves on every change of `ILocalizer.RefreshTriggeringRevision`, and so does
+  `LocalizeEnumConverter` with its new refresh-trigger child.
 
 ### Changed
 
@@ -93,6 +102,10 @@ this project adheres to [Semantic Versioning](https://semver.org/).
   key. See the [migration guide](docs/guides/migration-2.0.md).
 - **BREAKING:** Avalonia: `{l:Localize}` with arguments in a `Style` setter or a resource is formatted;
   it resolved unformatted. See the [migration guide](docs/guides/migration-2.0.md).
+- **BREAKING:** `LocalizeEnumConverter` reads child 0 of its `MultiBinding` as the refresh trigger
+  (`RefreshTriggeringRevision` of `Localizer.Current`), child 1 as the enum value and children from
+  index 2 on as format arguments; a `MultiBinding` with the enum first renders an empty string until it
+  is rewritten. See the [migration guide](docs/guides/migration-2.0.md).
 
 ### Removed
 
@@ -101,6 +114,9 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 - **BREAKING:** `LocalizeArgs` and its attached properties `Arg0`...`Arg8`, in both UI packages; give
   `{l:Localize}` `<l:Argument>` children instead. See the [migration guide](docs/guides/migration-2.0.md).
 - **BREAKING:** `LocalizeExtension.ResourceKey`; set `Key` to the `ResourceKey` instead. See the [migration guide](docs/guides/migration-2.0.md).
+- **BREAKING:** The `DataContext` mode of `{l:LocalizeEnum}`: it no longer reads the enum value from the
+  target's `DataContext`; set `Value`, as `Value={Binding}` in item templates. See the
+  [migration guide](docs/guides/migration-2.0.md).
 
 ## [1.1.0] - 2026-07-20
 

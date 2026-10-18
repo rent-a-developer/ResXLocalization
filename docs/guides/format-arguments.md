@@ -76,6 +76,9 @@ the explicit form is `<l:Localize.Arguments>`. The first `<l:Argument>` is `{0}`
 so on. There is no upper limit, and each localized property has its own arguments - a localized `Text`
 and a localized `ToolTip` on the same element can format different values.
 
+`{l:LocalizeEnum}` takes the same `<l:Argument>` children, and `LocalizeEnumConverter` takes its
+arguments as extra `MultiBinding` children; see [Localizing enum values](enums.md#with-format-arguments).
+
 ### Bound and constant values
 
 `Value` takes a binding or a constant:

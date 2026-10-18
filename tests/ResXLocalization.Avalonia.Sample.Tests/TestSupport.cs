@@ -1,8 +1,8 @@
 namespace RentADeveloper.ResXLocalization.Avalonia.Sample.Tests;
 
 /// <summary>
-/// Shared helpers for the sample tests: access to the test-only resource files, a few binding utilities,
-/// and the minimal service-provider stand-ins a markup extension needs outside of the XAML loader.
+/// Shared helpers for the sample tests: access to the test-only resource files and a few binding utilities
+/// for markup extensions created in code.
 /// </summary>
 internal static class TestSupport
 {
@@ -35,20 +35,20 @@ internal static class TestSupport
             .ToArray();
 
     /// <summary>
-    /// Binds a <see cref="LocalizeEnumExtension" /> to a fresh text block whose <c>DataContext</c> is the
-    /// supplied enumeration value, mirroring how the extension is used inside an item template.
+    /// Binds a <see cref="LocalizeEnumExtension" /> to a fresh text block's Text, then sets the text block's
+    /// <c>DataContext</c> and pumps pending UI work so that bindings settle.
     /// </summary>
     /// <param name="extension">The markup extension that creates the localization binding.</param>
-    /// <param name="value">The enumeration value to expose as the text block's data context.</param>
-    /// <returns>The bound text block after pending UI work has been processed.</returns>
-    public static TextBlock BindLocalizedEnum(LocalizeEnumExtension extension, Enum value)
+    /// <param name="dataContext">
+    /// The data context: the enumeration value itself for <c>Value = new Binding()</c>, or a view model.
+    /// </param>
+    /// <returns>The bound text block.</returns>
+    public static TextBlock BindLocalizedEnum(LocalizeEnumExtension extension, object? dataContext)
     {
         var textBlock = new TextBlock();
-        var binding = (BindingBase)
-            extension.ProvideValue(new SimpleServiceProvider(new SimpleProvideValueTarget(textBlock)));
-        textBlock.Bind(TextBlock.TextProperty, binding);
-        textBlock.DataContext = value;
-        Dispatcher.UIThread.RunJobs(DispatcherPriority.Loaded);
+        textBlock.Bind(TextBlock.TextProperty, (BindingBase)extension.ProvideValue(null!));
+        textBlock.DataContext = dataContext;
+        PumpUi();
         return textBlock;
     }
 
@@ -83,17 +83,5 @@ internal static class TestSupport
         Localizer.Current.RegisterResourceManager(BrandingStringsKeys.ResourceManager);
         Localizer.Current.RegisterResourceManager(CatalogResources);
         Localizer.Current.RegisterResourceManager(FallbackResources);
-    }
-
-    private sealed class SimpleProvideValueTarget(object targetObject) : IProvideValueTarget
-    {
-        public object TargetObject { get; } = targetObject;
-
-        public object TargetProperty => null!;
-    }
-
-    private sealed class SimpleServiceProvider(IProvideValueTarget target) : IServiceProvider
-    {
-        public object? GetService(Type serviceType) => serviceType == typeof(IProvideValueTarget) ? target : null;
     }
 }

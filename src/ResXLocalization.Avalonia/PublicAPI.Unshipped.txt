@@ -38,7 +38,13 @@ RentADeveloper.ResXLocalization.Avalonia.Argument.Name.get -> string?
 RentADeveloper.ResXLocalization.Avalonia.Argument.Name.set -> void
 RentADeveloper.ResXLocalization.Avalonia.Argument.Value.get -> object?
 RentADeveloper.ResXLocalization.Avalonia.Argument.Value.set -> void
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter.ArgumentNames.get -> string?
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter.ArgumentNames.set -> void
 RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter.KeyPrefix.get -> string?
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension.Arguments.get -> System.Collections.ObjectModel.Collection<RentADeveloper.ResXLocalization.Avalonia.Argument!>!
 RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension.KeyPrefix.get -> string?
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension.LocalizeEnumExtension(object! value) -> void
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension.Value.get -> object?
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension.Value.set -> void
 RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension.Arguments.get -> System.Collections.ObjectModel.Collection<RentADeveloper.ResXLocalization.Avalonia.Argument!>!
 RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension.Key.get -> object?

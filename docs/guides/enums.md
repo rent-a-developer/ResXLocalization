@@ -16,39 +16,177 @@ public enum FileSortOrder { Unsorted, Ascending, Descending }
 Like every other lookup, enum labels update live when the culture changes, and the same three usages
 work identically in Avalonia and WPF.
 
-## In item templates: `{l:LocalizeEnum}`
+## In XAML: `{l:LocalizeEnum}`
 
-Inside a `ComboBox` or `ListBox` item template each item *is* the enum value — it is the
-`DataContext` — so the markup extension localizes it directly:
+`{l:LocalizeEnum}` localizes the enum value you give it in `Value` - a binding or a fixed member:
+
+```xml
+<TextBlock Text="{l:LocalizeEnum Value={Binding SortOrder}}" />
+<TextBlock Text="{l:LocalizeEnum {Binding SortOrder}}" />                           <!-- the same, shorter -->
+<TextBlock Text="{l:LocalizeEnum Value={x:Static m:FileSortOrder.Ascending}}" />    <!-- a fixed member -->
+```
+
+The text follows the bound value: when `SortOrder` changes, so does the text. A bound value that is
+not an enum - for example a `null` property while the view loads - renders an empty string.
+
+A fixed member is written with `{x:Static}`. `Value=Ascending` is the **string** `"Ascending"`, not the
+enum member, and `{l:LocalizeEnum}` throws `InvalidOperationException` for it, as it does when `Value`
+is missing.
+
+`Value` accepts the same bindings as an `<l:Argument>` `Value`: in Avalonia any binding, in WPF a plain
+`{Binding}` only - a `MultiBinding` or a `PriorityBinding` throws `InvalidOperationException`. See
+[Dynamic format arguments](format-arguments.md#worth-knowing).
+
+### In item templates
+
+Inside a `ComboBox` or `ListBox` item template each item *is* the enum value - it is the
+`DataContext` - so `Value={Binding}`, a binding without a path, localizes it:
 
 ```xml
 <ComboBox ItemsSource="{Binding FileSortOrders}"
           SelectedItem="{Binding SelectedFileSortOrder}">
   <ComboBox.ItemTemplate>
     <DataTemplate>
-      <TextBlock Text="{l:LocalizeEnum}" />
+      <TextBlock Text="{l:LocalizeEnum Value={Binding}}" />
     </DataTemplate>
   </ComboBox.ItemTemplate>
 </ComboBox>
 ```
 
-## As a bound value: `LocalizeEnumConverter`
+### With format arguments
 
-When the enum is a bound property rather than the `DataContext`, use `LocalizeEnumConverter` in a
-`MultiBinding`. The second binding — to the current culture — is what re-triggers the conversion on
-a language switch:
+An enum label can have placeholders and take [format arguments](format-arguments.md), as
+`<l:Argument>` children - the same as for `{l:Localize}`. With a `Count_FileSortOrder_Ascending` entry
+of `{0} files, ascending`:
+
+```xml
+<TextBlock>
+  <TextBlock.Text>
+    <l:LocalizeEnum Value="{Binding SortOrder}" KeyPrefix="Count_">
+      <l:Argument Value="{Binding FileCount}" />
+    </l:LocalizeEnum>
+  </TextBlock.Text>
+</TextBlock>
+<!-- "3 files, ascending" -->
+```
+
+The enum value itself is not an argument. A text that needs it, for example under a name, binds it
+explicitly:
+
+```xml
+<l:LocalizeEnum Value="{Binding SortOrder}">
+  <l:Argument Name="Kind" Value="{Binding SortOrder}" />
+</l:LocalizeEnum>
+```
+
+Under the default formatter, a text that needs a plural - `1 file` and `3 files` - needs one enum
+member per plural case: the default formatter is `string.Format` and does not choose between forms.
+
+## Where a markup extension is not accepted: `LocalizeEnumConverter`
+
+A markup extension does not work everywhere a binding is expected - for example in a property of type
+`Binding` or `BindingBase`, such as `DataGridTextColumn.Binding`. A hand-written `MultiBinding` with
+`LocalizeEnumConverter` does. Its children are, in this order:
+
+1. The refresh trigger: `RefreshTriggeringRevision` of `Localizer.Current`, which re-runs the
+   conversion whenever a lookup's result can change, such as on a language switch.
+2. The enum value.
+3. From index 2 on, the format arguments, in order.
 
 ```xml
 <!-- xmlns:core="clr-namespace:RentADeveloper.ResXLocalization;assembly=ResXLocalization.Core" -->
 <TextBlock>
   <TextBlock.Text>
     <MultiBinding Converter="{x:Static l:LocalizeEnumConverter.Default}">
+      <Binding Path="RefreshTriggeringRevision" Source="{x:Static core:Localizer.Current}" />
       <Binding Path="SelectedFileSortOrder" />
-      <Binding Path="CurrentCulture" Source="{x:Static core:Localizer.Current}" />
     </MultiBinding>
   </TextBlock.Text>
 </TextBlock>
 ```
+
+A `MultiBinding` that puts the enum value first renders an empty string, and nothing reports it; check
+the order whenever a converter shows nothing.
+
+### With format arguments
+
+Every child from index 2 on is one positional argument: child 2 fills `{0}`, child 3 fills `{1}`, and so
+on. A converter with a key prefix is declared as a resource; with a `Count_FileSortOrder_Ascending` entry
+of `{0} files, ascending`:
+
+```xml
+<Window.Resources>
+  <l:LocalizeEnumConverter x:Key="CountConverter" KeyPrefix="Count_" />
+</Window.Resources>
+
+<TextBlock>
+  <TextBlock.Text>
+    <MultiBinding Converter="{StaticResource CountConverter}">
+      <Binding Path="RefreshTriggeringRevision" Source="{x:Static core:Localizer.Current}" />
+      <Binding Path="SortOrder" />
+      <Binding Path="FileCount" />                 <!-- {0} -->
+    </MultiBinding>
+  </TextBlock.Text>
+</TextBlock>
+<!-- "3 files, ascending" -->
+```
+
+Two placeholders take two argument children, in placeholder order. With a `Range_FileSortOrder_Ascending`
+entry of `{0} of {1} files, ascending`:
+
+```xml
+<Window.Resources>
+  <l:LocalizeEnumConverter x:Key="RangeConverter" KeyPrefix="Range_" />
+</Window.Resources>
+
+<TextBlock>
+  <TextBlock.Text>
+    <MultiBinding Converter="{StaticResource RangeConverter}">
+      <Binding Path="RefreshTriggeringRevision" Source="{x:Static core:Localizer.Current}" />
+      <Binding Path="SortOrder" />
+      <Binding Path="ShownCount" />                <!-- {0} -->
+      <Binding Path="FileCount" />                 <!-- {1} -->
+    </MultiBinding>
+  </TextBlock.Text>
+</TextBlock>
+<!-- "3 of 10 files, ascending" -->
+```
+
+### Named arguments: `ArgumentNames`
+
+A `MultiBinding` child has no name. A formatter that understands named arguments, such as ICU
+MessageFormat, gets the names from `ArgumentNames` on the converter: one comma-separated string whose
+entry `i` names the argument at child `2 + i`.
+
+With such a formatter assigned to `ILocalizer.MessageFormatter`, the entry can use names. With a
+`Range_FileSortOrder_Ascending` entry of `{Shown} of {Total} files, ascending`:
+
+```xml
+<Window.Resources>
+  <l:LocalizeEnumConverter x:Key="RangeConverter" KeyPrefix="Range_" ArgumentNames="Shown,Total" />
+</Window.Resources>
+
+<TextBlock>
+  <TextBlock.Text>
+    <MultiBinding Converter="{StaticResource RangeConverter}">
+      <Binding Path="RefreshTriggeringRevision" Source="{x:Static core:Localizer.Current}" />
+      <Binding Path="SortOrder" />
+      <Binding Path="ShownCount" />                <!-- {Shown}, also {0} -->
+      <Binding Path="FileCount" />                 <!-- {Total}, also {1} -->
+    </MultiBinding>
+  </TextBlock.Text>
+</TextBlock>
+<!-- "3 of 10 files, ascending" -->
+```
+
+The default formatter, `string.Format`, ignores names and knows only positions: under it the entry must
+use `{0}` and `{1}`, as in the previous example. `{Shown}` is not a valid composite format item, so it
+renders the failure text and raises `LookupFailed`.
+
+Entries are trimmed, and an empty entry leaves that argument unnamed: `",Total"` names only the second.
+Two entries with the same name throw `ArgumentException`. Extra names are ignored, and arguments without
+an entry are unnamed. Every argument keeps its position whether it is named or not, and the default
+formatter ignores names.
 
 ## In code
 
@@ -56,8 +194,7 @@ a language switch:
 Localizer.Current.Get(FileSortOrder.Ascending);   // "Ascending (A-Z)" / "Aufsteigend (A-Z)"
 ```
 
-An enum label can have placeholders and take [format arguments](format-arguments.md), like any other
-lookup. With a `Count_FileSortOrder_Ascending` entry of `{0} files, ascending`:
+With format arguments, and with a resource manager and a key prefix:
 
 ```csharp
 Localizer.Current.Get(FileSortOrder.Ascending, MessageArguments.FromValues(count), keyPrefix: "Count_");   // "3 files, ascending"
@@ -75,7 +212,8 @@ optional **`ResourceManager`** that scopes the lookup to one `.resx` file. That 
 the same enum carry different label sets, or keeps enum labels in a file of their own:
 
 ```xml
-<TextBlock Text="{l:LocalizeEnum KeyPrefix=Display_,
+<TextBlock Text="{l:LocalizeEnum Value={Binding SortOrder},
+                                 KeyPrefix=Display_,
                                  ResourceManager={x:Static res:SortingStringsKeys.ResourceManager}}" />
 ```
 
@@ -83,8 +221,8 @@ the same enum carry different label sets, or keeps enum labels in a file of thei
 Localizer.Current.Get(FileSortOrder.Ascending, resourceManager: SortingStringsKeys.ResourceManager, keyPrefix: "Display_");
 ```
 
-`LocalizeEnumConverter.Default` is read-only, so a converter with a custom prefix is declared as its
-own instance in resources:
+`LocalizeEnumConverter.Default` is read-only, so a converter with a custom prefix, a resource manager or
+argument names is declared as its own instance in resources:
 
 ```xml
 <l:LocalizeEnumConverter x:Key="DisplayEnumConverter" KeyPrefix="Display_" />

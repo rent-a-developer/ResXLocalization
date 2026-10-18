@@ -36,19 +36,22 @@ internal static class TestSupport
             .ToArray();
 
     /// <summary>
-    /// Binds a <see cref="LocalizeEnumExtension" /> to a fresh text block whose <c>DataContext</c> is the
-    /// supplied enumeration value, mirroring how the extension is used inside an item template.
+    /// Binds a <see cref="LocalizeEnumExtension" /> to a fresh text block's Text, then sets the text block's
+    /// <c>DataContext</c> and flushes pending binding transfers.
     /// </summary>
     /// <param name="extension">The markup extension that creates the localization binding.</param>
-    /// <param name="value">The enumeration value to expose as the text block's data context.</param>
+    /// <param name="dataContext">
+    /// The data context: the enumeration value itself for <c>Value = new Binding()</c>, or a view model.
+    /// </param>
     /// <returns>The bound text block after pending binding transfers have been applied.</returns>
-    public static TextBlock BindLocalizedEnum(LocalizeEnumExtension extension, Enum value)
+    public static TextBlock BindLocalizedEnum(LocalizeEnumExtension extension, object? dataContext)
     {
-        var textBlock = new TextBlock { DataContext = value };
+        var textBlock = new TextBlock();
         textBlock.SetBinding(
             TextBlock.TextProperty,
             (BindingBase)extension.ProvideValue(EmptyServiceProvider.Instance)
         );
+        textBlock.DataContext = dataContext;
         Flush();
         return textBlock;
     }
