@@ -545,18 +545,18 @@ public class ArgumentTests
     /// <returns>The argument.</returns>
     private static Argument Arg(string name, object? value) => new() { Name = name, Value = value };
 
+    /// <summary>A formatter that ignores the arguments and upper-cases the resolved value.</summary>
+    internal sealed class UpperCaseFormatter : IMessageFormatter
+    {
+        /// <inheritdoc />
+        public string Format(string pattern, MessageArguments arguments, CultureInfo culture) =>
+            pattern.ToUpperInvariant();
+    }
+
     /// <summary>A service provider without services, for a markup extension created in code.</summary>
     private sealed class EmptyServiceProvider : IServiceProvider
     {
         /// <inheritdoc />
         public object? GetService(Type serviceType) => null;
-    }
-
-    /// <summary>A formatter that ignores the arguments and upper-cases the resolved value.</summary>
-    private sealed class UpperCaseFormatter : IMessageFormatter
-    {
-        /// <inheritdoc />
-        public string Format(string pattern, MessageArguments arguments, CultureInfo culture) =>
-            pattern.ToUpperInvariant();
     }
 }

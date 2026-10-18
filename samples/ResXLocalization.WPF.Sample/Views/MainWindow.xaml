@@ -27,8 +27,8 @@
     <Window.Resources>
         <!--
             Four LocalizeEnumConverter configurations for the "enum bound as a value" section. The converter is
-            used in a MultiBinding [enumValue, currentCulture]; the culture child only exists to re-trigger the
-            conversion on a language switch.
+            used in a MultiBinding [RefreshTriggeringRevision, enumValue]; the first child only exists to re-trigger the
+            conversion whenever a lookup can change, such as on a language switch.
         -->
         <l:LocalizeEnumConverter x:Key="EnumConverterCustomPrefixSearchAll"
                                  KeyPrefix="Display_" />
@@ -381,7 +381,7 @@
                             <TextBlock Style="{StaticResource SectionHeaderTitle}"
                                        Text="4.  Enum values in templates - {l:LocalizeEnum}" />
                             <TextBlock Style="{StaticResource SectionHeaderSubtitle}"
-                                       Text="In an item template each item is the DataContext, so {l:LocalizeEnum} localizes it directly. The two combo boxes below show the very same FileSortOrder values with two different label sets, chosen by KeyPrefix." />
+                                       Text="In an item template each item is the DataContext, so {l:LocalizeEnum Value={Binding}} localizes it. The two combo boxes below show the very same FileSortOrder values with two different label sets, chosen by KeyPrefix." />
                         </StackPanel>
                     </Border>
                     <Border Style="{StaticResource SectionRow}">
@@ -395,7 +395,7 @@
                                             Margin="0,0,8,0">
                                     <TextBlock Style="{StaticResource SectionRowTechnique}"
                                                Text="Enum_ prefix" />
-                                    <controls:SyntaxTextBlock Code="{}{l:LocalizeEnum}"
+                                    <controls:SyntaxTextBlock Code="{}{l:LocalizeEnum Value={Binding}}"
                                                               Style="{StaticResource SectionRowSyntax}" />
                                     <ComboBox Margin="0,5,0,0"
                                               HorizontalAlignment="Stretch"
@@ -403,7 +403,7 @@
                                               SelectedItem="{Binding SelectedFileSortOrder}">
                                         <ComboBox.ItemTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{l:LocalizeEnum}" />
+                                                <TextBlock Text="{l:LocalizeEnum Value={Binding}}" />
                                             </DataTemplate>
                                         </ComboBox.ItemTemplate>
                                     </ComboBox>
@@ -412,7 +412,7 @@
                                             Margin="8,0,0,0">
                                     <TextBlock Style="{StaticResource SectionRowTechnique}"
                                                Text="Display_ prefix" />
-                                    <controls:SyntaxTextBlock Code="{}{l:LocalizeEnum KeyPrefix=Display_}"
+                                    <controls:SyntaxTextBlock Code="{}{l:LocalizeEnum Value={Binding}, KeyPrefix=Display_}"
                                                               Style="{StaticResource SectionRowSyntax}" />
                                     <ComboBox Margin="0,5,0,0"
                                               HorizontalAlignment="Stretch"
@@ -420,7 +420,7 @@
                                               SelectedItem="{Binding SelectedFileSortOrder}">
                                         <ComboBox.ItemTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{l:LocalizeEnum KeyPrefix=Display_}" />
+                                                <TextBlock Text="{l:LocalizeEnum Value={Binding}, KeyPrefix=Display_}" />
                                             </DataTemplate>
                                         </ComboBox.ItemTemplate>
                                     </ComboBox>
@@ -432,7 +432,7 @@
                         </StackPanel>
                     </Border>
 
-                    <!--  Each read-out sets its DataContext to the selected enum so {l:LocalizeEnum} can localize it.  -->
+                    <!--  Each read-out sets its DataContext to the selected enum so {l:LocalizeEnum Value={Binding}} can localize it.  -->
                     <Border Style="{StaticResource SectionRow}">
                         <Grid Margin="0,8">
                             <Grid.ColumnDefinitions>
@@ -444,7 +444,7 @@
                                         VerticalAlignment="Center">
                                 <TextBlock Style="{StaticResource SectionRowTechnique}"
                                            Text="Enum_ + search-all" />
-                                <controls:SyntaxTextBlock Code="{}{l:LocalizeEnum}"
+                                <controls:SyntaxTextBlock Code="{}{l:LocalizeEnum Value={Binding}}"
                                                           Style="{StaticResource SectionRowSyntax}" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
@@ -452,7 +452,7 @@
                                            Text="Result" />
                                 <TextBlock DataContext="{Binding SelectedFileSortOrder}"
                                            Style="{StaticResource SectionRowResultValue}"
-                                           Text="{l:LocalizeEnum}" />
+                                           Text="{l:LocalizeEnum Value={Binding}}" />
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -467,7 +467,7 @@
                                         VerticalAlignment="Center">
                                 <TextBlock Style="{StaticResource SectionRowTechnique}"
                                            Text="Display_ + search-all" />
-                                <controls:SyntaxTextBlock Code="{}{l:LocalizeEnum KeyPrefix=Display_}"
+                                <controls:SyntaxTextBlock Code="{}{l:LocalizeEnum Value={Binding}, KeyPrefix=Display_}"
                                                           Style="{StaticResource SectionRowSyntax}" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
@@ -475,7 +475,8 @@
                                            Text="Result" />
                                 <TextBlock DataContext="{Binding SelectedFileSortOrder}"
                                            Style="{StaticResource SectionRowResultValue}"
-                                           Text="{l:LocalizeEnum KeyPrefix=Display_}" />
+                                           Text="{l:LocalizeEnum Value={Binding},
+                                                                 KeyPrefix=Display_}" />
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -490,7 +491,7 @@
                                         VerticalAlignment="Center">
                                 <TextBlock Style="{StaticResource SectionRowTechnique}"
                                            Text="Enum_ + ApplicationStrings" />
-                                <controls:SyntaxTextBlock Code="{}{l:LocalizeEnum ResourceManager={x:Static res:ApplicationStringsKeys.ResourceManager}}"
+                                <controls:SyntaxTextBlock Code="{}{l:LocalizeEnum Value={Binding}, ResourceManager={x:Static res:ApplicationStringsKeys.ResourceManager}}"
                                                           Style="{StaticResource SectionRowSyntax}" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
@@ -498,7 +499,8 @@
                                            Text="Result" />
                                 <TextBlock DataContext="{Binding SelectedFileSortOrder}"
                                            Style="{StaticResource SectionRowResultValue}"
-                                           Text="{l:LocalizeEnum ResourceManager={x:Static res:ApplicationStringsKeys.ResourceManager}}" />
+                                           Text="{l:LocalizeEnum Value={Binding},
+                                                                 ResourceManager={x:Static res:ApplicationStringsKeys.ResourceManager}}" />
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -513,7 +515,7 @@
                                         VerticalAlignment="Center">
                                 <TextBlock Style="{StaticResource SectionRowTechnique}"
                                            Text="Display_ + SortingStrings" />
-                                <controls:SyntaxTextBlock Code="{}{l:LocalizeEnum KeyPrefix=Display_, ResourceManager={x:Static res:SortingStringsKeys.ResourceManager}}"
+                                <controls:SyntaxTextBlock Code="{}{l:LocalizeEnum Value={Binding}, KeyPrefix=Display_, ResourceManager={x:Static res:SortingStringsKeys.ResourceManager}}"
                                                           Style="{StaticResource SectionRowSyntax}" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
@@ -521,7 +523,8 @@
                                            Text="Result" />
                                 <TextBlock DataContext="{Binding SelectedFileSortOrder}"
                                            Style="{StaticResource SectionRowResultValue}"
-                                           Text="{l:LocalizeEnum KeyPrefix=Display_,
+                                           Text="{l:LocalizeEnum Value={Binding},
+                                                                 KeyPrefix=Display_,
                                                                  ResourceManager={x:Static res:SortingStringsKeys.ResourceManager}}" />
                             </StackPanel>
                         </Grid>
@@ -535,7 +538,7 @@
                             <TextBlock Style="{StaticResource SectionHeaderTitle}"
                                        Text="5.  Enum values bound as data - LocalizeEnumConverter" />
                             <TextBlock Style="{StaticResource SectionHeaderSubtitle}"
-                                       Text="When the enum is a real bound value rather than the DataContext, use LocalizeEnumConverter inside a MultiBinding [enumValue, currentCulture]. The culture child re-triggers the conversion on every language switch." />
+                                       Text="Where a markup extension is not accepted - for example a Binding-typed property such as DataGridTextColumn.Binding - use LocalizeEnumConverter inside a MultiBinding [RefreshTriggeringRevision, enumValue, arguments...]. The first child re-triggers the conversion whenever a lookup can change, such as on a language switch; children from index 2 on are format arguments." />
                         </StackPanel>
                     </Border>
                     <Border Style="{StaticResource SectionRow}">
@@ -549,7 +552,7 @@
                                         VerticalAlignment="Center">
                                 <TextBlock Style="{StaticResource SectionRowTechnique}"
                                            Text="Default converter" />
-                                <controls:SyntaxTextBlock Code="Converter={x:Static l:LocalizeEnumConverter.Default}"
+                                <controls:SyntaxTextBlock Code="&lt;MultiBinding Converter=&quot;{x:Static l:LocalizeEnumConverter.Default}&quot;&gt;&lt;Binding Path=&quot;RefreshTriggeringRevision&quot; Source=&quot;{x:Static core:Localizer.Current}&quot; /&gt;&lt;Binding Path=&quot;SelectedFileSortOrder&quot; /&gt;&lt;/MultiBinding&gt;"
                                                           Style="{StaticResource SectionRowSyntax}" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
@@ -558,9 +561,9 @@
                                 <TextBlock Style="{StaticResource SectionRowResultValue}">
                                     <TextBlock.Text>
                                         <MultiBinding Converter="{x:Static l:LocalizeEnumConverter.Default}">
-                                            <Binding Path="SelectedFileSortOrder" />
-                                            <Binding Path="CurrentCulture"
+                                            <Binding Path="RefreshTriggeringRevision"
                                                      Source="{x:Static core:Localizer.Current}" />
+                                            <Binding Path="SelectedFileSortOrder" />
                                         </MultiBinding>
                                     </TextBlock.Text>
                                 </TextBlock>
@@ -578,7 +581,7 @@
                                         VerticalAlignment="Center">
                                 <TextBlock Style="{StaticResource SectionRowTechnique}"
                                            Text="Display_ converter" />
-                                <controls:SyntaxTextBlock Code="Converter={StaticResource EnumConverterCustomPrefixSearchAll}"
+                                <controls:SyntaxTextBlock Code="&lt;MultiBinding Converter=&quot;{StaticResource EnumConverterCustomPrefixSearchAll}&quot;&gt;&lt;Binding Path=&quot;RefreshTriggeringRevision&quot; Source=&quot;{x:Static core:Localizer.Current}&quot; /&gt;&lt;Binding Path=&quot;SelectedFileSortOrder&quot; /&gt;&lt;/MultiBinding&gt;"
                                                           Style="{StaticResource SectionRowSyntax}" />
                                 <controls:SyntaxTextBlock Code="&lt;l:LocalizeEnumConverter x:Key=&quot;EnumConverterCustomPrefixSearchAll&quot; KeyPrefix=&quot;Display_&quot; /&gt;"
                                                           Style="{StaticResource SectionRowSyntax}" />
@@ -589,9 +592,9 @@
                                 <TextBlock Style="{StaticResource SectionRowResultValue}">
                                     <TextBlock.Text>
                                         <MultiBinding Converter="{StaticResource EnumConverterCustomPrefixSearchAll}">
-                                            <Binding Path="SelectedFileSortOrder" />
-                                            <Binding Path="CurrentCulture"
+                                            <Binding Path="RefreshTriggeringRevision"
                                                      Source="{x:Static core:Localizer.Current}" />
+                                            <Binding Path="SelectedFileSortOrder" />
                                         </MultiBinding>
                                     </TextBlock.Text>
                                 </TextBlock>
@@ -609,7 +612,7 @@
                                         VerticalAlignment="Center">
                                 <TextBlock Style="{StaticResource SectionRowTechnique}"
                                            Text="ApplicationStrings converter" />
-                                <controls:SyntaxTextBlock Code="Converter={StaticResource EnumConverterScopedDefaultPrefix}"
+                                <controls:SyntaxTextBlock Code="&lt;MultiBinding Converter=&quot;{StaticResource EnumConverterScopedDefaultPrefix}&quot;&gt;&lt;Binding Path=&quot;RefreshTriggeringRevision&quot; Source=&quot;{x:Static core:Localizer.Current}&quot; /&gt;&lt;Binding Path=&quot;SelectedFileSortOrder&quot; /&gt;&lt;/MultiBinding&gt;"
                                                           Style="{StaticResource SectionRowSyntax}" />
                                 <controls:SyntaxTextBlock Code="&lt;l:LocalizeEnumConverter x:Key=&quot;EnumConverterScopedDefaultPrefix&quot; ResourceManager=&quot;{x:Static res:ApplicationStringsKeys.ResourceManager}&quot; /&gt;"
                                                           Style="{StaticResource SectionRowSyntax}" />
@@ -620,9 +623,9 @@
                                 <TextBlock Style="{StaticResource SectionRowResultValue}">
                                     <TextBlock.Text>
                                         <MultiBinding Converter="{StaticResource EnumConverterScopedDefaultPrefix}">
-                                            <Binding Path="SelectedFileSortOrder" />
-                                            <Binding Path="CurrentCulture"
+                                            <Binding Path="RefreshTriggeringRevision"
                                                      Source="{x:Static core:Localizer.Current}" />
+                                            <Binding Path="SelectedFileSortOrder" />
                                         </MultiBinding>
                                     </TextBlock.Text>
                                 </TextBlock>
@@ -640,7 +643,7 @@
                                         VerticalAlignment="Center">
                                 <TextBlock Style="{StaticResource SectionRowTechnique}"
                                            Text="SortingStrings converter" />
-                                <controls:SyntaxTextBlock Code="Converter={StaticResource EnumConverterScopedCustomPrefix}"
+                                <controls:SyntaxTextBlock Code="&lt;MultiBinding Converter=&quot;{StaticResource EnumConverterScopedCustomPrefix}&quot;&gt;&lt;Binding Path=&quot;RefreshTriggeringRevision&quot; Source=&quot;{x:Static core:Localizer.Current}&quot; /&gt;&lt;Binding Path=&quot;SelectedFileSortOrder&quot; /&gt;&lt;/MultiBinding&gt;"
                                                           Style="{StaticResource SectionRowSyntax}" />
                                 <controls:SyntaxTextBlock Code="&lt;l:LocalizeEnumConverter x:Key=&quot;EnumConverterScopedCustomPrefix&quot; KeyPrefix=&quot;Display_&quot; ResourceManager=&quot;{x:Static res:SortingStringsKeys.ResourceManager}&quot; /&gt;"
                                                           Style="{StaticResource SectionRowSyntax}" />
@@ -651,9 +654,9 @@
                                 <TextBlock Style="{StaticResource SectionRowResultValue}">
                                     <TextBlock.Text>
                                         <MultiBinding Converter="{StaticResource EnumConverterScopedCustomPrefix}">
-                                            <Binding Path="SelectedFileSortOrder" />
-                                            <Binding Path="CurrentCulture"
+                                            <Binding Path="RefreshTriggeringRevision"
                                                      Source="{x:Static core:Localizer.Current}" />
+                                            <Binding Path="SelectedFileSortOrder" />
                                         </MultiBinding>
                                     </TextBlock.Text>
                                 </TextBlock>

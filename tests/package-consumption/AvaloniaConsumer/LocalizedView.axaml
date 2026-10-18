@@ -49,8 +49,8 @@
         <TextBlock x:Name="InvitedWithoutArgumentsText"
                    Text="{l:Localize {x:Static resources:StringsKeys.PeopleInvited}}" />
 
-        <!--  An enumeration value carried in the DataContext, localized by convention.  -->
+        <!--  An enumeration value of the view model, bound to Value with a compiled binding and localized by convention.  -->
         <TextBlock x:Name="SortOrderText"
-                   Text="{l:LocalizeEnum}" />
+                   Text="{l:LocalizeEnum Value={Binding SortOrder}}" />
     </StackPanel>
 </UserControl>

@@ -615,7 +615,7 @@ public class ArgumentTests
             .ToArray();
 
     /// <summary>A formatter that ignores the arguments and upper-cases the resolved value.</summary>
-    private sealed class UpperCaseFormatter : IMessageFormatter
+    internal sealed class UpperCaseFormatter : IMessageFormatter
     {
         /// <inheritdoc />
         public string Format(string pattern, MessageArguments arguments, CultureInfo culture) =>

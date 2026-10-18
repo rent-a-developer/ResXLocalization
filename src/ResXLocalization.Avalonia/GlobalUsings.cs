@@ -6,5 +6,3 @@ global using Avalonia.Data;
 global using Avalonia.Data.Converters;
 global using Avalonia.Markup.Xaml;
 global using Avalonia.Metadata;
-global using Avalonia.Reactive;
-global using Avalonia.Utilities;

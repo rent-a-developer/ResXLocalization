@@ -3,7 +3,7 @@ using System.ComponentModel;
 namespace AvaloniaConsumer;
 
 /// <summary>
-/// The data context of <see cref="LocalizedView" />: the value its compiled argument binding reads.
+/// The data context of <see cref="LocalizedView" />: the values its compiled bindings read.
 /// </summary>
 public sealed class LocalizedViewModel : INotifyPropertyChanged
 {
@@ -22,4 +22,7 @@ public sealed class LocalizedViewModel : INotifyPropertyChanged
             this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(this.InvitedCount)));
         }
     }
+
+    /// <summary>Gets the enumeration value that {l:LocalizeEnum} localizes.</summary>
+    public ConsumerSortOrder SortOrder { get; } = ConsumerSortOrder.Ascending;
 }

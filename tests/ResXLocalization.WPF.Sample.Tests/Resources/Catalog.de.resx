@@ -28,4 +28,7 @@
   <data name="PartitionDisplay" xml:space="preserve">
     <value>{0} ({1}:) - Laufwerk {2}, Partition {3}</value>
   </data>
+  <data name="Count_FileSortOrder_Ascending" xml:space="preserve">
+    <value>{0} Dateien, aufsteigend</value>
+  </data>
 </root>

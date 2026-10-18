@@ -14,7 +14,7 @@ Localizer.Current.Get(FileSortOrder.Ascending);  // search-all, enum key
 
 ```xml
 <TextBlock Text="{l:Localize Greeting}" />
-<TextBlock Text="{l:LocalizeEnum}" />
+<TextBlock Text="{l:LocalizeEnum Value={Binding SortOrder}}" />
 ```
 
 Typed and scoped lookups need none - they already name the file:

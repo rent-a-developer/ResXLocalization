@@ -5,7 +5,6 @@ global using Avalonia.Controls;
 global using Avalonia.Data;
 global using Avalonia.Headless;
 global using Avalonia.Headless.XUnit;
-global using Avalonia.Markup.Xaml;
 global using Avalonia.Threading;
 global using Avalonia.VisualTree;
 global using AwesomeAssertions;
