@@ -24,6 +24,12 @@
   <data name="PeopleInvited" xml:space="preserve">
     <value>{0} Personen eingeladen</value>
   </data>
+  <data name="StatusConnecting" xml:space="preserve">
+    <value>Verbindung wird hergestellt...</value>
+  </data>
+  <data name="StatusConnected" xml:space="preserve">
+    <value>Verbunden</value>
+  </data>
   <data name="Enum_FileSortOrder_Unsorted" xml:space="preserve">
     <value>Unsortiert</value>
   </data>

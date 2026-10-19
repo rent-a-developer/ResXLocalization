@@ -43,6 +43,56 @@ The same three modes exist in XAML:
 <TextBlock Text="{l:Localize Greeting}" />
 ```
 
+## A key from the view model
+
+When the view model decides *which* message to show - e.g. a status that can be "Connecting", "Connected"
+or "Failed" - bind the key instead of writing it in the XAML:
+
+```xml
+<TextBlock Text="{l:Localize {Binding StatusKey}}" />            <!-- a ResourceKey: recommended -->
+<TextBlock Text="{l:Localize Key={Binding StatusKeyName}}" />    <!-- a string key: the escape hatch -->
+
+<l:Localize Key="{Binding StatusKey}">                            <!-- a bound key with arguments -->
+  <l:Argument Value="{Binding Count}" />
+</l:Localize>
+```
+
+```csharp
+public ResourceKey StatusKey => this.IsConnected ? AppStringsKeys.Connected : AppStringsKeys.Connecting;
+```
+
+Bind a `ResourceKey`. The view model then picks one of the generated keys, so renaming or deleting a
+resource is still a build error. Binding a `string` key works too, but a typo in that string is not
+caught by the compiler: the lookup fails, and the text shows the [failure text](#failure-text)
+(`!key!` by default).
+
+`{l:Localize}` reads the bound value again whenever the view model reports a change of the bound
+property through `INotifyPropertyChanged`, and whenever `Localizer.Current.RefreshTriggeringRevision`
+changes - for example on a language switch. Depending on the bound value, the text is:
+
+| Bound value | Text shown |
+| --- | --- |
+| a non-empty `string` | the translation of that key, looked up exactly like a key written in the XAML: in the file that `ResourceManager` names if `ResourceManager` is set, otherwise in all registered files (search-all) |
+| a `ResourceKey` | the translation of that key, looked up in the file the `ResourceKey` belongs to; `ResourceManager` is ignored |
+| an empty string (`""`) | an empty string - the same result as `Localizer.Current.Get("")` in code |
+| nothing yet, because the element has no `DataContext` yet | an empty string |
+| `null` | an empty string. A view model can therefore leave the key property `null` while it has nothing to show - for example before the first connection attempt, when there is no status yet - and the element simply stays empty |
+| `default(ResourceKey)`, or a value of any other type, such as an `int` | an empty string; `Localizer.Current.LookupFailed` is not raised |
+
+No bound value makes `{l:Localize}` throw an exception: a value that is neither a non-empty `string`
+nor a `ResourceKey` always renders an empty string. Format arguments (`<l:Argument>` children)
+work with a bound key exactly as with a key written in the XAML.
+
+Worth knowing:
+
+- **WPF accepts a plain `{Binding}` only.** In WPF, a `MultiBinding` or `PriorityBinding` as the key is
+  rejected with an `InvalidOperationException` when the view loads. Avalonia accepts every binding kind.
+- **Missing `x:DataType` inference.** Rider and Visual Studio with ReSharper may not infer the
+  `x:DataType` for a binding nested inside `{l:Localize}`. Code completion and go-to-definition navigation
+  for the bound property then do not work in the editor; the binding itself still works at run time.
+  To get them back, add a `d:DataContext` to the view, or write `{CompiledBinding ...}` instead of
+  `{Binding ...}`.
+
 ## Registration is only for search-all
 
 ```csharp

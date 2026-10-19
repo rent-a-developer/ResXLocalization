@@ -129,6 +129,12 @@
   <data name="PeopleInvited" xml:space="preserve">
     <value>{0} people invited</value>
   </data>
+  <data name="StatusConnecting" xml:space="preserve">
+    <value>Connecting...</value>
+  </data>
+  <data name="StatusConnected" xml:space="preserve">
+    <value>Connected</value>
+  </data>
   <data name="Enum_FileSortOrder_Unsorted" xml:space="preserve">
     <value>Unsorted</value>
   </data>

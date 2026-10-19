@@ -7,6 +7,23 @@ namespace RentADeveloper.ResXLocalization.Avalonia.Sample.Tests;
 public class MainWindowLiveSwitchTests
 {
     [AvaloniaFact]
+    public void BoundKey_FollowsTheViewModel_AndSwitchesLive()
+    {
+        var (window, viewModel) = CreateWindow();
+
+        // Both bound-key rows of card 7, the ResourceKey one and the string one, show the status.
+        TestSupport.AllVisibleText(window).Count(text => text == "Connecting...").Should().Be(2);
+
+        viewModel.IsConnected = true;
+        TestSupport.PumpUi();
+        TestSupport.AllVisibleText(window).Count(text => text == "Connected").Should().Be(2);
+
+        viewModel.SelectedLanguage = TestSupport.German;
+        TestSupport.PumpUi();
+        TestSupport.AllVisibleText(window).Count(text => text == "Verbunden").Should().Be(2);
+    }
+
+    [AvaloniaFact]
     public void PlainStrings_SwitchLive()
     {
         var (window, viewModel) = CreateWindow();

@@ -7,6 +7,24 @@ namespace RentADeveloper.ResXLocalization.WPF.Sample.Tests;
 public class MainWindowLiveSwitchTests
 {
     [Fact]
+    public void BoundKey_FollowsTheViewModel_AndSwitchesLive() =>
+        WpfThread.Invoke(() =>
+        {
+            var (window, viewModel) = CreateWindow();
+
+            // Both bound-key rows of card 7, the ResourceKey one and the string one, show the status.
+            TestSupport.AllVisibleText(window).Count(text => text == "Connecting...").Should().Be(2);
+
+            viewModel.IsConnected = true;
+            TestSupport.Flush();
+            TestSupport.AllVisibleText(window).Count(text => text == "Connected").Should().Be(2);
+
+            viewModel.SelectedLanguage = TestSupport.German;
+            TestSupport.Flush();
+            TestSupport.AllVisibleText(window).Count(text => text == "Verbunden").Should().Be(2);
+        });
+
+    [Fact]
     public void PlainStrings_SwitchLive() =>
         WpfThread.Invoke(() =>
         {

@@ -40,6 +40,13 @@ public sealed class TestViewModel : INotifyPropertyChanged
         set => this.Set(ref field, value);
     }
 
+    /// <summary>Gets or sets the bound key of the bound-key tests: a key, or any other value.</summary>
+    public object? Key
+    {
+        get;
+        set => this.Set(ref field, value);
+    }
+
     /// <summary>Gets or sets the volume label of <c>PartitionDisplay</c>.</summary>
     public string? Label
     {
