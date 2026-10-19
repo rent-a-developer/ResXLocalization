@@ -43,6 +43,9 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 - `LocalizeEnumExtension.Value`: the enum value to localize, a binding or a fixed member
   (`Value={x:Static m:FileSortOrder.Ascending}`), and the shorthand `{l:LocalizeEnum {Binding SortOrder}}`
   through the new constructor `LocalizeEnumExtension(object value)`.
+- A bound key for `{l:Localize}`, in both UI packages: `{l:Localize {Binding Key}}` or
+  `Key="{Binding Key}"` takes the key from the view model, as a `ResourceKey` or a `string`. A bound value
+  that gives no key, such as `null`, renders an empty string instead of throwing.
 - `LocalizeEnumConverter.ArgumentNames`: comma-separated names for the converter's arguments, for a
   formatter that understands named arguments.
 - `{l:LocalizeEnum}` re-resolves on every change of `ILocalizer.RefreshTriggeringRevision`, and so does

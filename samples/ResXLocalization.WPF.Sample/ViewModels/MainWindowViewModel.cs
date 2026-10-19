@@ -114,8 +114,32 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     /// <summary>Gets the selection via <c>Get(Enum)</c>: search-all with the default <c>Enum_</c> prefix.</summary>
     public string SortOrderViaSearchAllDefaultPrefix => this.localizer.Get(this.SelectedFileSortOrder);
 
+    /// <summary>
+    /// Gets the key of the connection status shown by the bound-key demo, as a generated
+    /// <see cref="ResourceKey" />: <c>StatusConnected</c> while <see cref="IsConnected" /> is
+    /// <see langword="true" />, otherwise <c>StatusConnecting</c>. The view binds it as the key of
+    /// <c>{l:Localize {Binding StatusKey}}</c>, so the shown text follows this property and the language.
+    /// </summary>
+    public ResourceKey StatusKey =>
+        this.IsConnected ? ApplicationStringsKeys.StatusConnected : ApplicationStringsKeys.StatusConnecting;
+
+    /// <summary>
+    /// Gets the name of <see cref="StatusKey" /> as a plain <see cref="string" />, for the bound-key demo of a
+    /// string key: <c>{l:Localize Key={Binding StatusKeyName}}</c>.
+    /// </summary>
+    public string StatusKeyName => this.StatusKey.Name;
+
     /// <summary>Gets the languages offered in the language switcher.</summary>
     public CultureInfo[] SupportedLanguages { get; } = [new("en"), new("de")];
+
+    /// <summary>
+    /// Whether the simulated connection of the bound-key demo is established. Changing it changes
+    /// <see cref="StatusKey" /> and <see cref="StatusKeyName" />, the keys the view binds.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(StatusKey))]
+    [NotifyPropertyChangedFor(nameof(StatusKeyName))]
+    public partial bool IsConnected { get; set; }
 
     /// <summary>
     /// The people count formatted into the <c>PeopleInvited</c> resource by the dynamic

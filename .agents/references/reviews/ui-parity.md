@@ -18,8 +18,8 @@ both, so anything that is not framework-specific belongs there rather than in on
 | Localize an enum value | `LocalizeEnumExtension` | `LocalizeEnumExtension` |
 | Localize an enum in a hand-written `MultiBinding` | `LocalizeEnumConverter` | `LocalizeEnumConverter` |
 | Composite-format arguments | `Argument` children in `LocalizeExtension.Arguments` | `Argument` children in `LocalizeExtension.Arguments` |
-| Assigning a binding to `Argument.Value` or `LocalizeEnumExtension.Value` instead of applying it | `[AssignBinding]` on the property | the `XamlSetMarkupExtension` handler of `Argument` and of `LocalizeEnumExtension` |
-| An argument or enum-value binding that is a `MultiBinding` or a `PriorityBinding` | accepted | rejected by `ProvideValue`: WPF's `MultiBinding` accepts only plain `Binding` children |
+| Assigning a binding to `Argument.Value`, `LocalizeEnumExtension.Value` or `LocalizeExtension.Key` instead of applying it | `[AssignBinding]` on the property | the `XamlSetMarkupExtension` handler of `Argument`, of `LocalizeEnumExtension` and of `LocalizeExtension` |
+| An argument, enum-value or key binding that is a `MultiBinding` or a `PriorityBinding` | accepted | rejected by `ProvideValue`: WPF's `MultiBinding` accepts only plain `Binding` children |
 
 Where the frameworks genuinely differ, the difference is expected to be **local and explained**:
 `LocalizeExtension` and `LocalizeEnumExtension` build their `MultiBinding` through

@@ -632,12 +632,69 @@
                     </Border>
                 </StackPanel>
 
-                <!--  ===== 7. Code-behind API (ILocalizer.Get + indexer) =====  -->
+                <!--  ===== 7. A key from the view model (bound key) =====  -->
                 <StackPanel>
                     <Border Classes="sectionHeader">
                         <StackPanel>
                             <TextBlock Classes="sectionHeaderTitle"
-                                       Text="7.  Code-behind API - ILocalizer.Get and the indexer" />
+                                       Text="7.  A key from the view model - bound key" />
+                            <TextBlock Classes="sectionHeaderSubtitle"
+                                       Text="When the view model decides which message to show, bind the key: {l:Localize {Binding StatusKey}}. Bind a generated ResourceKey, so renaming or deleting the resource stays a build error; a bound string key also works, but the compiler cannot catch a typo in it, and the text then shows the failure text !key! at run time. Tick the check box to make the view model switch the key from StatusConnecting to StatusConnected; the text follows the key and the language." />
+                        </StackPanel>
+                    </Border>
+                    <Border Classes="sectionRow">
+                        <StackPanel>
+                            <TextBlock Classes="sectionRowTechnique"
+                                       Text="Connection state (the view-model property IsConnected, which chooses the key):" />
+                            <CheckBox Margin="0,5,0,0"
+                                      Content="Connection established"
+                                      IsChecked="{Binding IsConnected}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Classes="sectionRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="ResourceKey bound from the view model (recommended)" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="{}{l:Localize {Binding StatusKey}}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue"
+                                           Text="{l:Localize {Binding StatusKey}}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="sectionLastRow">
+                        <Grid Classes="row"
+                              ColumnDefinitions="550,24,*">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Classes="sectionRowTechnique"
+                                           Text="String key bound from the view model" />
+                                <controls:SyntaxTextBlock Classes="sectionRowSyntax"
+                                                          Code="{}{l:Localize Key={Binding StatusKeyName}}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="sectionRowResultTitle"
+                                           Text="Result" />
+                                <TextBlock Classes="sectionRowResultValue"
+                                           Text="{l:Localize Key={Binding StatusKeyName}}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <!--  ===== 8. Code-behind API (ILocalizer.Get + indexer) =====  -->
+                <StackPanel>
+                    <Border Classes="sectionHeader">
+                        <StackPanel>
+                            <TextBlock Classes="sectionHeaderTitle"
+                                       Text="8.  Code-behind API - ILocalizer.Get and the indexer" />
                             <TextBlock Classes="sectionHeaderSubtitle"
                                        Text="Outside XAML, resolve strings with the ILocalizer methods. The view model below computes each value once per language switch; binding to those properties is what makes this section update live. Every Get overload and the indexer are shown." />
                         </StackPanel>

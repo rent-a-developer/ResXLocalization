@@ -7,12 +7,15 @@ namespace RentADeveloper.ResXLocalization.WPF;
 /// managers. Usage in XAML: <c>{l:Localize {x:Static res:StringsKeys.Greeting}}</c> for a typed key,
 /// <c>{l:Localize Greeting}</c> for a key-only lookup across all registered resource managers, or
 /// <c>{l:Localize Key=Greeting, ResourceManager={x:Static res:StringsKeys.ResourceManager}}</c> to scope the
-/// lookup to one file. When the resource value is a composite format string, supply its arguments as
+/// lookup to one file. A key chosen by the view model is bound: <c>{l:Localize {Binding StatusKey}}</c> or
+/// <c>Key="{Binding StatusKey}"</c>; bind a <see cref="RentADeveloper.ResXLocalization.ResourceKey" /> to keep
+/// the key compile-checked. When the resource value is a composite format string, supply its arguments as
 /// <see cref="Argument" /> child elements:
 /// <c>&lt;l:Localize Key="{x:Static res:StringsKeys.PeopleInvited}"&gt;&lt;l:Argument Value="{Binding PeopleCount}" /&gt;&lt;/l:Localize&gt;</c>.
 /// </summary>
 [ContentProperty(nameof(Arguments))]
 [MarkupExtensionReturnType(typeof(string))]
+[XamlSetMarkupExtension(nameof(ReceiveMarkupExtension))]
 public sealed class LocalizeExtension : MarkupExtension
 {
     /// <summary>Initializes a new instance of the <see cref="LocalizeExtension" /> class.</summary>
@@ -20,10 +23,14 @@ public sealed class LocalizeExtension : MarkupExtension
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LocalizeExtension" /> class and sets <see cref="Key" />:
-    /// <c>{l:Localize Greeting}</c> is <c>{l:Localize Key=Greeting}</c>. A single object-typed constructor is
-    /// used instead of overloads so WPF's positional-argument resolution is never ambiguous.
+    /// <c>{l:Localize Greeting}</c> is <c>{l:Localize Key=Greeting}</c>, and <c>{l:Localize {Binding StatusKey}}</c>
+    /// is <c>{l:Localize Key={Binding StatusKey}}</c>. A single object-typed constructor is used instead of
+    /// overloads so WPF's positional-argument resolution is never ambiguous.
     /// </summary>
-    /// <param name="key">The key: a <see cref="string" /> or a <see cref="RentADeveloper.ResXLocalization.ResourceKey" />.</param>
+    /// <param name="key">
+    /// The key: a <see cref="string" />, a <see cref="RentADeveloper.ResXLocalization.ResourceKey" />, or a
+    /// plain <see cref="Binding" /> that yields one of them.
+    /// </param>
     public LocalizeExtension(object key) => this.Key = key;
 
     /// <summary>
@@ -36,7 +43,12 @@ public sealed class LocalizeExtension : MarkupExtension
     /// Gets or sets the key to resolve: a <see cref="string" />, scoped to <see cref="ResourceManager" /> if
     /// that is set and otherwise searched across all registered resource managers, or a
     /// <see cref="RentADeveloper.ResXLocalization.ResourceKey" />, which resolves through its own resource
-    /// manager.
+    /// manager; or a plain <see cref="Binding" />, such as <c>Key="{Binding StatusKey}"</c>, whose value is
+    /// resolved by the same rules on every update. Prefer binding a
+    /// <see cref="RentADeveloper.ResXLocalization.ResourceKey" /> chosen by the view model, which keeps the key
+    /// compile-checked; a bound <see cref="string" /> key is an escape hatch where a typo silently becomes the
+    /// failure text. A bound value that gives no key, such as <see langword="null" />, an empty string or a
+    /// value of another type, renders an empty string.
     /// </summary>
     public object? Key { get; set; }
 
@@ -60,10 +72,11 @@ public sealed class LocalizeExtension : MarkupExtension
     /// the multi-binding itself for a <c>Setter</c>.
     /// </returns>
     /// <exception cref="InvalidOperationException">
-    /// <see cref="Key" /> is <see langword="null" /> or neither a <see cref="string" /> nor a
-    /// <see cref="RentADeveloper.ResXLocalization.ResourceKey" />; or an <see cref="Argument" /> has no
-    /// <see cref="Argument.Value" />, an empty <see cref="Argument.Name" />, the same name as another one, or
-    /// a binding that is not a plain <see cref="Binding" />.
+    /// <see cref="Key" /> is <see langword="null" />, a constant that is neither a <see cref="string" /> nor a
+    /// <see cref="RentADeveloper.ResXLocalization.ResourceKey" />, or a binding that is not a plain
+    /// <see cref="Binding" />; or an <see cref="Argument" /> has no <see cref="Argument.Value" />, an empty
+    /// <see cref="Argument.Name" />, the same name as another one, or a binding that is not a plain
+    /// <see cref="Binding" />.
     /// </exception>
     /// <exception cref="ArgumentNullException">
     /// <see cref="Key" /> is a <see cref="RentADeveloper.ResXLocalization.ResourceKey" /> without a resource
@@ -79,10 +92,36 @@ public sealed class LocalizeExtension : MarkupExtension
             .ProvideValue(serviceProvider);
     }
 
-    /// <summary>Checks that <see cref="Key" /> is a <see cref="string" /> or a usable resource key.</summary>
+    /// <summary>
+    /// Called by the XAML reader for every markup extension written for a property of a
+    /// <see cref="LocalizeExtension" />. Assigns a binding written for <see cref="Key" /> instead of applying
+    /// it; every other markup extension, such as <c>{x:Static}</c> or <c>{x:Null}</c>, stays unhandled and
+    /// provides its value as usual. Also called for the constructor argument, with the member name
+    /// <c>_PositionalParameters</c>; that case stays unhandled, because a binding passed to the constructor
+    /// already arrives as a <see cref="Binding" />.
+    /// </summary>
+    /// <param name="targetObject">The object whose property is being set.</param>
+    /// <param name="eventArgs">The property and the markup extension written for it.</param>
+    private static void ReceiveMarkupExtension(object targetObject, XamlSetMarkupExtensionEventArgs eventArgs)
+    {
+        if (
+            targetObject is LocalizeExtension extension
+            && eventArgs.Member.Name == nameof(Key)
+            && eventArgs.MarkupExtension is BindingBase binding
+        )
+        {
+            extension.Key = binding;
+            eventArgs.Handled = true;
+        }
+    }
+
+    /// <summary>
+    /// Checks that <see cref="Key" /> is a <see cref="string" />, a usable resource key or a plain binding.
+    /// </summary>
     /// <exception cref="InvalidOperationException">
-    /// <see cref="Key" /> is <see langword="null" /> or neither a <see cref="string" /> nor a
-    /// <see cref="RentADeveloper.ResXLocalization.ResourceKey" />.
+    /// <see cref="Key" /> is <see langword="null" />, a constant that is neither a <see cref="string" /> nor a
+    /// <see cref="RentADeveloper.ResXLocalization.ResourceKey" />, or a binding that is not a plain
+    /// <see cref="Binding" />.
     /// </exception>
     /// <exception cref="ArgumentNullException">
     /// <see cref="Key" /> is a <see cref="RentADeveloper.ResXLocalization.ResourceKey" /> without a resource
@@ -107,11 +146,18 @@ public sealed class LocalizeExtension : MarkupExtension
                 );
 
             case ResourceKey:
+            case Binding:
                 return;
+
+            // WPF's MultiBinding accepts only plain Binding children.
+            case BindingBase:
+                throw new InvalidOperationException(
+                    $"Key of {{l:Localize}} is a {this.Key.GetType().FullName}. WPF supports only a plain {{Binding}} here."
+                );
 
             default:
                 throw new InvalidOperationException(
-                    $"Key of {{l:Localize}} must be a string or a ResourceKey, but is a {this.Key.GetType().FullName}."
+                    $"Key of {{l:Localize}} must be a string, a ResourceKey or a binding, but is a {this.Key.GetType().FullName}."
                 );
         }
     }
