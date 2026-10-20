@@ -1,3 +1,1 @@
 #nullable enable
-RentADeveloper.ResXLocalization.MessageFormat.MessageFormatLocalizerExtensions
-static RentADeveloper.ResXLocalization.MessageFormat.MessageFormatLocalizerExtensions.UseMessageFormat(this RentADeveloper.ResXLocalization.ILocalizer! localizer, Jeffijoe.MessageFormat.MessageFormatter? messageFormatter = null) -> void

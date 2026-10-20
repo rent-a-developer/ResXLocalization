@@ -7,6 +7,8 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-10-20
+
 ### Added
 
 - `IMessageFormatter` and `ILocalizer.MessageFormatter`: one replaceable formatter that every resolved
@@ -160,6 +162,7 @@ this project adheres to [Semantic Versioning](https://semver.org/).
   - Available-culture discovery for language pickers: `GetAvailableCultures()`.
   - Native AOT / trimming support for the Avalonia package and the shared engine.
 
-[unreleased]: https://github.com/rent-a-developer/ResXLocalization/compare/v1.1.0...HEAD
+[unreleased]: https://github.com/rent-a-developer/ResXLocalization/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/rent-a-developer/ResXLocalization/releases/tag/v2.0.0
 [1.1.0]: https://github.com/rent-a-developer/ResXLocalization/releases/tag/v1.1.0
 [1.0.0]: https://github.com/rent-a-developer/ResXLocalization/releases/tag/v1.0.0

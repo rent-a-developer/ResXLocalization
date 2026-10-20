@@ -1,54 +1,41 @@
 #nullable enable
+override RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension.ProvideValue(System.IServiceProvider! serviceProvider) -> object!
+override RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension.ProvideValue(System.IServiceProvider! serviceProvider) -> object!
+RentADeveloper.ResXLocalization.Avalonia.Argument
+RentADeveloper.ResXLocalization.Avalonia.Argument.Argument() -> void
+RentADeveloper.ResXLocalization.Avalonia.Argument.Name.get -> string?
+RentADeveloper.ResXLocalization.Avalonia.Argument.Name.set -> void
+RentADeveloper.ResXLocalization.Avalonia.Argument.Value.get -> object?
+RentADeveloper.ResXLocalization.Avalonia.Argument.Value.set -> void
+RentADeveloper.ResXLocalization.Avalonia.DesignTime
 RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter.ArgumentNames.get -> string?
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter.ArgumentNames.set -> void
 RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter.Convert(System.Collections.Generic.IList<object?>! values, System.Type! targetType, object? parameter, System.Globalization.CultureInfo! culture) -> object!
-RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter.KeyPrefix.get -> string!
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter.KeyPrefix.get -> string?
 RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter.KeyPrefix.set -> void
 RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter.LocalizeEnumConverter() -> void
 RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter.ResourceManager.get -> System.Resources.ResourceManager?
 RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter.ResourceManager.set -> void
 RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension
-RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension.KeyPrefix.get -> string!
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension.Arguments.get -> System.Collections.ObjectModel.Collection<RentADeveloper.ResXLocalization.Avalonia.Argument!>!
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension.KeyPrefix.get -> string?
 RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension.KeyPrefix.set -> void
 RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension.LocalizeEnumExtension() -> void
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension.LocalizeEnumExtension(object! value) -> void
 RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension.ResourceManager.get -> System.Resources.ResourceManager?
 RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension.ResourceManager.set -> void
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension.Value.get -> object?
+RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension.Value.set -> void
 RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension
-RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension.Key.get -> string!
+RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension.Arguments.get -> System.Collections.ObjectModel.Collection<RentADeveloper.ResXLocalization.Avalonia.Argument!>!
+RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension.Key.get -> object?
 RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension.Key.set -> void
 RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension.LocalizeExtension() -> void
 RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension.LocalizeExtension(object! key) -> void
-RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension.ResourceKey.get -> RentADeveloper.ResXLocalization.ResourceKey?
-RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension.ResourceKey.set -> void
 RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension.ResourceManager.get -> System.Resources.ResourceManager?
 RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension.ResourceManager.set -> void
-override RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension.ProvideValue(System.IServiceProvider! serviceProvider) -> object!
-override RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension.ProvideValue(System.IServiceProvider! serviceProvider) -> object!
+static readonly RentADeveloper.ResXLocalization.Avalonia.DesignTime.CultureProperty -> Avalonia.AttachedProperty<string?>!
+static RentADeveloper.ResXLocalization.Avalonia.DesignTime.GetCulture(Avalonia.AvaloniaObject! element) -> string?
+static RentADeveloper.ResXLocalization.Avalonia.DesignTime.SetCulture(Avalonia.AvaloniaObject! element, string? value) -> void
 static RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter.Default.get -> RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter!
-RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs
-static readonly RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs.Arg0Property -> Avalonia.AttachedProperty<object?>!
-static readonly RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs.Arg1Property -> Avalonia.AttachedProperty<object?>!
-static readonly RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs.Arg2Property -> Avalonia.AttachedProperty<object?>!
-static readonly RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs.Arg3Property -> Avalonia.AttachedProperty<object?>!
-static readonly RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs.Arg4Property -> Avalonia.AttachedProperty<object?>!
-static readonly RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs.Arg5Property -> Avalonia.AttachedProperty<object?>!
-static readonly RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs.Arg6Property -> Avalonia.AttachedProperty<object?>!
-static readonly RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs.Arg7Property -> Avalonia.AttachedProperty<object?>!
-static readonly RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs.Arg8Property -> Avalonia.AttachedProperty<object?>!
-static RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs.GetArg0(Avalonia.AvaloniaObject! element) -> object?
-static RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs.GetArg1(Avalonia.AvaloniaObject! element) -> object?
-static RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs.GetArg2(Avalonia.AvaloniaObject! element) -> object?
-static RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs.GetArg3(Avalonia.AvaloniaObject! element) -> object?
-static RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs.GetArg4(Avalonia.AvaloniaObject! element) -> object?
-static RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs.GetArg5(Avalonia.AvaloniaObject! element) -> object?
-static RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs.GetArg6(Avalonia.AvaloniaObject! element) -> object?
-static RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs.GetArg7(Avalonia.AvaloniaObject! element) -> object?
-static RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs.GetArg8(Avalonia.AvaloniaObject! element) -> object?
-static RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs.SetArg0(Avalonia.AvaloniaObject! element, object? value) -> void
-static RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs.SetArg1(Avalonia.AvaloniaObject! element, object? value) -> void
-static RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs.SetArg2(Avalonia.AvaloniaObject! element, object? value) -> void
-static RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs.SetArg3(Avalonia.AvaloniaObject! element, object? value) -> void
-static RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs.SetArg4(Avalonia.AvaloniaObject! element, object? value) -> void
-static RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs.SetArg5(Avalonia.AvaloniaObject! element, object? value) -> void
-static RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs.SetArg6(Avalonia.AvaloniaObject! element, object? value) -> void
-static RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs.SetArg7(Avalonia.AvaloniaObject! element, object? value) -> void
-static RentADeveloper.ResXLocalization.Avalonia.LocalizeArgs.SetArg8(Avalonia.AvaloniaObject! element, object? value) -> void

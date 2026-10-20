@@ -1,55 +1,42 @@
 #nullable enable
+override RentADeveloper.ResXLocalization.WPF.LocalizeEnumExtension.ProvideValue(System.IServiceProvider! serviceProvider) -> object!
+override RentADeveloper.ResXLocalization.WPF.LocalizeExtension.ProvideValue(System.IServiceProvider! serviceProvider) -> object!
+RentADeveloper.ResXLocalization.WPF.Argument
+RentADeveloper.ResXLocalization.WPF.Argument.Argument() -> void
+RentADeveloper.ResXLocalization.WPF.Argument.Name.get -> string?
+RentADeveloper.ResXLocalization.WPF.Argument.Name.set -> void
+RentADeveloper.ResXLocalization.WPF.Argument.Value.get -> object?
+RentADeveloper.ResXLocalization.WPF.Argument.Value.set -> void
+RentADeveloper.ResXLocalization.WPF.DesignTime
 RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter.ArgumentNames.get -> string?
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter.ArgumentNames.set -> void
 RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter.Convert(object?[]! values, System.Type! targetType, object? parameter, System.Globalization.CultureInfo! culture) -> object!
 RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter.ConvertBack(object? value, System.Type![]! targetTypes, object? parameter, System.Globalization.CultureInfo! culture) -> object![]!
-RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter.KeyPrefix.get -> string!
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter.KeyPrefix.get -> string?
 RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter.KeyPrefix.set -> void
 RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter.LocalizeEnumConverter() -> void
 RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter.ResourceManager.get -> System.Resources.ResourceManager?
 RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter.ResourceManager.set -> void
 RentADeveloper.ResXLocalization.WPF.LocalizeEnumExtension
-RentADeveloper.ResXLocalization.WPF.LocalizeEnumExtension.KeyPrefix.get -> string!
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumExtension.Arguments.get -> System.Collections.ObjectModel.Collection<RentADeveloper.ResXLocalization.WPF.Argument!>!
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumExtension.KeyPrefix.get -> string?
 RentADeveloper.ResXLocalization.WPF.LocalizeEnumExtension.KeyPrefix.set -> void
 RentADeveloper.ResXLocalization.WPF.LocalizeEnumExtension.LocalizeEnumExtension() -> void
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumExtension.LocalizeEnumExtension(object! value) -> void
 RentADeveloper.ResXLocalization.WPF.LocalizeEnumExtension.ResourceManager.get -> System.Resources.ResourceManager?
 RentADeveloper.ResXLocalization.WPF.LocalizeEnumExtension.ResourceManager.set -> void
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumExtension.Value.get -> object?
+RentADeveloper.ResXLocalization.WPF.LocalizeEnumExtension.Value.set -> void
 RentADeveloper.ResXLocalization.WPF.LocalizeExtension
-RentADeveloper.ResXLocalization.WPF.LocalizeExtension.Key.get -> string!
+RentADeveloper.ResXLocalization.WPF.LocalizeExtension.Arguments.get -> System.Collections.ObjectModel.Collection<RentADeveloper.ResXLocalization.WPF.Argument!>!
+RentADeveloper.ResXLocalization.WPF.LocalizeExtension.Key.get -> object?
 RentADeveloper.ResXLocalization.WPF.LocalizeExtension.Key.set -> void
 RentADeveloper.ResXLocalization.WPF.LocalizeExtension.LocalizeExtension() -> void
 RentADeveloper.ResXLocalization.WPF.LocalizeExtension.LocalizeExtension(object! key) -> void
-RentADeveloper.ResXLocalization.WPF.LocalizeExtension.ResourceKey.get -> RentADeveloper.ResXLocalization.ResourceKey?
-RentADeveloper.ResXLocalization.WPF.LocalizeExtension.ResourceKey.set -> void
 RentADeveloper.ResXLocalization.WPF.LocalizeExtension.ResourceManager.get -> System.Resources.ResourceManager?
 RentADeveloper.ResXLocalization.WPF.LocalizeExtension.ResourceManager.set -> void
-override RentADeveloper.ResXLocalization.WPF.LocalizeEnumExtension.ProvideValue(System.IServiceProvider! serviceProvider) -> object!
-override RentADeveloper.ResXLocalization.WPF.LocalizeExtension.ProvideValue(System.IServiceProvider! serviceProvider) -> object!
+static readonly RentADeveloper.ResXLocalization.WPF.DesignTime.CultureProperty -> System.Windows.DependencyProperty!
+static RentADeveloper.ResXLocalization.WPF.DesignTime.GetCulture(System.Windows.DependencyObject! element) -> string?
+static RentADeveloper.ResXLocalization.WPF.DesignTime.SetCulture(System.Windows.DependencyObject! element, string? value) -> void
 static RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter.Default.get -> RentADeveloper.ResXLocalization.WPF.LocalizeEnumConverter!
-RentADeveloper.ResXLocalization.WPF.LocalizeArgs
-static readonly RentADeveloper.ResXLocalization.WPF.LocalizeArgs.Arg0Property -> System.Windows.DependencyProperty!
-static readonly RentADeveloper.ResXLocalization.WPF.LocalizeArgs.Arg1Property -> System.Windows.DependencyProperty!
-static readonly RentADeveloper.ResXLocalization.WPF.LocalizeArgs.Arg2Property -> System.Windows.DependencyProperty!
-static readonly RentADeveloper.ResXLocalization.WPF.LocalizeArgs.Arg3Property -> System.Windows.DependencyProperty!
-static readonly RentADeveloper.ResXLocalization.WPF.LocalizeArgs.Arg4Property -> System.Windows.DependencyProperty!
-static readonly RentADeveloper.ResXLocalization.WPF.LocalizeArgs.Arg5Property -> System.Windows.DependencyProperty!
-static readonly RentADeveloper.ResXLocalization.WPF.LocalizeArgs.Arg6Property -> System.Windows.DependencyProperty!
-static readonly RentADeveloper.ResXLocalization.WPF.LocalizeArgs.Arg7Property -> System.Windows.DependencyProperty!
-static readonly RentADeveloper.ResXLocalization.WPF.LocalizeArgs.Arg8Property -> System.Windows.DependencyProperty!
-static RentADeveloper.ResXLocalization.WPF.LocalizeArgs.GetArg0(System.Windows.DependencyObject! element) -> object?
-static RentADeveloper.ResXLocalization.WPF.LocalizeArgs.GetArg1(System.Windows.DependencyObject! element) -> object?
-static RentADeveloper.ResXLocalization.WPF.LocalizeArgs.GetArg2(System.Windows.DependencyObject! element) -> object?
-static RentADeveloper.ResXLocalization.WPF.LocalizeArgs.GetArg3(System.Windows.DependencyObject! element) -> object?
-static RentADeveloper.ResXLocalization.WPF.LocalizeArgs.GetArg4(System.Windows.DependencyObject! element) -> object?
-static RentADeveloper.ResXLocalization.WPF.LocalizeArgs.GetArg5(System.Windows.DependencyObject! element) -> object?
-static RentADeveloper.ResXLocalization.WPF.LocalizeArgs.GetArg6(System.Windows.DependencyObject! element) -> object?
-static RentADeveloper.ResXLocalization.WPF.LocalizeArgs.GetArg7(System.Windows.DependencyObject! element) -> object?
-static RentADeveloper.ResXLocalization.WPF.LocalizeArgs.GetArg8(System.Windows.DependencyObject! element) -> object?
-static RentADeveloper.ResXLocalization.WPF.LocalizeArgs.SetArg0(System.Windows.DependencyObject! element, object? value) -> void
-static RentADeveloper.ResXLocalization.WPF.LocalizeArgs.SetArg1(System.Windows.DependencyObject! element, object? value) -> void
-static RentADeveloper.ResXLocalization.WPF.LocalizeArgs.SetArg2(System.Windows.DependencyObject! element, object? value) -> void
-static RentADeveloper.ResXLocalization.WPF.LocalizeArgs.SetArg3(System.Windows.DependencyObject! element, object? value) -> void
-static RentADeveloper.ResXLocalization.WPF.LocalizeArgs.SetArg4(System.Windows.DependencyObject! element, object? value) -> void
-static RentADeveloper.ResXLocalization.WPF.LocalizeArgs.SetArg5(System.Windows.DependencyObject! element, object? value) -> void
-static RentADeveloper.ResXLocalization.WPF.LocalizeArgs.SetArg6(System.Windows.DependencyObject! element, object? value) -> void
-static RentADeveloper.ResXLocalization.WPF.LocalizeArgs.SetArg7(System.Windows.DependencyObject! element, object? value) -> void
-static RentADeveloper.ResXLocalization.WPF.LocalizeArgs.SetArg8(System.Windows.DependencyObject! element, object? value) -> void
