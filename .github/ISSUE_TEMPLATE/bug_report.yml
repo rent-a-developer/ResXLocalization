@@ -8,12 +8,14 @@ body:
       label: Package
       description: >
         Which package is affected? ResXLocalization.Core is the shared engine both UI packages depend on;
-        pick it when the problem shows in a lookup made from code rather than from markup. "Not sure" is a
-        real answer and is fine.
+        pick it when the problem shows in a lookup made from code rather than from markup. Pick
+        ResXLocalization.MessageFormat when the problem shows only after Localizer.Current.UseMessageFormat().
+        "Not sure" is a real answer and is fine.
       options:
         - ResXLocalization.Avalonia
         - ResXLocalization.WPF
         - ResXLocalization.Core
+        - ResXLocalization.MessageFormat
         - More than one, or not sure
     validations:
       required: true

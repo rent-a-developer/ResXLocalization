@@ -105,7 +105,6 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 - **BREAKING:** Two neutral `.resx` files that produce the same keys class report `RXLGEN004` and
   generate neither class, instead of merging into one partial class. See the
   [migration guide](docs/guides/migration-2.0.md).
-
 - **BREAKING:** `Localizer.RegisterResourceManager` throws `ArgumentException` naming the base name for a
   plain `ResourceManager` for which no resources exist under its base name, instead of registering it and
   letting every search-all lookup that reaches it throw `MissingManifestResourceException`. Fix the base

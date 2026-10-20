@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
   <!--
-    Test-only resource file. It has no .Designer.cs, so the typed-key generator skips it; the tests load
-    it through a plain ResourceManager. It defines:
+    Test-only resource file. This test project does not run the typed-key generator, so no keys class
+    exists for it; the tests load it through a plain ResourceManager. It defines:
       * Shared            - also defined in Fallback.resx, to test search-all first-match-wins and scoping.
       * CatalogOnly       - unique to this file, to prove search-all reaches it.
       * Display_*         - custom-prefix enum keys, to test scoped custom-prefix enum lookups.

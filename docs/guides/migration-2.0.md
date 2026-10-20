@@ -1,172 +1,53 @@
 # Migrating to 2.0
 
-2.0 is a major version; each section below is one breaking change, with what to do. The last section
-is a design-time change that needs no action.
+2.0 is a major version; each section below is one breaking change, with what to do, starting with the
+changes that affect the most applications. Two sections need no action: the optional section on the enum
+key prefix, and the last section, a design-time change.
 
-## A formatting failure returns the failure text instead of throwing
+## `LocalizeArgs` is replaced by `<l:Argument>`
 
-A resource value that cannot be formatted with the supplied arguments - `Broken {0`, or
-`File {0} of {1}` with one argument - no longer throws `FormatException` from
-`Localizer.Current.Get(key, args)` and its scoped and typed siblings. The lookup returns the failure
-text (by default `!key!`) and raises `ILocalizer.LookupFailed` with
-`LookupFailureReason.MessageFormatFailed`. Code that caught `FormatException` subscribes to the event
-instead.
+The attached properties `LocalizeArgs.Arg0`...`Arg8` are removed from both packages. Format arguments
+are `<l:Argument>` children of `{l:Localize}`, each with a constant or bound `Value` and an optional
+`Name`. A localized text with arguments is written in element syntax.
 
 Before:
 
-```csharp
-try
-{
-    text = Localizer.Current.Get(AppStringsKeys.FilesCopied, copied);
-}
-catch (FormatException exception)
-{
-    logger.LogWarning(exception, "Broken translation");
-}
+```xml
+<TextBlock l:LocalizeArgs.Arg0="{Binding PeopleCount}"
+           Text="{l:Localize {x:Static res:AppStringsKeys.PeopleInvited}}" />
 ```
-
-After:
-
-```csharp
-Localizer.Current.LookupFailed += (_, args) =>
-    logger.LogWarning(args.Failure.Exception, "Broken translation {Key} in {Culture}", args.Failure.Key, args.Failure.Culture);
-
-text = Localizer.Current.Get(AppStringsKeys.FilesCopied, copied);
-```
-
-## A formatting failure in XAML renders the failure text
-
-`{l:Localize}` with arguments whose resource value cannot be formatted renders the
-failure text, in both frameworks, and raises `LookupFailed`. In 1.x, Avalonia reported a binding
-error and kept the previous text, and WPF showed an empty text.
-
-Before (1.x): an Avalonia binding error, or an empty WPF `TextBlock`.
 
 After:
 
 ```xml
-<!-- Resource "FilesCopied" = "Copied {0 files" -->
 <TextBlock>
   <TextBlock.Text>
-    <l:Localize Key="{x:Static res:AppStringsKeys.FilesCopied}">
-      <l:Argument Value="{Binding Copied}" />
+    <l:Localize Key="{x:Static res:AppStringsKeys.PeopleInvited}">
+      <l:Argument Value="{Binding PeopleCount}" />
     </l:Localize>
   </TextBlock.Text>
 </TextBlock>
-<!-- renders "!FilesCopied!" and raises Localizer.Current.LookupFailed -->
 ```
 
-## An empty arguments array no longer formats
+## `LocalizeExtension.ResourceKey` is replaced by `Key`
 
-`Localizer.Current.Get(key, args)` with an empty array (from 2.0, `Get(key, MessageArguments.FromValues())`) returns the resource value unformatted, exactly
-like `Get(key)`: `{{x}}` stays `{{x}}`, and a value containing `{0}` no longer throws.
+`LocalizeExtension.ResourceKey` is removed. `Key` takes a `string` or a `ResourceKey`; a `ResourceKey`
+resolves through its own resource manager and ignores `ResourceManager`. Code that read
+`LocalizeExtension.Key` as a `string` reads an `object?`. A constructor argument or a `Key` that is
+neither a `string` nor a `ResourceKey` throws an `InvalidOperationException` when the view loads;
+before, it produced an empty key.
 
 Before:
 
-```csharp
-// Resource "Template" = "Literal {{braces}} for {0}"
-Localizer.Current.Get("Template", Array.Empty<object?>()); // 1.x: FormatException
+```xml
+<TextBlock Text="{l:Localize ResourceKey={x:Static res:AppStringsKeys.Greeting}}" />
 ```
 
 After:
 
-```csharp
-Localizer.Current.Get("Template", MessageArguments.FromValues()); // "Literal {{braces}} for {0}"
-```
-
-## Custom `ILocalizer` implementations have new members
-
-A custom `ILocalizer` implementation must implement:
-
-- `ILocalizer.LookupFailed`, replacing `TranslationNotFound` (see below);
-- `ILocalizer.MessageFormatter`;
-- `ILocalizer.RefreshTriggeringRevision` - advance it and raise `PropertyChanged` on every change that
-  can change a lookup's result; from 2.0 the XAML bindings re-resolve on it, not on `CurrentCulture`;
-- `ILocalizer.Get(string key, MessageArguments? arguments = null, ResourceManager? resourceManager = null)`,
-  the one entry point every lookup goes through, together with the other two `Get` overloads and
-  `EnumKeyBuilder` (see
-  [A custom `ILocalizer` implements three `Get` overloads](#a-custom-ilocalizer-implements-three-get-overloads-and-enumkeybuilder)).
-
-It also replaces `MissingTranslationFormat` with `LookupFailureTextBuilder` (see below), raises
-`LookupFailed` and builds the failure text for both `LookupFailureReason`s.
-
-Before:
-
-```csharp
-public sealed class MyLocalizer : ILocalizer
-{
-    public event EventHandler<TranslationNotFoundEventArgs>? TranslationNotFound;
-    public string MissingTranslationFormat { get; set; } = "!{0}!";
-    // ...
-}
-```
-
-After:
-
-```csharp
-public sealed class MyLocalizer : ILocalizer
-{
-    public event EventHandler<LookupFailedEventArgs>? LookupFailed;
-    public IMessageFormatter MessageFormatter { get; set; } = StringFormatMessageFormatter.Instance;
-    public int RefreshTriggeringRevision { get; private set; }
-    public Func<LookupFailure, string> LookupFailureTextBuilder { get; set; } = failure => $"!{failure.Key}!";
-
-    public string Get(string key, MessageArguments? arguments = null, ResourceManager? resourceManager = null) =>
-        /* resolve, then MessageFormatter.Format(value, arguments, CurrentCulture);
-           on a failure raise LookupFailed, then return LookupFailureTextBuilder(failure) */;
-    // ...
-}
-```
-
-## `MissingTranslationFormat` is replaced by `LookupFailureTextBuilder`
-
-`ILocalizer.MissingTranslationFormat`, a composite format string, is replaced by
-`ILocalizer.LookupFailureTextBuilder`, a `Func<LookupFailure, string>`. It produces the failure text for
-a missing translation and, new in 2.0, for a formatting failure; `LookupFailure.Reason` tells them
-apart. The compiler reports every use of the old property; code that read the format string calls the
-function instead. The `ArgumentException` for a malformed format no longer exists. The documentation
-calls the text the "failure text" instead of the "sentinel".
-
-Before:
-
-```csharp
-Localizer.Current.MissingTranslationFormat = "[{0}]";
-```
-
-After:
-
-```csharp
-Localizer.Current.LookupFailureTextBuilder = failure => $"[{failure.Key}]";
-```
-
-See [Lookup modes and culture fallback](lookup-and-fallback.md#failure-text) for more examples.
-
-## `TranslationNotFound` is replaced by `LookupFailed`
-
-`ILocalizer.TranslationNotFound` and `TranslationNotFoundEventArgs` are replaced by
-`ILocalizer.LookupFailed` and `LookupFailedEventArgs`. The new event reports every failed lookup - a key
-that no resource file contains, and, new in 2.0, a value that cannot be formatted. Its
-`LookupFailedEventArgs.Failure` is a `LookupFailure`, the same value `LookupFailureTextBuilder`
-receives; `Failure.Reason` tells the two cases apart. To keep logging only missing translations, check
-the reason.
-
-Before:
-
-```csharp
-Localizer.Current.TranslationNotFound += (_, args) =>
-    logger.LogWarning("No translation for {Key} in {Culture}", args.Key, args.Culture);
-```
-
-After:
-
-```csharp
-Localizer.Current.LookupFailed += (_, args) =>
-{
-    if (args.Failure.Reason == LookupFailureReason.TranslationNotFound)
-    {
-        logger.LogWarning("No translation for {Key} in {Culture}", args.Failure.Key, args.Failure.Culture);
-    }
-};
+```xml
+<TextBlock Text="{l:Localize Key={x:Static res:AppStringsKeys.Greeting}}" />
+<TextBlock Text="{l:Localize {x:Static res:AppStringsKeys.Greeting}}" />
 ```
 
 ## Format arguments are built with `MessageArguments`
@@ -225,67 +106,6 @@ Localizer.Current.Get(sortOrder, keyPrefix: "Display_");
 Localizer.Current.Get(sortOrder, resourceManager: rm, keyPrefix: "Display_");
 ```
 
-## `null` no longer throws for a manager or a key prefix
-
-A `null` resource manager means search-all, and a `null` key prefix means the default convention of
-`ILocalizer.EnumKeyBuilder`. In 1.x both threw `ArgumentNullException`. This applies in code and in
-XAML: `LocalizeEnumExtension.KeyPrefix` and `LocalizeEnumConverter.KeyPrefix` are `string?` and default
-to `null`, and `KeyPrefix="{x:Null}"` no longer throws.
-
-Before:
-
-```csharp
-Localizer.Current.Get("Key", (ResourceManager)null!);    // 1.x: ArgumentNullException
-Localizer.Current.Get(sortOrder, (string)null!);         // 1.x: ArgumentNullException
-```
-
-After:
-
-```csharp
-Localizer.Current.Get("Key", resourceManager: null);     // search-all
-Localizer.Current.Get(sortOrder, keyPrefix: null);       // the EnumKeyBuilder's default, Enum_
-```
-
-## Recompile assemblies that call `Get`
-
-Every 1.x `Get` signature is removed, including `Get(string)` and `Get(ResourceKey)`, whose calls still
-compile unchanged against 2.0. An assembly compiled against 1.x throws `MissingMethodException` at the
-first `Get` call until it is recompiled.
-
-## A custom `ILocalizer` implements three `Get` overloads and `EnumKeyBuilder`
-
-A custom `ILocalizer` implementation replaces its `Get` overloads with exactly three, one per key kind,
-and implements `EnumKeyBuilder`.
-
-Before:
-
-```csharp
-public string Get(string key) => /* ... */;
-public string Get(string key, ResourceManager resourceManager) => /* ... */;
-public string Get(string key, params object?[] arguments) => /* ... */;
-public string Get(string key, ResourceManager resourceManager, params object?[] arguments) => /* ... */;
-public string Get(ResourceKey key) => /* ... */;
-public string Get(ResourceKey key, params object?[] arguments) => /* ... */;
-public string Get(Enum value, string keyPrefix = "Enum_") => /* ... */;
-public string Get(Enum value, ResourceManager resourceManager, string keyPrefix = "Enum_") => /* ... */;
-```
-
-After:
-
-```csharp
-public Func<Enum, string?, string> EnumKeyBuilder { get; set; } =
-    static (value, keyPrefix) => (keyPrefix ?? "Enum_") + value.GetType().Name + "_" + value;
-
-public string Get(string key, MessageArguments? arguments = null, ResourceManager? resourceManager = null) =>
-    /* the one lookup; null arguments means none, a null manager means search-all */;
-
-public string Get(ResourceKey key, MessageArguments? arguments = null) =>
-    this.Get(key.Name, arguments, key.Manager);
-
-public string Get(Enum value, MessageArguments? arguments = null, ResourceManager? resourceManager = null, string? keyPrefix = null) =>
-    this.Get(this.EnumKeyBuilder(value, keyPrefix), arguments, resourceManager);
-```
-
 ## Optional: set the enum key prefix once
 
 Not a break. An application that passes the same prefix on every enum lookup can make it the default
@@ -312,6 +132,53 @@ Localizer.Current.Get(sortOrder);
 
 ```xml
 <TextBlock Text="{l:LocalizeEnum Value={Binding}}" />
+```
+
+## `{l:LocalizeEnum}` takes its value from `Value`
+
+`{l:LocalizeEnum}` no longer reads the enum value from the target's `DataContext`; `Value` is required,
+and a `{l:LocalizeEnum}` without it throws `InvalidOperationException` when the view loads. In an item
+template, where the item is the `DataContext`, write `Value={Binding}`; for a view-model property, bind
+it; for a fixed member, use `{x:Static}`.
+
+Before:
+
+```xml
+<TextBlock Text="{l:LocalizeEnum}" />
+```
+
+After:
+
+```xml
+<TextBlock Text="{l:LocalizeEnum Value={Binding}}" />                              <!-- item templates -->
+<TextBlock Text="{l:LocalizeEnum Value={Binding SortOrder}}" />                    <!-- a bound property -->
+<TextBlock Text="{l:LocalizeEnum Value={x:Static m:FileSortOrder.Ascending}}" />   <!-- a fixed member -->
+```
+
+## `LocalizeEnumConverter` has a new child order
+
+`LocalizeEnumConverter` reads child 0 as the refresh trigger, `RefreshTriggeringRevision` of
+`Localizer.Current`, child 1 as the enum value, and children from index 2 on as format arguments. A
+`MultiBinding` in the old order - the enum first, then `CurrentCulture` - renders an empty string until
+it is rewritten, and nothing reports it, so search for every use of `LocalizeEnumConverter`. Extra
+children that served only to re-trigger the conversion are now format arguments; remove them.
+
+Before:
+
+```xml
+<MultiBinding Converter="{x:Static l:LocalizeEnumConverter.Default}">
+  <Binding Path="SortOrder" />
+  <Binding Path="CurrentCulture" Source="{x:Static core:Localizer.Current}" />
+</MultiBinding>
+```
+
+After:
+
+```xml
+<MultiBinding Converter="{x:Static l:LocalizeEnumConverter.Default}">
+  <Binding Path="RefreshTriggeringRevision" Source="{x:Static core:Localizer.Current}" />
+  <Binding Path="SortOrder" />
+</MultiBinding>
 ```
 
 ## Typed keys use the generated `ResourceManager`
@@ -411,50 +278,120 @@ Localizer.Current.RegisterResourceManager(new ResourceManager("MyApp.Strngs", ty
 Localizer.Current.RegisterResourceManager(AppStringsKeys.ResourceManager);
 ```
 
-## `LocalizeArgs` is replaced by `<l:Argument>`
+## `TranslationNotFound` is replaced by `LookupFailed`
 
-The attached properties `LocalizeArgs.Arg0`...`Arg8` are removed from both packages. Format arguments
-are `<l:Argument>` children of `{l:Localize}`, each with a constant or bound `Value` and an optional
-`Name`. A localized text with arguments is written in element syntax.
+`ILocalizer.TranslationNotFound` and `TranslationNotFoundEventArgs` are replaced by
+`ILocalizer.LookupFailed` and `LookupFailedEventArgs`. The new event reports every failed lookup - a key
+that no resource file contains, and, new in 2.0, a value that cannot be formatted. Its
+`LookupFailedEventArgs.Failure` is a `LookupFailure`, the same value `LookupFailureTextBuilder`
+receives; `Failure.Reason` tells the two cases apart. To keep logging only missing translations, check
+the reason.
+
+Before:
+
+```csharp
+Localizer.Current.TranslationNotFound += (_, args) =>
+    logger.LogWarning("No translation for {Key} in {Culture}", args.Key, args.Culture);
+```
+
+After:
+
+```csharp
+Localizer.Current.LookupFailed += (_, args) =>
+{
+    if (args.Failure.Reason == LookupFailureReason.TranslationNotFound)
+    {
+        logger.LogWarning("No translation for {Key} in {Culture}", args.Failure.Key, args.Failure.Culture);
+    }
+};
+```
+
+## `MissingTranslationFormat` is replaced by `LookupFailureTextBuilder`
+
+`ILocalizer.MissingTranslationFormat`, a composite format string, is replaced by
+`ILocalizer.LookupFailureTextBuilder`, a `Func<LookupFailure, string>`. It produces the failure text for
+a missing translation and, new in 2.0, for a formatting failure; `LookupFailure.Reason` tells them
+apart. The compiler reports every use of the old property; code that read the format string calls the
+function instead. The `ArgumentException` for a malformed format no longer exists. The documentation
+calls the text the "failure text" instead of the "sentinel".
+
+Before:
+
+```csharp
+Localizer.Current.MissingTranslationFormat = "[{0}]";
+```
+
+After:
+
+```csharp
+Localizer.Current.LookupFailureTextBuilder = failure => $"[{failure.Key}]";
+```
+
+See [Lookup modes and culture fallback](lookup-and-fallback.md#failure-text) for more examples.
+
+## A formatting failure returns the failure text instead of throwing
+
+A resource value that cannot be formatted with the supplied arguments - `Broken {0`, or
+`File {0} of {1}` with one argument - no longer throws `FormatException` from
+`Localizer.Current.Get(key, args)` and its scoped and typed siblings. The lookup returns the failure
+text (by default `!key!`) and raises `ILocalizer.LookupFailed` with
+`LookupFailureReason.MessageFormatFailed`. Code that caught `FormatException` subscribes to the event
+instead and checks `LookupFailure.Reason`, because the event reports missing translations too.
+
+Before:
+
+```csharp
+try
+{
+    text = Localizer.Current.Get(AppStringsKeys.FilesCopied, copied);
+}
+catch (FormatException exception)
+{
+    logger.LogWarning(exception, "Broken translation");
+}
+```
+
+After:
+
+```csharp
+Localizer.Current.LookupFailed += (_, args) =>
+{
+    if (args.Failure.Reason == LookupFailureReason.MessageFormatFailed)
+    {
+        logger.LogWarning(args.Failure.Exception, "Broken translation {Key} in {Culture}", args.Failure.Key, args.Failure.Culture);
+    }
+};
+
+text = Localizer.Current.Get(AppStringsKeys.FilesCopied, MessageArguments.FromValues(copied));
+```
+
+## A formatting failure in XAML renders the failure text
+
+`{l:Localize}` with arguments whose resource value cannot be formatted renders the
+failure text, in both frameworks, and raises `LookupFailed`. In 1.x, Avalonia reported a binding
+error and kept the previous text, and WPF showed an empty text.
 
 Before:
 
 ```xml
-<TextBlock l:LocalizeArgs.Arg0="{Binding PeopleCount}"
-           Text="{l:Localize {x:Static res:AppStringsKeys.PeopleInvited}}" />
+<!-- Resource "FilesCopied" = "Copied {0 files" -->
+<TextBlock l:LocalizeArgs.Arg0="{Binding Copied}"
+           Text="{l:Localize {x:Static res:AppStringsKeys.FilesCopied}}" />
+<!-- Avalonia: a binding error, and the previous text stays; WPF: an empty text -->
 ```
 
 After:
 
 ```xml
+<!-- Resource "FilesCopied" = "Copied {0 files" -->
 <TextBlock>
   <TextBlock.Text>
-    <l:Localize Key="{x:Static res:AppStringsKeys.PeopleInvited}">
-      <l:Argument Value="{Binding PeopleCount}" />
+    <l:Localize Key="{x:Static res:AppStringsKeys.FilesCopied}">
+      <l:Argument Value="{Binding Copied}" />
     </l:Localize>
   </TextBlock.Text>
 </TextBlock>
-```
-
-## `LocalizeExtension.ResourceKey` is replaced by `Key`
-
-`LocalizeExtension.ResourceKey` is removed. `Key` takes a `string` or a `ResourceKey`; a `ResourceKey`
-resolves through its own resource manager and ignores `ResourceManager`. Code that read
-`LocalizeExtension.Key` as a `string` reads an `object?`. A constructor argument or a `Key` that is
-neither a `string` nor a `ResourceKey` throws an `InvalidOperationException` when the view loads;
-before, it produced an empty key.
-
-Before:
-
-```xml
-<TextBlock Text="{l:Localize ResourceKey={x:Static res:AppStringsKeys.Greeting}}" />
-```
-
-After:
-
-```xml
-<TextBlock Text="{l:Localize Key={x:Static res:AppStringsKeys.Greeting}}" />
-<TextBlock Text="{l:Localize {x:Static res:AppStringsKeys.Greeting}}" />
+<!-- renders "!FilesCopied!" and raises Localizer.Current.LookupFailed -->
 ```
 
 ## Avalonia: arguments in a style setter or a resource are formatted
@@ -487,51 +424,143 @@ After:
 <!-- renders "5 people invited" for PeopleCount = 5 -->
 ```
 
-## `{l:LocalizeEnum}` takes its value from `Value`
+## An empty arguments array no longer formats
 
-`{l:LocalizeEnum}` no longer reads the enum value from the target's `DataContext`; `Value` is required,
-and a `{l:LocalizeEnum}` without it throws `InvalidOperationException` when the view loads. In an item
-template, where the item is the `DataContext`, write `Value={Binding}`; for a view-model property, bind
-it; for a fixed member, use `{x:Static}`.
+`Localizer.Current.Get(key, args)` with an empty array (from 2.0, `Get(key, MessageArguments.Empty)`) returns the resource value unformatted, exactly
+like `Get(key)`: `{{x}}` stays `{{x}}`, and a value containing `{0}` no longer throws.
 
 Before:
 
-```xml
-<TextBlock Text="{l:LocalizeEnum}" />
+```csharp
+// Resource "Template" = "Literal {{braces}} for {0}"
+Localizer.Current.Get("Template", Array.Empty<object?>()); // 1.x: FormatException
 ```
 
 After:
 
-```xml
-<TextBlock Text="{l:LocalizeEnum Value={Binding}}" />                              <!-- item templates -->
-<TextBlock Text="{l:LocalizeEnum Value={Binding SortOrder}}" />                    <!-- a bound property -->
-<TextBlock Text="{l:LocalizeEnum Value={x:Static m:FileSortOrder.Ascending}}" />   <!-- a fixed member -->
+```csharp
+Localizer.Current.Get("Template", MessageArguments.Empty); // "Literal {{braces}} for {0}"
 ```
 
-## `LocalizeEnumConverter` has a new child order
+## `null` no longer throws for a manager or a key prefix
 
-`LocalizeEnumConverter` reads child 0 as the refresh trigger, `RefreshTriggeringRevision` of
-`Localizer.Current`, child 1 as the enum value, and children from index 2 on as format arguments. A
-`MultiBinding` in the old order - the enum first, then `CurrentCulture` - renders an empty string until
-it is rewritten, and nothing reports it, so search for every use of `LocalizeEnumConverter`. Extra
-children that served only to re-trigger the conversion are now format arguments; remove them.
+A `null` resource manager means search-all, and a `null` key prefix means the default convention of
+`ILocalizer.EnumKeyBuilder`. In 1.x both threw `ArgumentNullException`. This applies in code and in
+XAML: `LocalizeEnumExtension.KeyPrefix` and `LocalizeEnumConverter.KeyPrefix` are `string?` and default
+to `null`, and `KeyPrefix="{x:Null}"` no longer throws.
 
 Before:
 
-```xml
-<MultiBinding Converter="{x:Static l:LocalizeEnumConverter.Default}">
-  <Binding Path="SortOrder" />
-  <Binding Path="CurrentCulture" Source="{x:Static core:Localizer.Current}" />
-</MultiBinding>
+```csharp
+Localizer.Current.Get("Key", (ResourceManager)null!);    // 1.x: ArgumentNullException
+Localizer.Current.Get(sortOrder, (string)null!);         // 1.x: ArgumentNullException
 ```
 
 After:
 
-```xml
-<MultiBinding Converter="{x:Static l:LocalizeEnumConverter.Default}">
-  <Binding Path="RefreshTriggeringRevision" Source="{x:Static core:Localizer.Current}" />
-  <Binding Path="SortOrder" />
-</MultiBinding>
+```csharp
+Localizer.Current.Get("Key", resourceManager: null);     // search-all
+Localizer.Current.Get(sortOrder, keyPrefix: null);       // the EnumKeyBuilder's default, Enum_
+```
+
+## Recompile assemblies that call `Get`
+
+Every 1.x `Get` signature is removed, including `Get(string)` and `Get(ResourceKey)`, whose calls still
+compile unchanged against 2.0. An assembly compiled against 1.x throws `MissingMethodException` at the
+first `Get` call until it is recompiled.
+
+Before:
+
+```text
+MyLibrary.dll, compiled against 1.x, calls Localizer.Current.Get("Greeting") under 2.0
+  ->  MissingMethodException: Method not found: 'System.String RentADeveloper.ResXLocalization.ILocalizer.Get(System.String)'.
+```
+
+After:
+
+```text
+MyLibrary.dll, recompiled against 2.0 without a source change, calls Localizer.Current.Get("Greeting")
+  ->  the translation of "Greeting", as with 1.x
+```
+
+## Custom `ILocalizer` implementations have new members
+
+A custom `ILocalizer` implementation must implement:
+
+- `ILocalizer.LookupFailed`, replacing `TranslationNotFound` (see
+  [`TranslationNotFound` is replaced by `LookupFailed`](#translationnotfound-is-replaced-by-lookupfailed));
+- `ILocalizer.MessageFormatter`;
+- `ILocalizer.RefreshTriggeringRevision` - advance it and raise `PropertyChanged` on every change that
+  can change a lookup's result; from 2.0 the XAML bindings re-resolve on it, not on `CurrentCulture`;
+- `ILocalizer.Get(string key, MessageArguments? arguments = null, ResourceManager? resourceManager = null)`,
+  the one entry point every lookup goes through, together with the other two `Get` overloads and
+  `EnumKeyBuilder` (see
+  [A custom `ILocalizer` implements three `Get` overloads](#a-custom-ilocalizer-implements-three-get-overloads-and-enumkeybuilder)).
+
+It also replaces `MissingTranslationFormat` with `LookupFailureTextBuilder` (see
+[`MissingTranslationFormat` is replaced by `LookupFailureTextBuilder`](#missingtranslationformat-is-replaced-by-lookupfailuretextbuilder)), raises
+`LookupFailed` and builds the failure text for both `LookupFailureReason`s.
+
+Before:
+
+```csharp
+public sealed class MyLocalizer : ILocalizer
+{
+    public event EventHandler<TranslationNotFoundEventArgs>? TranslationNotFound;
+    public string MissingTranslationFormat { get; set; } = "!{0}!";
+    // ...
+}
+```
+
+After:
+
+```csharp
+public sealed class MyLocalizer : ILocalizer
+{
+    public event EventHandler<LookupFailedEventArgs>? LookupFailed;
+    public IMessageFormatter MessageFormatter { get; set; } = StringFormatMessageFormatter.Instance;
+    public int RefreshTriggeringRevision { get; private set; }
+    public Func<LookupFailure, string> LookupFailureTextBuilder { get; set; } = failure => $"!{failure.Key}!";
+
+    public string Get(string key, MessageArguments? arguments = null, ResourceManager? resourceManager = null) =>
+        /* resolve, then MessageFormatter.Format(value, arguments, CurrentCulture);
+           on a failure raise LookupFailed, then return LookupFailureTextBuilder(failure) */;
+    // ...
+}
+```
+
+## A custom `ILocalizer` implements three `Get` overloads and `EnumKeyBuilder`
+
+A custom `ILocalizer` implementation replaces its `Get` overloads with exactly three, one per key kind,
+and implements `EnumKeyBuilder`.
+
+Before:
+
+```csharp
+public string Get(string key) => /* ... */;
+public string Get(string key, ResourceManager resourceManager) => /* ... */;
+public string Get(string key, params object?[] arguments) => /* ... */;
+public string Get(string key, ResourceManager resourceManager, params object?[] arguments) => /* ... */;
+public string Get(ResourceKey key) => /* ... */;
+public string Get(ResourceKey key, params object?[] arguments) => /* ... */;
+public string Get(Enum value, string keyPrefix = "Enum_") => /* ... */;
+public string Get(Enum value, ResourceManager resourceManager, string keyPrefix = "Enum_") => /* ... */;
+```
+
+After:
+
+```csharp
+public Func<Enum, string?, string> EnumKeyBuilder { get; set; } =
+    static (value, keyPrefix) => (keyPrefix ?? "Enum_") + value.GetType().Name + "_" + value;
+
+public string Get(string key, MessageArguments? arguments = null, ResourceManager? resourceManager = null) =>
+    /* the one lookup; null arguments means none, a null manager means search-all */;
+
+public string Get(ResourceKey key, MessageArguments? arguments = null) =>
+    this.Get(key.Name, arguments, key.Manager);
+
+public string Get(Enum value, MessageArguments? arguments = null, ResourceManager? resourceManager = null, string? keyPrefix = null) =>
+    this.Get(this.EnumKeyBuilder(value, keyPrefix), arguments, resourceManager);
 ```
 
 ## Rider's WPF previewer renders raw patterns (not a breaking change)

@@ -9,21 +9,26 @@ together.
 ## What this is
 
 ResXLocalization is a .NET library that gives XAML applications type-safe `.resx` localization with live
-language switching. It ships as two NuGet packages — `ResXLocalization.Avalonia` and `ResXLocalization.WPF` —
-over one shared, UI-agnostic engine. Consumers keep the `.resx` files and editors they already have.
+language switching. It ships as two UI packages — `ResXLocalization.Avalonia` and `ResXLocalization.WPF` —
+over one shared, UI-agnostic engine, `ResXLocalization.Core`, plus the opt-in package
+`ResXLocalization.MessageFormat`, which formats every localized text as ICU MessageFormat. Consumers keep
+the `.resx` files and editors they already have.
 
 Two things separate it from plain `.resx`:
 
-- **Compile-checked keys.** A source generator turns every eligible `.resx` into a `<FileName>Keys` class of
-  `ResourceKey` fields, each carrying both its key name and the `ResourceManager` it belongs to. A renamed or
-  deleted resource becomes a build error instead of a runtime surprise.
+- **Compile-checked keys.** A source generator turns every neutral `.resx`, with or without a `.Designer.cs`,
+  into a `<FileName>Keys` class with its own `ResourceManager` property and one `ResourceKey` field per string
+  entry, each carrying both its key name and that `ResourceManager`. A renamed or deleted resource becomes a
+  build error instead of a runtime surprise.
 - **Live culture switching.** Assigning `Localizer.Current.CurrentCulture` re-resolves every `{l:Localize}`
   binding in place — no window reload, no view rebuild, no restart.
 
 Around those: three lookup modes (typed, scoped, and search-all across registered resource managers) over
-.NET's own culture fallback chain, enum localization by naming convention, format arguments in code and in
-XAML, a `!key!` failure text plus a `TranslationNotFound` event for missing translations, and Native AOT and
-trimming support on the Avalonia side (WPF supports neither).
+.NET's own culture fallback chain, enum localization by naming convention, format arguments in code
+(`MessageArguments`) and in XAML (`<l:Argument>` children of `{l:Localize}` and `{l:LocalizeEnum}`), one
+replaceable message formatter for every lookup, a `!key!` failure text plus a `LookupFailed` event for
+missing translations and formatting failures, and Native AOT and trimming support on the Avalonia side (WPF
+supports neither).
 
 [`README.md`](README.md) is the user-facing version of the same story, with the quick start and the examples.
 
@@ -31,12 +36,13 @@ trimming support on the Avalonia side (WPF supports neither).
 
 | Path | What it is |
 | --- | --- |
-| `src/ResXLocalization.Core` | The UI-agnostic engine: `ILocalizer`, `Localizer`, `ResourceKey`, the events. Both UI packages depend on it, and one copy satisfies both |
-| `src/ResXLocalization.SourceGenerators` | The incremental generator that emits the typed `…Keys` classes. `netstandard2.0`. Ships **inside** the UI packages as an analyzer; it is not a package of its own |
+| `src/ResXLocalization.Core` | The UI-agnostic engine: `ILocalizer`, `Localizer`, `ResourceKey`, `MessageArguments`, the message formatter, the events. Both UI packages depend on it, and one copy satisfies both |
+| `src/ResXLocalization.MessageFormat` | The opt-in ICU MessageFormat formatter, installed with `Localizer.Current.UseMessageFormat()`. Depends on Core and the `MessageFormat` library, not on a UI package |
+| `src/ResXLocalization.SourceGenerators` | The incremental generator that emits the typed `…Keys` classes. It reads each `.resx` and the MSBuild resource name the build wiring passes for it, and needs no `.Designer.cs`. `netstandard2.0`. Ships **inside** the UI packages as an analyzer; it is not a package of its own |
 | `src/ResXLocalization.Avalonia` | The Avalonia markup extensions and converter, plus the packaged generator and resx wiring |
 | `src/ResXLocalization.WPF` | The same for WPF. Windows-only, no Native AOT |
 | `samples/` | Two runnable showcases, one per UI framework. Excluded from coverage |
-| `tests/` | Four suites: Core (both frameworks), the generator, and one sample-test suite per UI framework |
+| `tests/` | Five suites: Core and `tests/ResXLocalization.MessageFormat.Tests` (both on both frameworks), the generator, and one sample-test suite per UI framework |
 | `tests/package-consumption/` | Package-only consumers. The repository's `Directory.Build.*` deliberately does **not** apply there |
 | `build/` | The shared resx and packaging targets, and the DocFX configuration |
 | `scripts/` | Every check and workflow, as PowerShell 7 |
@@ -103,8 +109,8 @@ change rendering rather than layout, are in
   `<Name>_<random>_wpftmp` name, and `_TargetAssemblyProjectName` carries the real one. The root
   `Directory.Build.props` resolves `_ConventionProjectName` from it, and every condition that has to hold in
   that pass tests that property rather than `MSBuildProjectName`.
-- **Native AOT covers Core and Avalonia only.** WPF has no AOT support, and `src/Directory.Build.props`
-  excludes it from `IsAotCompatible` deliberately.
+- **Native AOT covers Core, Avalonia and MessageFormat only.** WPF has no AOT support, and
+  `src/Directory.Build.props` excludes it from `IsAotCompatible` deliberately.
 - **The package consumers are outside everything.** `tests/package-consumption/` carries empty
   `Directory.Build.props` and `Directory.Build.targets` files that stop MSBuild's upward search, so those
   projects receive the library only from the packed packages. Do not add a project reference, a repository
@@ -122,15 +128,15 @@ The .NET 8 SDK step needs an 8.0 SDK installed next to the pinned one. It exists
 more than their compiler - for example in WPF's temporary markup-compile pass, see the comment "WPF's temporary markup-compile pass" in `build/ResXLocalization.Resx.targets`.
 
 Nothing is trimmed on the just-in-time compiler, so **no test suite in this repository can see trimming
-damage**. The AOT gate publishes a package-only consumer natively and runs it; that is the only check that
-can. See [`docs/guides/native-aot.md`](docs/guides/native-aot.md).
+damage**. The AOT gate publishes the package-only consumers `AvaloniaConsumer` and `MessageFormatConsumer`
+natively and runs them; that is the only check that can. See [`docs/guides/native-aot.md`](docs/guides/native-aot.md).
 
 Invoke a reviewer only when its scope applies. Both are read-only by construction — see
 [`.agents/README.md`](.agents/README.md).
 
 ## Public API
 
-The three runtime projects declare their public surface in `PublicAPI.Shipped.txt` and
+The four runtime projects declare their public surface in `PublicAPI.Shipped.txt` and
 `PublicAPI.Unshipped.txt`. An undeclared public member is `RS0016`; a declared one that is gone is `RS0017`.
 Both are build errors.
 
@@ -144,6 +150,26 @@ equivalent is analyzer release tracking in `AnalyzerReleases.*.md`.
 **Never bump a version, and never date a changelog section.** The version in the repository-root
 `Directory.Build.props`, the release date, promoting `Unshipped` to `Shipped`, and the tag are the
 maintainer's, at release time.
+
+## Pending maintainer tasks for the release after 2.0.0
+
+The package validation is set up for the 2.0.0 release: its baseline is 1.1.0, and
+`ResXLocalization.MessageFormat`, which has no 1.1.0 version, is excluded from the baseline. When the
+maintainer prepares the next release after 2.0.0 - a `<Version>` bump, a dated changelog section, or a
+question about releasing - remind them of these steps, as part of `CONTRIBUTING.md`'s release step 3. Do
+not do them yourself; they are the maintainer's, like the version.
+
+1. Set `PackageValidationBaselineVersion` in `src/Directory.Build.props` to `2.0.0`.
+2. In the same file, remove `AND '$(_ConventionProjectName)' != 'ResXLocalization.MessageFormat'` from the
+   condition of the `PropertyGroup` that sets `PackageValidationBaselineVersion`, and remove the comment
+   about `ResXLocalization.MessageFormat` in it. Keep the group and the property: the condition becomes
+   `'$(_IsShippingPackage)' == 'true'`, so the MessageFormat package is validated against 2.0.0 like the
+   others.
+3. Delete `CompatibilitySuppressions.xml` in `src/ResXLocalization.Core`, `src/ResXLocalization.Avalonia`
+   and `src/ResXLocalization.WPF`: they accept breaks against the 1.1.0 baseline only. Then run
+   `dotnet pack ResXLocalization.slnx -c Release` once to confirm that package validation passes without
+   them.
+4. Remove this section from `AGENTS.md`.
 
 ## Commits and branches
 
