@@ -1,12 +1,19 @@
 ﻿<UserControl x:Class="AvaloniaConsumer.LocalizedView"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:consumer="using:AvaloniaConsumer"
              xmlns:l="using:RentADeveloper.ResXLocalization.Avalonia"
-             xmlns:resources="using:AvaloniaConsumer.Resources">
+             xmlns:resources="using:AvaloniaConsumer.Resources"
+             x:CompileBindings="True"
+             x:DataType="consumer:LocalizedViewModel">
     <StackPanel>
         <!--  A typed key from the packaged generator, resolved across the registered resource managers.  -->
         <TextBlock x:Name="GreetingText"
                    Text="{l:Localize {x:Static resources:StringsKeys.Greeting}}" />
+
+        <!--  A typed key of a .resx without a designer: its resource name reaches the generator through the package.  -->
+        <TextBlock x:Name="DesignerlessText"
+                   Text="{l:Localize {x:Static resources:DesignerlessKeys.Title}}" />
 
         <!--  A typed key the German satellite does not carry: it must fall back to the neutral value.  -->
         <TextBlock x:Name="FallbackText"
@@ -18,23 +25,32 @@
         -->
         <TextBlock x:Name="ScopedText"
                    Text="{l:Localize Key=ScopedOnly,
-                                     ResourceManager={x:Static resources:Catalog.ResourceManager}}" />
+                                     ResourceManager={x:Static resources:CatalogKeys.ResourceManager}}" />
 
         <!--  The same, for a catalog key with no German translation.  -->
         <TextBlock x:Name="ScopedFallbackText"
                    Text="{l:Localize Key=ScopedNeutralOnly,
-                                     ResourceManager={x:Static resources:Catalog.ResourceManager}}" />
+                                     ResourceManager={x:Static resources:CatalogKeys.ResourceManager}}" />
 
         <!--
-            A composite-format resource whose argument arrives through the LocalizeArgs attached
-            property. The code-behind sets it after construction, which is the argument change the
-            rendered text has to follow.
+            A composite-format resource whose argument is an <l:Argument> with a compiled binding to the
+            view model. The code-behind changes the view model after construction, which is the argument
+            change the rendered text has to follow.
         -->
-        <TextBlock x:Name="InvitedText"
+        <TextBlock x:Name="InvitedText">
+            <TextBlock.Text>
+                <l:Localize Key="{x:Static resources:StringsKeys.PeopleInvited}">
+                    <l:Argument Value="{Binding InvitedCount}" />
+                </l:Localize>
+            </TextBlock.Text>
+        </TextBlock>
+
+        <!--  The same composite-format resource without arguments, which is not formatted.  -->
+        <TextBlock x:Name="InvitedWithoutArgumentsText"
                    Text="{l:Localize {x:Static resources:StringsKeys.PeopleInvited}}" />
 
-        <!--  An enumeration value carried in the DataContext, localized by convention.  -->
+        <!--  An enumeration value of the view model, bound to Value with a compiled binding and localized by convention.  -->
         <TextBlock x:Name="SortOrderText"
-                   Text="{l:LocalizeEnum}" />
+                   Text="{l:LocalizeEnum Value={Binding SortOrder}}" />
     </StackPanel>
 </UserControl>

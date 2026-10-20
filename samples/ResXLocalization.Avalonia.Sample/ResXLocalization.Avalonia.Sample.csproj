@@ -53,8 +53,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The test project drives this app and needs to register the internal BrandingStrings file the
-         same way Program.Main does. -->
+    <!-- Lets the test project that drives this app reach its internal types. -->
     <InternalsVisibleTo Include="ResXLocalization.Avalonia.Sample.Tests" />
   </ItemGroup>
 

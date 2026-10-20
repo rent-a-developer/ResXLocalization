@@ -7,19 +7,26 @@ namespace RentADeveloper.ResXLocalization;
 /// </summary>
 /// <remarks>
 /// Like the UI frameworks it serves, this class is designed for UI-thread use and is not
-/// synchronized: register resource managers once at startup and set <see cref="CurrentCulture" />
+/// synchronized: register resource managers once at startup and set <see cref="CurrentCulture" />,
+/// <see cref="MessageFormatter" />, <see cref="LookupFailureTextBuilder" /> and <see cref="EnumKeyBuilder" />
 /// from the UI thread, so change notifications reach bindings on the thread WPF and Avalonia expect.
 /// </remarks>
 public sealed class Localizer : ILocalizer
 {
-    /// <summary>Cached event args announcing a <see cref="CurrentCulture" /> change.</summary>
-    private static readonly PropertyChangedEventArgs CurrentCultureChangedArgs = new(nameof(CurrentCulture));
+    /// <summary>
+    /// The default of <see cref="EnumKeyBuilder" />: the convention
+    /// <c>{keyPrefix ?? "Enum_"}{EnumTypeName}_{Value}</c>. One shared instance, so every new localizer
+    /// starts with the same delegate.
+    /// </summary>
+    private static readonly Func<Enum, string?, string> DefaultEnumKeyBuilder = static (value, keyPrefix) =>
+        (keyPrefix ?? "Enum_") + value.GetType().Name + "_" + value;
 
     /// <summary>
-    /// Cached event args announcing an indexer change (<c>Item[]</c>), which makes bindings through
-    /// the indexer re-resolve after a culture change.
+    /// The default of <see cref="LookupFailureTextBuilder" />: produces <c>!key!</c>. One shared instance,
+    /// so every new localizer starts with the same delegate.
     /// </summary>
-    private static readonly PropertyChangedEventArgs IndexerChangedArgs = new("Item[]");
+    private static readonly Func<LookupFailure, string> DefaultLookupFailureTextBuilder = static failure =>
+        $"!{failure.Key}!";
 
     /// <summary>Backing field of <see cref="CurrentCulture" />.</summary>
     private CultureInfo currentCulture = CultureInfo.CurrentUICulture;
@@ -41,14 +48,15 @@ public sealed class Localizer : ILocalizer
     /// <inheritdoc />
     public event EventHandler<CultureChangedEventArgs>? CultureChanged;
 
+    /// <inheritdoc />
+    public event EventHandler<LookupFailedEventArgs>? LookupFailed;
+
     /// <summary>
-    /// Occurs when a property value changes, including <see cref="CurrentCulture" /> and the indexer,
-    /// so that localized bindings re-resolve after a culture change.
+    /// Occurs when a property value changes, including <see cref="CurrentCulture" />,
+    /// <see cref="RefreshTriggeringRevision" /> and the indexer, so that localized bindings re-resolve
+    /// after a change that can change the result of a lookup.
     /// </summary>
     public event PropertyChangedEventHandler? PropertyChanged;
-
-    /// <inheritdoc />
-    public event EventHandler<TranslationNotFoundEventArgs>? TranslationNotFound;
 
     /// <summary>
     /// Gets or sets the shared, ambient localizer instance used throughout the application. Register resource
@@ -83,130 +91,145 @@ public sealed class Localizer : ILocalizer
             var oldCulture = this.currentCulture;
             this.currentCulture = value;
 
-            this.PropertyChanged?.Invoke(this, CurrentCultureChangedArgs);
-            this.PropertyChanged?.Invoke(this, IndexerChangedArgs);
+            this.PropertyChanged?.Invoke(this, new(nameof(this.CurrentCulture)));
+            this.AdvanceRefreshTriggeringRevision();
             this.CultureChanged?.Invoke(this, new(oldCulture, value));
         }
     }
 
     /// <inheritdoc />
-    public string MissingTranslationFormat
+    public Func<Enum, string?, string> EnumKeyBuilder
     {
         get;
         set
         {
             ArgumentNullException.ThrowIfNull(value);
 
-            // Validate eagerly with a probe key so a bad format (e.g. "{1}", which references a second
-            // argument that never exists) fails right here, at the faulty assignment - not later, deep
-            // inside the first cache miss where the FormatException would be far from its cause.
-            try
+            if (ReferenceEquals(field, value))
             {
-                _ = string.Format(CultureInfo.InvariantCulture, value, "probe");
-            }
-            catch (FormatException exception)
-            {
-                throw new ArgumentException(
-                    "The missing-translation format must be a composite format string with at most one "
-                        + "placeholder ({0}, the key).",
-                    nameof(value),
-                    exception
-                );
+                return;
             }
 
             field = value;
+            this.AdvanceRefreshTriggeringRevision();
         }
-    } = "!{0}!";
+    } = DefaultEnumKeyBuilder;
+
+    /// <inheritdoc />
+    public Func<LookupFailure, string> LookupFailureTextBuilder
+    {
+        get;
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+
+            if (ReferenceEquals(field, value))
+            {
+                return;
+            }
+
+            field = value;
+            this.AdvanceRefreshTriggeringRevision();
+        }
+    } = DefaultLookupFailureTextBuilder;
+
+    /// <inheritdoc />
+    public IMessageFormatter MessageFormatter
+    {
+        get;
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+
+            if (ReferenceEquals(field, value))
+            {
+                return;
+            }
+
+            field = value;
+            this.AdvanceRefreshTriggeringRevision();
+        }
+    } = StringFormatMessageFormatter.Instance;
+
+    /// <inheritdoc />
+    public int RefreshTriggeringRevision { get; private set; }
 
     /// <inheritdoc />
     public string this[string key] => this.Get(key);
 
     /// <inheritdoc />
-    public void ClearResourceManagers() => this.resourceManagers = [];
-
-    /// <inheritdoc />
-    public string Get(string key)
+    public void ClearResourceManagers()
     {
-        if (string.IsNullOrEmpty(key))
+        if (this.resourceManagers.IsEmpty)
         {
-            return string.Empty;
+            return;
         }
 
-        return this.FindInRegisteredManagers(key) ?? this.Miss(key, null);
+        this.resourceManagers = [];
+        this.AdvanceRefreshTriggeringRevision();
     }
 
     /// <inheritdoc />
-    public string Get(string key, params object?[] arguments)
+    public string Get(string key, MessageArguments? arguments = null, ResourceManager? resourceManager = null)
     {
-        ArgumentNullException.ThrowIfNull(arguments);
+        arguments ??= MessageArguments.Empty;
 
-        if (string.IsNullOrEmpty(key))
-        {
-            return string.Empty;
-        }
-
-        var value = this.FindInRegisteredManagers(key);
-
-        return value is null ? this.Miss(key, null) : this.FormatValue(value, arguments);
-    }
-
-    /// <inheritdoc />
-    public string Get(Enum value, string keyPrefix = EnumKeyConvention.DefaultEnumKeyPrefix)
-    {
-        ArgumentNullException.ThrowIfNull(value);
-        ArgumentNullException.ThrowIfNull(keyPrefix);
-
-        return this.Get(EnumKeyConvention.BuildEnumKey(value, keyPrefix));
-    }
-
-    /// <inheritdoc />
-    public string Get(string key, ResourceManager resourceManager)
-    {
-        ArgumentNullException.ThrowIfNull(resourceManager);
+        // One lookup uses one culture throughout: for the lookup, the format and the failure.
+        var culture = this.currentCulture;
 
         if (string.IsNullOrEmpty(key))
         {
             return string.Empty;
         }
 
-        return resourceManager.GetString(key, this.currentCulture) ?? this.Miss(key, resourceManager);
+        var value = resourceManager is null
+            ? this.FindInRegisteredResourceManagers(key, culture)
+            : resourceManager.GetString(key, culture);
+
+        if (value is null)
+        {
+            return this.FailLookup(
+                new(LookupFailureReason.TranslationNotFound, key, culture, resourceManager, arguments, null, null)
+            );
+        }
+
+        try
+        {
+            // Also without arguments: the formatter is the one hook for every resolved value.
+            return this.MessageFormatter.Format(value, arguments, culture);
+        }
+        catch (Exception exception)
+        {
+            // Every exception type, deliberately: one bad translation in one language must not take
+            // down a screen, and formatters from other packages throw their own exception types.
+            return this.FailLookup(
+                new(LookupFailureReason.MessageFormatFailed, key, culture, resourceManager, arguments, value, exception)
+            );
+        }
     }
 
     /// <inheritdoc />
-    public string Get(string key, ResourceManager resourceManager, params object?[] arguments)
+    public string Get(ResourceKey key, MessageArguments? arguments = null)
     {
-        ArgumentNullException.ThrowIfNull(resourceManager);
-        ArgumentNullException.ThrowIfNull(arguments);
+        // An uninitialized ResourceKey, such as default(ResourceKey), has no Manager. Without this check the
+        // lookup below would receive a null manager and search all registered managers instead of throwing.
+        ArgumentNullException.ThrowIfNull(key.Manager);
 
-        if (string.IsNullOrEmpty(key))
-        {
-            return string.Empty;
-        }
-
-        var value = resourceManager.GetString(key, this.currentCulture);
-
-        return value is null ? this.Miss(key, resourceManager) : this.FormatValue(value, arguments);
+        return this.Get(key.Name, arguments, key.Manager);
     }
 
     /// <inheritdoc />
     public string Get(
         Enum value,
-        ResourceManager resourceManager,
-        string keyPrefix = EnumKeyConvention.DefaultEnumKeyPrefix
+        MessageArguments? arguments = null,
+        ResourceManager? resourceManager = null,
+        string? keyPrefix = null
     )
     {
         ArgumentNullException.ThrowIfNull(value);
-        ArgumentNullException.ThrowIfNull(resourceManager);
-        ArgumentNullException.ThrowIfNull(keyPrefix);
 
-        return this.Get(EnumKeyConvention.BuildEnumKey(value, keyPrefix), resourceManager);
+        return this.Get(this.BuildEnumKey(value, keyPrefix), arguments, resourceManager);
     }
-
-    /// <inheritdoc />
-    public string Get(ResourceKey key) => this.Get(key.Name, key.Manager);
-
-    /// <inheritdoc />
-    public string Get(ResourceKey key, params object?[] arguments) => this.Get(key.Name, key.Manager, arguments);
 
     /// <inheritdoc />
     public IReadOnlyList<CultureInfo> GetAvailableCultures()
@@ -232,7 +255,35 @@ public sealed class Localizer : ILocalizer
         return SortCultures(cultures);
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Registers a <see cref="ResourceManager" /> to be searched by search-all lookups. Managers are
+    /// searched in registration order, and the first match wins; registering the same instance more than
+    /// once has no effect. Adding a manager advances <see cref="RefreshTriggeringRevision" />.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Which lookups need registration, which instance to register and where to register it is described
+    /// on <see cref="ILocalizer.RegisterResourceManager" />.
+    /// </para>
+    /// <para>
+    /// The registrations belong to this instance. A localizer assigned to <see cref="Current" /> later does
+    /// not inherit them; register the resource managers on the instance that serves the lookups.
+    /// </para>
+    /// <para>
+    /// A manager whose type is exactly <see cref="ResourceManager" /> is checked once, when it is first
+    /// registered: if no resources exist under its <see cref="ResourceManager.BaseName" />, it is rejected
+    /// and not registered. A subclass of <see cref="ResourceManager" /> is registered without that check.
+    /// </para>
+    /// </remarks>
+    /// <param name="resourceManager">The resource manager to add to the search set.</param>
+    /// <exception cref="ArgumentNullException">
+    /// <paramref name="resourceManager" /> is <see langword="null" />.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="resourceManager" /> is exactly of type <see cref="ResourceManager" />, and no resources
+    /// exist under its base name - usually a hand-written base name that does not match the embedded
+    /// resource.
+    /// </exception>
     public void RegisterResourceManager(ResourceManager resourceManager)
     {
         ArgumentNullException.ThrowIfNull(resourceManager);
@@ -242,11 +293,37 @@ public sealed class Localizer : ILocalizer
             return;
         }
 
+        // Only the exact type: a subclass may resolve strings without manifest resources, and the base
+        // class's probe can fail for it for unrelated reasons. The probe loads the neutral resource set,
+        // which the first lookup would load anyway, and the manager caches it.
+        if (resourceManager.GetType() == typeof(ResourceManager))
+        {
+            try
+            {
+                _ = resourceManager.GetResourceSet(
+                    CultureInfo.InvariantCulture,
+                    createIfNotExists: true,
+                    tryParents: true
+                );
+            }
+            catch (MissingManifestResourceException exception)
+            {
+                throw new ArgumentException(
+                    $"No resources exist under the base name '{resourceManager.BaseName}'. The usual cause is a "
+                        + "hand-written base name that does not match the embedded resource; register the generated "
+                        + "<Name>Keys.ResourceManager instead.",
+                    nameof(resourceManager),
+                    exception
+                );
+            }
+        }
+
         // Copy-on-write: register/unregister/clear swap the whole immutable array atomically, so a
         // lookup that reads the field once (foreach captures the struct value) never enumerates a
         // collection being mutated - even from a stray background thread - while keeping the
         // documented UI-thread contract for culture changes.
         this.resourceManagers = this.resourceManagers.Add(resourceManager);
+        this.AdvanceRefreshTriggeringRevision();
     }
 
     /// <inheritdoc />
@@ -262,6 +339,7 @@ public sealed class Localizer : ILocalizer
         }
 
         this.resourceManagers = updated;
+        this.AdvanceRefreshTriggeringRevision();
 
         return true;
     }
@@ -314,16 +392,48 @@ public sealed class Localizer : ILocalizer
         [.. cultures.OrderBy(static culture => culture.Name, StringComparer.OrdinalIgnoreCase)];
 
     /// <summary>
+    /// Advances <see cref="RefreshTriggeringRevision" /> (wrapping around harmlessly) and raises
+    /// <see cref="PropertyChanged" /> for it and then for the indexer, so bound text re-resolves.
+    /// </summary>
+    private void AdvanceRefreshTriggeringRevision()
+    {
+        this.RefreshTriggeringRevision = unchecked(this.RefreshTriggeringRevision + 1);
+
+        this.PropertyChanged?.Invoke(this, new(nameof(this.RefreshTriggeringRevision)));
+        this.PropertyChanged?.Invoke(this, new("Item[]"));
+    }
+
+    /// <summary>
+    /// Reports a failed lookup through <see cref="LookupFailed" />, then produces its failure text by
+    /// calling <see cref="LookupFailureTextBuilder" />. Exceptions from event handlers and from the
+    /// function propagate unchanged.
+    /// </summary>
+    /// <param name="failure">The failed lookup.</param>
+    /// <returns>The failure text.</returns>
+    /// <exception cref="InvalidOperationException">The function returned <see langword="null" />.</exception>
+    private string FailLookup(LookupFailure failure)
+    {
+        this.LookupFailed?.Invoke(this, new(failure));
+
+        return this.LookupFailureTextBuilder(failure)
+            ?? throw new InvalidOperationException(
+                $"{nameof(this.LookupFailureTextBuilder)} returned null for the lookup failure "
+                    + $"{failure.Reason} of the key '{failure.Key}'. Return a string; an empty string shows nothing."
+            );
+    }
+
+    /// <summary>
     /// Searches every registered resource manager in registration order and returns the first match,
     /// or <see langword="null" /> when no registered manager contains the key.
     /// </summary>
     /// <param name="key">The resource key to resolve.</param>
+    /// <param name="culture">The culture of the lookup.</param>
     /// <returns>The first matching value, or <see langword="null" />.</returns>
-    private string? FindInRegisteredManagers(string key)
+    private string? FindInRegisteredResourceManagers(string key, CultureInfo culture)
     {
         foreach (var resourceManager in this.resourceManagers)
         {
-            var value = resourceManager.GetString(key, this.currentCulture);
+            var value = resourceManager.GetString(key, culture);
             if (value is not null)
             {
                 return value;
@@ -331,28 +441,5 @@ public sealed class Localizer : ILocalizer
         }
 
         return null;
-    }
-
-    /// <summary>Formats a resolved value with <see cref="string.Format(IFormatProvider, string, object[])" /> in the current culture.</summary>
-    /// <param name="value">The resolved resource value, used as the composite format string.</param>
-    /// <param name="arguments">The format arguments.</param>
-    /// <returns>The formatted string.</returns>
-    private string FormatValue(string value, object?[] arguments) =>
-        string.Format(this.currentCulture, value, arguments);
-
-    /// <summary>
-    /// Handles a lookup no resource file could satisfy: raises <see cref="TranslationNotFound" />
-    /// and produces the sentinel from <see cref="MissingTranslationFormat" />.
-    /// </summary>
-    /// <param name="key">The unresolved key.</param>
-    /// <param name="resourceManager">
-    /// The single manager of a scoped or typed lookup, or <see langword="null" /> for search-all.
-    /// </param>
-    /// <returns>The miss sentinel, by default <c>!key!</c>.</returns>
-    private string Miss(string key, ResourceManager? resourceManager)
-    {
-        this.TranslationNotFound?.Invoke(this, new(key, this.currentCulture, resourceManager));
-
-        return string.Format(CultureInfo.InvariantCulture, this.MissingTranslationFormat, key);
     }
 }

@@ -18,12 +18,15 @@ public class LocalizerLookupTests
     }
 
     [Fact]
-    public void MissingKey_ReturnsTheBangSentinel()
+    public void MissingKey_ReturnsTheFailureText()
     {
         var localizer = this.resources.CreateLocalizer();
 
         localizer.Get("ThisKeyDoesNotExist").Should().Be("!ThisKeyDoesNotExist!");
-        localizer.Get("ThisKeyDoesNotExist", this.resources.Catalog).Should().Be("!ThisKeyDoesNotExist!");
+        localizer
+            .Get("ThisKeyDoesNotExist", resourceManager: this.resources.Catalog)
+            .Should()
+            .Be("!ThisKeyDoesNotExist!");
     }
 
     [Fact]
@@ -33,7 +36,7 @@ public class LocalizerLookupTests
 
         localizer.Get(string.Empty).Should().BeEmpty();
         localizer.Get((string)null!).Should().BeEmpty();
-        localizer.Get(string.Empty, this.resources.Catalog).Should().BeEmpty();
+        localizer.Get(string.Empty, resourceManager: this.resources.Catalog).Should().BeEmpty();
     }
 
     [Fact]
@@ -41,29 +44,27 @@ public class LocalizerLookupTests
     {
         var localizer = this.resources.CreateLocalizer();
 
-        localizer.Get("Shared", this.resources.Catalog).Should().Be("CatalogShared");
-        localizer.Get("Shared", this.resources.Fallback).Should().Be("FallbackShared");
-    }
-
-    [Fact]
-    public void ScopedLookup_RejectsNullResourceManager()
-    {
-        var localizer = this.resources.CreateLocalizer();
-
-        var act = () => localizer.Get("Greeting", (ResourceManager)null!);
-
-        act.Should().Throw<ArgumentNullException>();
+        localizer.Get("Shared", resourceManager: this.resources.Catalog).Should().Be("CatalogShared");
+        localizer.Get("Shared", resourceManager: this.resources.Fallback).Should().Be("FallbackShared");
     }
 
     [Fact]
     public void ScopedLookup_SwitchesLive_OnCultureChange()
     {
         var localizer = this.resources.CreateLocalizer();
-        localizer.Get("Greeting", this.resources.Catalog).Should().Be("Hello and welcome!");
+        localizer.Get("Greeting", resourceManager: this.resources.Catalog).Should().Be("Hello and welcome!");
 
         localizer.CurrentCulture = TestResources.German;
 
-        localizer.Get("Greeting", this.resources.Catalog).Should().Be("Hallo und willkommen!");
+        localizer.Get("Greeting", resourceManager: this.resources.Catalog).Should().Be("Hallo und willkommen!");
+    }
+
+    [Fact]
+    public void ScopedLookup_WithANullResourceManager_SearchesAll()
+    {
+        var localizer = this.resources.CreateLocalizer();
+
+        localizer.Get("FallbackOnly", resourceManager: null).Should().Be("FallbackOnlyValue");
     }
 
     [Fact]
@@ -96,7 +97,7 @@ public class LocalizerLookupTests
     }
 
     [Fact]
-    public void SearchAll_WithNothingRegistered_ReturnsTheSentinel()
+    public void SearchAll_WithNothingRegistered_ReturnsTheFailureText()
     {
         var localizer = new Localizer { CurrentCulture = TestResources.English };
 

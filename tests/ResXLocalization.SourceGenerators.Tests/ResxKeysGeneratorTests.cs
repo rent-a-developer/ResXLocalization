@@ -1,12 +1,55 @@
+using System.Diagnostics.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
+
 namespace RentADeveloper.ResXLocalization.SourceGenerators.Tests;
 
 /// <summary>
 /// Unit tests for <see cref="ResxKeysGenerator" />. They drive the incremental generator in-memory
 /// with <see cref="CSharpGeneratorDriver" /> against fabricated <c>.resx</c> / <c>.Designer.cs</c>
-/// additional files and assert on the generated source - no file system, no MSBuild.
+/// additional files and assert on the generated source - no file system, no MSBuild. The MSBuild
+/// resource metadata a real build passes through the analyzer config file comes from
+/// <see cref="TestMetadata" />, which derives it from each path the way a build would.
 /// </summary>
 public class ResxKeysGeneratorTests
 {
+    [Fact]
+    public void BlankCustomToolNamespace_FallsBackToTheResourceNameNamespace()
+    {
+        var result = RunGenerator(
+            new TestMetadata().With("project/Resources/Strings.resx", ("CustomToolNamespace", "   ")),
+            ("project/Resources/Strings.resx", Resx(("Greeting", "Hello")))
+        );
+
+        SingleGeneratedSource(result).SourceText.ToString().Should().Contain("namespace N.Resources;");
+    }
+
+    [Fact]
+    public void ChangingOnlyCustomToolNamespace_RegeneratesTheKeysClassInTheNewNamespace()
+    {
+        var compilation = CSharpCompilation.Create("Tests");
+        GeneratorDriver driver = CreateTrackingDriver(new TestMetadata());
+
+        driver = driver
+            .AddAdditionalTexts([new InMemoryAdditionalText("project/Strings.resx", Resx(("Greeting", "Hello")))])
+            .RunGenerators(compilation)
+            // Then change only the metadata, as editing the project file does, and run again: the new
+            // namespace must not be served from the incremental cache.
+            .WithUpdatedAnalyzerConfigOptions(
+                new TestMetadata().With("project/Strings.resx", ("CustomToolNamespace", "Texts"))
+            )
+            .RunGenerators(compilation);
+
+        driver
+            .GetRunResult()
+            .Results.Single()
+            .GeneratedSources.Should()
+            .ContainSingle()
+            .Which.SourceText.ToString()
+            .Should()
+            .Contain("namespace Texts;");
+        OutputReasons(driver).Should().Contain(reason => reason != IncrementalStepRunReason.Cached);
+    }
+
     [Fact]
     public void CollidingSanitizedNames_GetNumericSuffixes()
     {
@@ -41,6 +84,31 @@ public class ResxKeysGeneratorTests
     }
 
     [Fact]
+    public void CustomToolNamespaceSegments_AreSanitized()
+    {
+        var result = RunGenerator(
+            new TestMetadata().With("project/Strings.resx", ("CustomToolNamespace", "My-App.event")),
+            ("project/Strings.resx", Resx(("Greeting", "Hello")))
+        );
+
+        SingleGeneratedSource(result).SourceText.ToString().Should().Contain("namespace My_App.@event;");
+    }
+
+    [Fact]
+    public void CustomToolNamespace_NamesTheNamespace_OfAResxWithoutADesigner()
+    {
+        var result = RunGenerator(
+            new TestMetadata().With("project/Resources/Strings.resx", ("CustomToolNamespace", " Texts.Custom ")),
+            ("project/Resources/Strings.resx", Resx(("Greeting", "Hello")))
+        );
+
+        var code = SingleGeneratedSource(result).SourceText.ToString();
+
+        code.Should().Contain("namespace Texts.Custom;");
+        code.Should().Contain("""new("N.Resources.Strings", typeof(StringsKeys).Assembly);""");
+    }
+
+    [Fact]
     public void DesignerInADifferentFolder_DoesNotPair()
     {
         var result = RunGenerator(
@@ -48,8 +116,41 @@ public class ResxKeysGeneratorTests
             ("project/Other/Strings.Designer.cs", Designer("My.App"))
         );
 
-        result.Diagnostics.Should().ContainSingle().Which.Id.Should().Be("RXLGEN002");
-        result.Results.Single().GeneratedSources.Should().BeEmpty();
+        var code = SingleGeneratedSource(result).SourceText.ToString();
+
+        code.Should().Contain("namespace N.Resources;");
+        code.Should().NotContain("My.App");
+    }
+
+    [Fact]
+    public void DesignerNamespace_IsUsed_ButNotTheDesignersResourceManager()
+    {
+        var result = RunGenerator(
+            ("project/Resources/Strings.resx", Resx(("Greeting", "Hello"))),
+            ("project/Resources/Strings.Designer.cs", Designer("Custom.Ns"))
+        );
+
+        var code = SingleGeneratedSource(result).SourceText.ToString();
+
+        code.Should().Contain("namespace Custom.Ns;");
+        code.Should().Contain("""new("N.Resources.Strings", typeof(StringsKeys).Assembly);""");
+        code.Should().NotContain("Custom.Ns.Strings");
+        code.Should().NotContain("global::Custom");
+    }
+
+    [Fact]
+    public void DesignerNamespace_WinsOverCustomToolNamespace()
+    {
+        var result = RunGenerator(
+            new TestMetadata().With("project/Resources/Strings.resx", ("CustomToolNamespace", "Texts.Custom")),
+            ("project/Resources/Strings.resx", Resx(("Greeting", "Hello"))),
+            ("project/Resources/Strings.Designer.cs", Designer("Designer.Ns"))
+        );
+
+        var code = SingleGeneratedSource(result).SourceText.ToString();
+
+        code.Should().Contain("namespace Designer.Ns;");
+        code.Should().NotContain("Texts.Custom");
     }
 
     [Fact]
@@ -70,19 +171,64 @@ public class ResxKeysGeneratorTests
             ("project/Strings.Designer.cs", formDesigner)
         );
 
-        result.Diagnostics.Should().ContainSingle().Which.Id.Should().Be("RXLGEN002");
-        result.Results.Single().GeneratedSources.Should().BeEmpty();
+        var code = SingleGeneratedSource(result).SourceText.ToString();
+
+        code.Should().Contain("namespace N;");
+        code.Should().NotContain("My.App");
     }
 
     [Fact]
-    public void DottedResxBaseName_IsTreatedAsSatelliteAndSkipped()
+    public void DottedNeutralResxBaseName_EmitsASanitizedClassInTheResourceNameNamespace()
     {
         var result = RunGenerator(
-            ("project/My.Strings.resx", Resx(("Greeting", "Hello"))),
-            ("project/My.Strings.Designer.cs", Designer("My.App"))
+            new TestMetadata().With("project/My.Strings.resx", ("WithCulture", "false")),
+            ("project/My.Strings.resx", Resx(("Greeting", "Hello")))
         );
 
-        result.Results.Single().GeneratedSources.Should().BeEmpty();
+        var code = SingleGeneratedSource(result).SourceText.ToString();
+
+        code.Should().Contain("namespace N.My;");
+        code.Should().Contain("public static partial class My_StringsKeys");
+        code.Should().Contain("""new("N.My.Strings", typeof(My_StringsKeys).Assembly);""");
+    }
+
+    [Fact]
+    public void EditingAnUnrelatedResx_KeepsTheCollisionAndTheCollidingFilesCached()
+    {
+        var compilation = CSharpCompilation.Create("Tests");
+        GeneratorDriver driver = CreateTrackingDriver(new TestMetadata());
+
+        var otherResx = new InMemoryAdditionalText("project/Other.resx", Resx(("Alpha", "a")));
+
+        driver = driver
+            .AddAdditionalTexts([
+                new InMemoryAdditionalText("project/A/Strings.resx", Resx(("Beta", "b"))),
+                new InMemoryAdditionalText("project/A/Strings.Designer.cs", Designer("N")),
+                new InMemoryAdditionalText("project/B/Strings.resx", Resx(("Gamma", "c"))),
+                new InMemoryAdditionalText("project/B/Strings.Designer.cs", Designer("N")),
+                otherResx,
+            ])
+            .RunGenerators(compilation)
+            // Then edit only Other.resx's keys and run again.
+            .ReplaceAdditionalText(
+                otherResx,
+                new InMemoryAdditionalText(otherResx.Path, Resx(("Alpha", "a"), ("Delta", "d")))
+            )
+            .RunGenerators(compilation);
+
+        var result = driver.GetRunResult();
+        result.Diagnostics.Select(diagnostic => diagnostic.Id).Should().Equal("RXLGEN004", "RXLGEN004");
+        result
+            .Results.Single()
+            .GeneratedSources.Should()
+            .ContainSingle()
+            .Which.HintName.Should()
+            .StartWith("N.OtherKeys.");
+
+        var reasons = OutputReasons(driver).ToList();
+        reasons.Should().HaveCount(3);
+        reasons.Count(reason => reason == IncrementalStepRunReason.Cached).Should().Be(2);
+        reasons.Should().ContainSingle(reason => reason == IncrementalStepRunReason.Modified);
     }
 
     [Fact]
@@ -110,8 +256,8 @@ public class ResxKeysGeneratorTests
         var code = SingleGeneratedSource(result).SourceText.ToString();
 
         code.Should().Contain("class Order_StatusKeys");
-        code.Should().Contain("global::OrderStatus.ResourceManager");
-        code.Should().NotContain("namespace ;");
+        code.Should().Contain("""new("N.Order-Status", typeof(Order_StatusKeys).Assembly);""");
+        code.Should().NotContain("namespace");
     }
 
     [Fact]
@@ -140,7 +286,18 @@ public class ResxKeysGeneratorTests
 
         var code = SingleGeneratedSource(result).SourceText.ToString();
 
-        code.Should().Contain("""StringsKeys2 = new("StringsKeys", """);
+        code.Should().Contain("""StringsKeys2 = new("StringsKeys", ResourceManager);""");
+    }
+
+    [Fact]
+    public void KeyNamedResourceManager_GetsANumericSuffix()
+    {
+        var result = RunGenerator(("project/Strings.resx", Resx(("ResourceManager", "a"))));
+
+        var code = SingleGeneratedSource(result).SourceText.ToString();
+
+        code.Should().Contain("public static global::System.Resources.ResourceManager ResourceManager { get; }");
+        code.Should().Contain("""ResourceManager2 = new("ResourceManager", ResourceManager);""");
     }
 
     [Fact]
@@ -158,11 +315,32 @@ public class ResxKeysGeneratorTests
     }
 
     [Fact]
-    public void MalformedEligibleResx_ReportsAnActionableDiagnostic()
+    public void LogicalName_ReplacesTheManifestResourceName()
     {
         var result = RunGenerator(
-            ("project/Strings.resx", "<root><data name='Broken'"),
-            ("project/Strings.Designer.cs", Designer("My.App"))
+            new TestMetadata().With("project/Logical.resx", ("LogicalName", "Totally.Custom.Name.resources")),
+            ("project/Logical.resx", Resx(("Greeting", "Hello")))
+        );
+
+        var code = SingleGeneratedSource(result).SourceText.ToString();
+
+        code.Should().Contain("namespace Totally.Custom;");
+        code.Should().Contain("""new("Totally.Custom.Name", typeof(LogicalKeys).Assembly);""");
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void MalformedEligibleResx_ReportsAnActionableDiagnostic(bool withDesigner)
+    {
+        var result = RunGenerator(
+            withDesigner
+                ?
+                [
+                    ("project/Strings.resx", "<root><data name='Broken'"),
+                    ("project/Strings.Designer.cs", Designer("My.App")),
+                ]
+                : [("project/Strings.resx", "<root><data name='Broken'")]
         );
 
         var diagnostic = result.Diagnostics.Should().ContainSingle().Subject;
@@ -170,6 +348,20 @@ public class ResxKeysGeneratorTests
         diagnostic.Severity.Should().Be(DiagnosticSeverity.Warning);
         diagnostic.Location.GetLineSpan().Path.Should().Be("project/Strings.resx");
         diagnostic.GetMessage(CultureInfo.InvariantCulture).Should().Contain("Could not parse eligible resource file");
+        result.Results.Single().GeneratedSources.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void MalformedResxThatCollides_ReportsTheCollisionInsteadOfTheParseError()
+    {
+        var result = RunGenerator(
+            ("project/A/Strings.resx", "<root><data name='Broken'"),
+            ("project/A/Strings.Designer.cs", Designer("N", "StringsA")),
+            ("project/B/Strings.resx", Resx(("Beta", "b"))),
+            ("project/B/Strings.Designer.cs", Designer("N", "StringsB"))
+        );
+
+        result.Diagnostics.Select(diagnostic => diagnostic.Id).Should().Equal("RXLGEN004", "RXLGEN004");
         result.Results.Single().GeneratedSources.Should().BeEmpty();
     }
 
@@ -204,9 +396,15 @@ public class ResxKeysGeneratorTests
         var code = source.SourceText.ToString();
         code.Should().Contain("namespace My.App.Resources;");
         code.Should().Contain("public static partial class StringsKeys");
-        code.Should().Contain("""Greeting = new("Greeting", global::My.App.Resources.Strings.ResourceManager);""");
         code.Should()
-            .Contain("""WindowTitle = new("WindowTitle", global::My.App.Resources.Strings.ResourceManager);""");
+            .Contain(
+                """
+                public static global::System.Resources.ResourceManager ResourceManager { get; } =
+                        new("N.Resources.Strings", typeof(StringsKeys).Assembly);
+                """
+            );
+        code.Should().Contain("""Greeting = new("Greeting", ResourceManager);""");
+        code.Should().Contain("""WindowTitle = new("WindowTitle", ResourceManager);""");
     }
 
     [Fact]
@@ -243,6 +441,21 @@ public class ResxKeysGeneratorTests
         code.Should().Contain("""Say__Hi__now = new("Say \"Hi\" now", """);
     }
 
+    [Fact]
+    public void ResourceManagerDeclaration_PrecedesTheFirstKey()
+    {
+        var result = RunGenerator(
+            ("project/Resources/Strings.resx", Resx(("WindowTitle", "My App"), ("Greeting", "Hello")))
+        );
+
+        var code = SingleGeneratedSource(result).SourceText.ToString();
+
+        code.IndexOf("ResourceManager ResourceManager", StringComparison.Ordinal)
+            .Should()
+            .BePositive()
+            .And.BeLessThan(code.IndexOf("ResourceKey", StringComparison.Ordinal));
+    }
+
     [Theory]
     [InlineData("global::System.Resources.ResourceManager", "")]
     [InlineData("System.Resources.ResourceManager", "")]
@@ -263,34 +476,80 @@ public class ResxKeysGeneratorTests
             ("project/Strings.Designer.cs", designer)
         );
 
-        SingleGeneratedSource(result)
-            .SourceText.ToString()
-            .Should()
-            .Contain("global::My.App.ActualAccessor.ResourceManager");
+        // Pairing is what puts the class into the designer's namespace instead of the resource name's.
+        SingleGeneratedSource(result).SourceText.ToString().Should().Contain("namespace My.App;");
     }
 
     [Fact]
-    public void ResxWithoutSiblingDesigner_ProducesNoOutput()
+    public void ResourceNameNamespaceSegments_AreSanitized()
     {
-        var result = RunGenerator(("project/Strings.resx", Resx(("Greeting", "Hello"))));
+        var result = RunGenerator(
+            new TestMetadata().With("project/Strings.resx", ("LogicalName", "My-App.event.Strings.resources")),
+            ("project/Strings.resx", Resx(("Greeting", "Hello")))
+        );
+
+        var code = SingleGeneratedSource(result).SourceText.ToString();
+
+        code.Should().Contain("namespace My_App.@event;");
+        code.Should().Contain("""new("My-App.event.Strings", typeof(StringsKeys).Assembly);""");
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ResxWithoutResourceName_ReportsRXLGEN003(bool wellFormed)
+    {
+        // A file without its resource name is not parsed at all, so malformed XML does not surface.
+        var result = RunGenerator(
+            new TestMetadata().Without("project/Strings.resx"),
+            ("project/Strings.resx", wellFormed ? Resx(("Greeting", "Hello")) : "<root><data name='Broken'")
+        );
 
         var diagnostic = result.Diagnostics.Should().ContainSingle().Subject;
-        diagnostic.Id.Should().Be("RXLGEN002");
+        diagnostic.Id.Should().Be("RXLGEN003");
         diagnostic.Severity.Should().Be(DiagnosticSeverity.Warning);
         diagnostic.Location.GetLineSpan().Path.Should().Be("project/Strings.resx");
+        diagnostic.GetMessage(CultureInfo.InvariantCulture).Should().Contain("project/Strings.resx");
         result.Results.Single().GeneratedSources.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ResxWithoutSiblingDesigner_EmitsKeysInTheResourceNameNamespace()
+    {
+        var result = RunGenerator(
+            ("project/Resources/Strings.resx", Resx(("WindowTitle", "My App"), ("Greeting", "Hello")))
+        );
+
+        var code = SingleGeneratedSource(result).SourceText.ToString();
+
+        code.Should().Contain("namespace N.Resources;");
+        code.Should().Contain("public static partial class StringsKeys");
+        code.Should()
+            .Contain(
+                """
+                {
+                    /// <summary>
+                    /// The resource manager of Strings.resx - the instance every key of this class uses. Register this
+                    /// instance for search-all lookups, and pass it for scoped lookups.
+                    /// </summary>
+                    public static global::System.Resources.ResourceManager ResourceManager { get; } =
+                        new("N.Resources.Strings", typeof(StringsKeys).Assembly);
+                """
+            );
+        code.Should().Contain("""Greeting = new("Greeting", ResourceManager);""");
+        code.Should().Contain("""WindowTitle = new("WindowTitle", ResourceManager);""");
     }
 
     [Fact]
     public void SatelliteResx_ProducesNoOutput()
     {
         var result = RunGenerator(
+            new TestMetadata().With("project/Strings.de.resx", ("WithCulture", "true")),
             ("project/Strings.de.resx", Resx(("Greeting", "Hallo"))),
             ("project/Strings.Designer.cs", Designer("My.App"))
         );
 
-        // Only the neutral file (with no resx present here) could pair with the designer; the
-        // satellite must not.
+        result.Diagnostics.Should().BeEmpty();
         result.Results.Single().GeneratedSources.Should().BeEmpty();
     }
 
@@ -298,7 +557,7 @@ public class ResxKeysGeneratorTests
     public void SecondRun_WithEquivalentInputs_CachesTheOutput()
     {
         var compilation = CSharpCompilation.Create("Tests");
-        GeneratorDriver driver = CreateTrackingDriver();
+        GeneratorDriver driver = CreateTrackingDriver(new TestMetadata());
 
         var resx = new InMemoryAdditionalText("project/Strings.resx", Resx(("Greeting", "Hello"), ("Bye", "Goodbye")));
         var designer = new InMemoryAdditionalText("project/Strings.Designer.cs", Designer("My.App"));
@@ -323,7 +582,7 @@ public class ResxKeysGeneratorTests
     public void TouchingOneResx_ReRunsOnlyThatFilesOutput()
     {
         var compilation = CSharpCompilation.Create("Tests");
-        GeneratorDriver driver = CreateTrackingDriver();
+        GeneratorDriver driver = CreateTrackingDriver(new TestMetadata());
 
         var oneResx = new InMemoryAdditionalText("project/One/Strings.resx", Resx(("Alpha", "a")));
 
@@ -354,33 +613,72 @@ public class ResxKeysGeneratorTests
     }
 
     [Fact]
-    public void TwoResxWithTheSameBaseNameAndTheSameNamespace_GetDistinctHintNames_AndMergeAsPartials()
+    public void TwoResxProducingTheSameKeysClassThroughCustomToolNamespace_ReportRXLGEN004()
     {
-        // Customized accessors can legitimately have different type names while two same-named resx
-        // files generate partial My.App.StringsKeys declarations. Both the input and output compile.
         var result = RunGenerator(
-            ("project/One/Strings.resx", Resx(("Alpha", "a"))),
-            (
-                "project/One/Strings.Designer.cs",
-                Designer("My.App").Replace("class Strings", "class StringsOne", StringComparison.Ordinal)
-            ),
-            ("project/Two/Strings.resx", Resx(("Beta", "b"))),
-            (
-                "project/Two/Strings.Designer.cs",
-                Designer("My.App").Replace("class Strings", "class StringsTwo", StringComparison.Ordinal)
-            )
+            new TestMetadata()
+                .With("project/A/Strings.resx", ("CustomToolNamespace", "Shared"))
+                .With("project/B/Strings.resx", ("CustomToolNamespace", "Shared")),
+            ("project/A/Strings.resx", Resx(("Alpha", "a"))),
+            ("project/B/Strings.resx", Resx(("Beta", "b")))
         );
 
-        result.Diagnostics.Should().BeEmpty();
+        result.Diagnostics.Select(diagnostic => diagnostic.Id).Should().Equal("RXLGEN004", "RXLGEN004");
+        result
+            .Diagnostics.Should()
+            .AllSatisfy(diagnostic =>
+                diagnostic.GetMessage(CultureInfo.InvariantCulture).Should().Contain("'Shared.StringsKeys'")
+            );
+        result.Results.Single().GeneratedSources.Should().BeEmpty();
+    }
 
-        var sources = result.Results.Single().GeneratedSources;
+    [Fact]
+    public void TwoResxProducingTheSameKeysClass_InNamespacesThatDifferOnlyByAVerbatimAt_ReportRXLGEN004()
+    {
+        // Foo.@Bar (from the designer) and Foo.Bar (from the resource name) are the same C# namespace.
+        var result = RunGenerator(
+            new TestMetadata().With("project/B/Strings.resx", ("LogicalName", "Foo.Bar.Strings.resources")),
+            ("project/A/Strings.resx", Resx(("Alpha", "a"))),
+            ("project/A/Strings.Designer.cs", Designer("Foo.@Bar")),
+            ("project/B/Strings.resx", Resx(("Beta", "b")))
+        );
 
-        sources.Should().HaveCount(2);
-        sources.Select(s => s.HintName).Should().OnlyHaveUniqueItems();
-        sources
-            .Select(s => s.SourceText.ToString())
+        result.Diagnostics.Select(diagnostic => diagnostic.Id).Should().Equal("RXLGEN004", "RXLGEN004");
+        result.Results.Single().GeneratedSources.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void TwoResxProducingTheSameKeysClass_ReportRXLGEN004_AndGenerateNeither()
+    {
+        // Distinct accessor type names keep the input compilation free of a duplicate type; both
+        // designers still declare namespace N, so both files would produce N.StringsKeys.
+        var result = RunGenerator(
+            ("project/A/Strings.resx", Resx(("Alpha", "a"))),
+            ("project/A/Strings.Designer.cs", Designer("N", "StringsA")),
+            ("project/B/Strings.resx", Resx(("Beta", "b"))),
+            ("project/B/Strings.Designer.cs", Designer("N", "StringsB")),
+            ("project/Other.resx", Resx(("Gamma", "c")))
+        );
+
+        result.Diagnostics.Should().HaveCount(2);
+        result
+            .Diagnostics.Select(diagnostic => diagnostic.Location.GetLineSpan().Path)
             .Should()
-            .AllSatisfy(code => code.Should().Contain("public static partial class StringsKeys"));
+            .BeEquivalentTo("project/A/Strings.resx", "project/B/Strings.resx");
+        result
+            .Diagnostics.Should()
+            .AllSatisfy(diagnostic =>
+            {
+                diagnostic.Id.Should().Be("RXLGEN004");
+                diagnostic.Severity.Should().Be(DiagnosticSeverity.Warning);
+                var message = diagnostic.GetMessage(CultureInfo.InvariantCulture);
+                message.Should().Contain("project/A/Strings.resx");
+                message.Should().Contain("project/B/Strings.resx");
+                message.Should().Contain("'N.StringsKeys'");
+            });
+
+        var source = result.Results.Single().GeneratedSources.Should().ContainSingle().Subject;
+        source.SourceText.ToString().Should().Contain("public static partial class OtherKeys");
     }
 
     [Fact]
@@ -420,21 +718,21 @@ public class ResxKeysGeneratorTests
         var code = SingleGeneratedSource(result).SourceText.ToString();
 
         code.Should().Contain("""Greeting = new("Greeting", """);
-        code.Should().NotContain("this");
+        code.Should().NotContain("$this");
     }
 
-    private static CSharpGeneratorDriver CreateTrackingDriver() =>
+    private static CSharpGeneratorDriver CreateTrackingDriver(TestMetadata metadata) =>
         CSharpGeneratorDriver.Create(
             [new ResxKeysGenerator().AsSourceGenerator()],
             parseOptions: null,
-            optionsProvider: null,
+            optionsProvider: metadata,
             driverOptions: new(IncrementalGeneratorOutputKind.None, trackIncrementalGeneratorSteps: true)
         );
 
-    private static string Designer(string ns) =>
+    private static string Designer(string ns, string accessorType = "Strings") =>
         $$"""
             namespace {{ns}} {
-                internal class Strings {
+                internal class {{accessorType}} {
                     public static global::System.Resources.ResourceManager ResourceManager {
                         get { return null; }
                     }
@@ -469,7 +767,13 @@ public class ResxKeysGeneratorTests
         return builder.ToString();
     }
 
-    private static GeneratorDriverRunResult RunGenerator(params (string Path, string Content)[] files)
+    private static GeneratorDriverRunResult RunGenerator(params (string Path, string Content)[] files) =>
+        RunGenerator(new TestMetadata(), files);
+
+    private static GeneratorDriverRunResult RunGenerator(
+        TestMetadata metadata,
+        params (string Path, string Content)[] files
+    )
     {
         var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
             .Split(Path.PathSeparator)
@@ -493,7 +797,12 @@ public class ResxKeysGeneratorTests
             .Select(AdditionalText (file) => new InMemoryAdditionalText(file.Path, file.Content))
             .ToImmutableArray();
 
-        var driver = CSharpGeneratorDriver.Create(new ResxKeysGenerator()).AddAdditionalTexts(additionalTexts);
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            [new ResxKeysGenerator().AsSourceGenerator()],
+            additionalTexts,
+            parseOptions: null,
+            optionsProvider: metadata
+        );
         driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out _);
         outputCompilation
             .GetDiagnostics()
@@ -516,5 +825,85 @@ public class ResxKeysGeneratorTests
 
         public override SourceText GetText(CancellationToken cancellationToken = default) =>
             SourceText.From(content, Encoding.UTF8);
+    }
+
+    /// <summary>
+    /// The analyzer config options a real build writes for each <c>.resx</c>. Paths are relative to a
+    /// project folder <c>project/</c> whose root namespace is <c>N</c>: <c>project/Resources/Strings.de.resx</c>
+    /// gets <c>ManifestResourceName</c> <c>N.Resources.Strings</c> and <c>WithCulture</c> <c>true</c>, as
+    /// MSBuild computes them. A test overrides single values with <see cref="With" /> or withholds them
+    /// all with <see cref="Without" />.
+    /// </summary>
+    private sealed class TestMetadata : AnalyzerConfigOptionsProvider
+    {
+        private const string Prefix = "build_metadata.AdditionalFiles.";
+
+        private static readonly HashSet<string> CultureNames = CultureInfo
+            .GetCultures(CultureTypes.AllCultures)
+            .Select(static culture => culture.Name)
+            .Where(static name => name.Length > 0)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        private readonly Dictionary<string, ImmutableDictionary<string, string>> overrides = new(
+            StringComparer.Ordinal
+        );
+
+        public override AnalyzerConfigOptions GlobalOptions =>
+            new TestOptions(ImmutableDictionary<string, string>.Empty);
+
+        public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) =>
+            new TestOptions(ImmutableDictionary<string, string>.Empty);
+
+        public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) =>
+            new TestOptions(this.MetadataOf(textFile.Path));
+
+        public TestMetadata With(string path, params (string Name, string Value)[] metadata)
+        {
+            this.overrides[path] = this.MetadataOf(path)
+                .SetItems(
+                    metadata.Select(static item => new KeyValuePair<string, string>(Prefix + item.Name, item.Value))
+                );
+
+            return this;
+        }
+
+        public TestMetadata Without(string path)
+        {
+            this.overrides[path] = ImmutableDictionary<string, string>.Empty;
+
+            return this;
+        }
+
+        private static ImmutableDictionary<string, string> Derive(string path)
+        {
+            if (!path.EndsWith(".resx", StringComparison.OrdinalIgnoreCase))
+            {
+                return ImmutableDictionary<string, string>.Empty;
+            }
+
+            var segments = path.Substring(0, path.Length - ".resx".Length).Split('/').Skip(1).ToList();
+            var fileName = segments[^1];
+            var lastDot = fileName.LastIndexOf('.');
+            var withCulture = lastDot >= 0 && CultureNames.Contains(fileName.Substring(lastDot + 1));
+
+            if (withCulture)
+            {
+                segments[^1] = fileName.Substring(0, lastDot);
+            }
+
+            return ImmutableDictionary<string, string>
+                .Empty.Add(Prefix + "ManifestResourceName", "N." + string.Join(".", segments))
+                .Add(Prefix + "LogicalName", string.Empty)
+                .Add(Prefix + "WithCulture", withCulture ? "true" : "false");
+        }
+
+        private ImmutableDictionary<string, string> MetadataOf(string path) =>
+            this.overrides.TryGetValue(path, out var metadata) ? metadata : Derive(path);
+    }
+
+    private sealed class TestOptions(ImmutableDictionary<string, string> values) : AnalyzerConfigOptions
+    {
+        public override bool TryGetValue(string key, [NotNullWhen(true)] out string? value) =>
+            values.TryGetValue(key, out value);
     }
 }

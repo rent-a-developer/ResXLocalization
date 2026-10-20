@@ -115,6 +115,24 @@ namespace RentADeveloper.ResXLocalization.Avalonia.Sample.Resources {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to Connected.
+        /// </summary>
+        public static string StatusConnected {
+            get {
+                return ResourceManager.GetString("StatusConnected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Connecting....
+        /// </summary>
+        public static string StatusConnecting {
+            get {
+                return ResourceManager.GetString("StatusConnecting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to ResXLocalization Showcase.
         /// </summary>
         public static string WindowTitle {

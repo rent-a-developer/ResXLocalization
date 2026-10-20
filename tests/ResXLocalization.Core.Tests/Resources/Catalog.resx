@@ -3,7 +3,8 @@
   <!--
     Test-only resource file, registered before Fallback.resx. It defines Shared (which Fallback also
     defines) so the tests can prove that a search-all lookup returns the first registered match while a
-    scoped lookup reads exactly the named file, plus the keys used by the plain and enum lookup tests.
+    scoped lookup reads exactly the named file, plus the keys used by the plain and enum lookup tests and
+    Malformed and EscapedBraces for the formatter tests.
   -->
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -37,5 +38,20 @@
   </data>
   <data name="NeutralOnly" xml:space="preserve">
     <value>Neutral fallback value</value>
+  </data>
+  <data name="Malformed" xml:space="preserve">
+    <value>Broken {0</value>
+  </data>
+  <data name="EscapedBraces" xml:space="preserve">
+    <value>Literal {{braces}} for {0}</value>
+  </data>
+  <data name="Count_TestSortOrder_Ascending" xml:space="preserve">
+    <value>{0} items, ascending</value>
+  </data>
+  <data name="Text_TestSortOrder.Ascending" xml:space="preserve">
+    <value>Custom ascending</value>
+  </data>
+  <data name="FilePosition" xml:space="preserve">
+    <value>File {0} of {1}</value>
   </data>
 </root>

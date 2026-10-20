@@ -3,5 +3,15 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:l="clr-namespace:RentADeveloper.ResXLocalization.WPF;assembly=ResXLocalization.WPF"
              xmlns:resources="clr-namespace:WpfConsumer.Resources">
-    <TextBlock Text="{l:Localize {x:Static resources:StringsKeys.Greeting}}" />
+    <StackPanel>
+        <TextBlock x:Name="GreetingText"
+                   Text="{l:Localize {x:Static resources:StringsKeys.Greeting}}" />
+
+        <!--
+            A typed key of a .resx without a designer. Compiling it needs DesignerlessKeys in WPF's
+            temporary markup-compile pass, so the resource name has to reach the generator there too.
+        -->
+        <TextBlock x:Name="DesignerlessText"
+                   Text="{l:Localize {x:Static resources:DesignerlessKeys.Title}}" />
+    </StackPanel>
 </UserControl>

@@ -58,8 +58,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     /// <summary>Gets the greeting via the indexer, which is shorthand for the search-all <c>Get(string)</c>.</summary>
     public string GreetingViaIndexer => this.localizer["Greeting"];
 
-    /// <summary>Gets the greeting via the scoped overload that names one file: <c>Get(string, ResourceManager)</c>.</summary>
-    public string GreetingViaScopedManager => this.localizer.Get("Greeting", ApplicationStrings.ResourceManager);
+    /// <summary>Gets the greeting via the scoped lookup that names one file: <c>Get(string, resourceManager:)</c>.</summary>
+    public string GreetingViaScopedManager =>
+        this.localizer.Get("Greeting", resourceManager: ApplicationStringsKeys.ResourceManager);
 
     // ---- Code-behind string lookups (each maps to one ILocalizer member) ------------------------------
 
@@ -79,10 +80,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public int[] PeopleCountOptions { get; } = [0, 1, 2, 5, 10];
 
     /// <summary>
-    /// Gets the branding text scoped to the internal <c>BrandingStrings</c> file from code-behind. XAML cannot
-    /// name an internal <c>ResourceManager</c>, but ordinary C# in the same assembly can.
+    /// Gets the branding text scoped to the <c>BrandingStrings</c> file, whose designer accessor is internal,
+    /// from code-behind. The scope is the public generated <c>BrandingStringsKeys.ResourceManager</c>, which
+    /// XAML can name through <c>{x:Static}</c> too.
     /// </summary>
-    public string PoweredByViaScopedInternalManager => this.localizer.Get("PoweredBy", BrandingStrings.ResourceManager);
+    public string PoweredByViaScopedInternalManager =>
+        this.localizer.Get("PoweredBy", resourceManager: BrandingStringsKeys.ResourceManager);
 
     /// <summary>
     /// Gets the branding text via a typed key. This resolves even though <c>BrandingStrings</c> has an internal
@@ -90,28 +93,57 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     /// </summary>
     public string PoweredByViaTypedKey => this.localizer.Get(BrandingStringsKeys.PoweredBy);
 
-    /// <summary>Gets the selection via <c>Get(Enum, ResourceManager, keyPrefix)</c>: scoped, custom prefix.</summary>
+    /// <summary>Gets the selection via <c>Get(Enum, resourceManager:, keyPrefix:)</c>: scoped, custom prefix.</summary>
     public string SortOrderViaScopedCustomPrefix =>
-        this.localizer.Get(this.SelectedFileSortOrder, SortingStrings.ResourceManager, "Display_");
+        this.localizer.Get(
+            this.SelectedFileSortOrder,
+            resourceManager: SortingStringsKeys.ResourceManager,
+            keyPrefix: "Display_"
+        );
 
-    /// <summary>Gets the selection via <c>Get(Enum, ResourceManager)</c>: scoped, default prefix.</summary>
+    /// <summary>Gets the selection via <c>Get(Enum, resourceManager:)</c>: scoped, default prefix.</summary>
     public string SortOrderViaScopedDefaultPrefix =>
-        this.localizer.Get(this.SelectedFileSortOrder, ApplicationStrings.ResourceManager);
+        this.localizer.Get(this.SelectedFileSortOrder, resourceManager: ApplicationStringsKeys.ResourceManager);
 
-    /// <summary>Gets the selection via <c>Get(Enum, keyPrefix)</c>: search-all with a custom prefix.</summary>
-    public string SortOrderViaSearchAllCustomPrefix => this.localizer.Get(this.SelectedFileSortOrder, "Display_");
+    /// <summary>Gets the selection via <c>Get(Enum, keyPrefix:)</c>: search-all with a custom prefix.</summary>
+    public string SortOrderViaSearchAllCustomPrefix =>
+        this.localizer.Get(this.SelectedFileSortOrder, keyPrefix: "Display_");
 
     // ---- Code-behind enum lookups (the selected FileSortOrder via each enum Get overload) --------------
 
     /// <summary>Gets the selection via <c>Get(Enum)</c>: search-all with the default <c>Enum_</c> prefix.</summary>
     public string SortOrderViaSearchAllDefaultPrefix => this.localizer.Get(this.SelectedFileSortOrder);
 
+    /// <summary>
+    /// Gets the key of the connection status shown by the bound-key demo, as a generated
+    /// <see cref="ResourceKey" />: <c>StatusConnected</c> while <see cref="IsConnected" /> is
+    /// <see langword="true" />, otherwise <c>StatusConnecting</c>. The view binds it as the key of
+    /// <c>{l:Localize {Binding StatusKey}}</c>, so the shown text follows this property and the language.
+    /// </summary>
+    public ResourceKey StatusKey =>
+        this.IsConnected ? ApplicationStringsKeys.StatusConnected : ApplicationStringsKeys.StatusConnecting;
+
+    /// <summary>
+    /// Gets the name of <see cref="StatusKey" /> as a plain <see cref="string" />, for the bound-key demo of a
+    /// string key: <c>{l:Localize Key={Binding StatusKeyName}}</c>.
+    /// </summary>
+    public string StatusKeyName => this.StatusKey.Name;
+
     /// <summary>Gets the languages offered in the language switcher.</summary>
     public CultureInfo[] SupportedLanguages { get; } = [new("en"), new("de")];
 
     /// <summary>
+    /// Whether the simulated connection of the bound-key demo is established. Changing it changes
+    /// <see cref="StatusKey" /> and <see cref="StatusKeyName" />, the keys the view binds.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(StatusKey))]
+    [NotifyPropertyChangedFor(nameof(StatusKeyName))]
+    public partial bool IsConnected { get; set; }
+
+    /// <summary>
     /// The people count formatted into the <c>PeopleInvited</c> resource by the dynamic
-    /// format-arguments demo: the view binds it to <c>LocalizeArgs.Arg0</c>, so every change
+    /// format-arguments demo: the view binds it to the <c>Value</c> of an <c>Argument</c>, so every change
     /// re-formats the localized text live.
     /// </summary>
     [ObservableProperty]

@@ -9,6 +9,25 @@ namespace RentADeveloper.ResXLocalization.WPF.Sample.Tests;
 public class MemoryLeakTests
 {
     [Fact]
+    public void BoundControlsWithArguments_AreCollected_WhenDiscarded() =>
+        WpfThread.Invoke(static () =>
+        {
+            TestSupport.ResetToEnglishWithTestCatalogs();
+
+            // Sanity: the binding really subscribes and resolves, so the leak check below is not vacuous.
+            var probe = TestSupport.BindLocalizedText(new(ApplicationStringsKeys.Greeting));
+            probe.Text.Should().Be("Hello and welcome!");
+
+            var references = CreateAndAbandonBoundControlsWithArguments(200);
+
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            references.Should().NotContain(static reference => reference.IsAlive);
+        });
+
+    [Fact]
     public void BoundControls_AreCollected_WhenDiscarded() =>
         WpfThread.Invoke(static () =>
         {
@@ -48,6 +67,20 @@ public class MemoryLeakTests
         for (var index = 0; index < count; index++)
         {
             var textBlock = TestSupport.BindLocalizedText(new(ApplicationStringsKeys.Greeting));
+            references.Add(new(textBlock));
+        }
+
+        return references;
+    }
+
+    private static List<WeakReference> CreateAndAbandonBoundControlsWithArguments(int count)
+    {
+        var references = new List<WeakReference>(count);
+        for (var index = 0; index < count; index++)
+        {
+            var textBlock = TestSupport.BindLocalizedText(
+                new(ApplicationStringsKeys.PeopleInvited) { Arguments = { new Argument { Value = 1 } } }
+            );
             references.Add(new(textBlock));
         }
 

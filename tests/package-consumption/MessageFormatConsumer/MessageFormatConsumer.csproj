@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- Both of the packages' target frameworks. The scripts and CI always select one explicitly, so a
+         leg that claims to test net8.0 cannot silently run the other. -->
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <SatelliteResourceLanguages>en;de</SatelliteResourceLanguages>
+    <!-- CI overrides this with the version it just packed. -->
+    <ResXLocalizationVersion Condition="'$(ResXLocalizationVersion)' == ''">1.0.0</ResXLocalizationVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- THE references under test: the UI package with its engine, generator and MSBuild wiring, and the
+         opt-in ICU formatter with its MessageFormat dependency. -->
+    <PackageReference Include="ResXLocalization.Avalonia" Version="$(ResXLocalizationVersion)" />
+    <PackageReference Include="ResXLocalization.MessageFormat" Version="$(ResXLocalizationVersion)" />
+  </ItemGroup>
+
+</Project>

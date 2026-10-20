@@ -2,6 +2,10 @@ using RentADeveloper.ResXLocalization;
 
 _ = new RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension("Probe");
 _ = new RentADeveloper.ResXLocalization.WPF.LocalizeExtension("Probe");
+
+// Load Core through its own type: neither constructor above has to touch it.
+_ = Localizer.Current;
+
 var coreAssemblies = AppDomain
     .CurrentDomain.GetAssemblies()
     .Where(static assembly => assembly.GetName().Name == "ResXLocalization.Core")

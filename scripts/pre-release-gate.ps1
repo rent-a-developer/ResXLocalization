@@ -7,7 +7,7 @@
     Run this before pushing a release - or any branch you want CI to go green on. It is the pre-commit gate
     plus the jobs that gate a publish: the documentation build with warnings as errors, the pack with
     package validation, the Native AOT gate against the packed packages, and the package consumers against
-    those same packages.
+    those same packages - once on the SDK the repository pins and once on the .NET 8 SDK.
 
     It stops at the first failure. Later steps consume what earlier ones produce - the AOT gate and the
     consumers run against the packages the pack step wrote - so continuing past a failure would only
@@ -24,14 +24,16 @@
                                    publishes anything.
       The GitHub release           Needs the tag and the GitHub API.
       The other operating system   CI runs the Avalonia verification, the AOT gate and the minimum-SDK
-                                   consumers on Linux and on Windows. This runs whichever legs the machine
-                                   you are on can run, and says which ones it skipped.
+                                   consumers on Linux and on Windows. This runs only what the machine you
+                                   are on can run, and says what it skipped.
       The WPF jobs, off Windows    The WPF projects do not load anywhere else, so on Linux or macOS the
                                    WPF build, the WPF tests and the WPF and combined consumers are not run.
-      The .NET-8-SDK-only leg      CI installs the 8.0 SDK alone to prove the generator's Roslyn floor.
-                                   This machine resolves the SDK the root global.json pins, so the consumer
-                                   steps here prove the packages work - not that they work with nothing but
-                                   an 8.0 SDK installed.
+      An 8.0 SDK on its own        CI's minimum-SDK job runs on a machine with only the .NET 8 SDK
+                                   installed. This gate also runs the consumers on an 8.0 SDK, selected
+                                   the same way, so that SDK's compiler and build targets are used. But
+                                   the SDK the root global.json pins is installed here too, so a pass here
+                                   does not prove the packages work on a machine that has only the .NET 8
+                                   SDK.
 
     A dirty working tree is reported, not rejected: CI tests the commit you push, so anything uncommitted
     is untested by definition, but you may well still be iterating.
@@ -52,6 +54,10 @@
 .PARAMETER SkipDocumentation
     Skip the DocFX metadata and site build. It needs the docfx local tool.
 
+.PARAMETER SkipMinimumSdk
+    Skip running the package consumers a second time on the .NET 8 SDK. That step needs an 8.0 SDK
+    installed next to the one the repository pins.
+
 .PARAMETER Configuration
     Build configuration. Release by default, because that is what CI uses and what gets published.
 
@@ -68,6 +74,7 @@ param(
     [Switch] $SkipNativeAot,
     [Switch] $SkipConsumers,
     [Switch] $SkipDocumentation,
+    [Switch] $SkipMinimumSdk,
     [String] $Configuration = 'Release'
 )
 
@@ -82,6 +89,7 @@ $onWindows = $IsWindows
 $solutionFileName = if ($onWindows) { 'ResXLocalization.slnx' } else { 'ResXLocalization.NonWindows.slnf' }
 
 $consumerDirectory = Join-Path $repositoryRoot 'tests/package-consumption'
+$consumerSdkPin = Join-Path $consumerDirectory 'global.json'
 $packageOutput = Join-Path $repositoryRoot 'artifacts/packages'
 $docfxConfiguration = 'build/docfx/docfx.json'
 
@@ -186,6 +194,25 @@ if ($uncommitted)
 else
 {
     Write-Output 'Clean.'
+}
+
+# --- Consumer SDK pin ---------------------------------------------------------------------------------
+# The step that runs the consumers on the .NET 8 SDK writes a global.json into the consumer directory and
+# removes it again. One left behind - by an interrupted run, or by hand - would quietly choose the SDK for
+# everything that runs from there: the Native AOT gate's publish and every consumer. An 8.0 SDK cannot
+# build for net10.0, so the net10.0 runs would fail with a message that does not mention the pin. Checked
+# first, so the failure names the cause.
+
+Invoke-Step 'Consumer SDK pin' {
+    if (Test-Path -LiteralPath $consumerSdkPin)
+    {
+        Write-Output "FAILED - $consumerSdkPin exists and would choose the SDK for the AOT gate and the consumers. Delete it and re-run."
+        $script:stepSucceeded = $false
+
+        return
+    }
+
+    Write-Output 'None.'
 }
 
 # --- Release identity ---------------------------------------------------------------------------------
@@ -416,6 +443,10 @@ Invoke-Step 'Pack' {
         Write-Output ''
         Write-Output 'NOT PACKED: ResXLocalization.WPF. Release packaging happens on Windows.'
     }
+
+    # The consumers below build against the packages just written, under the same version as the last
+    # pack. A reused MSBuild node keeps evaluating the previous package's targets, so stop it here.
+    & dotnet build-server shutdown 2>&1 | Out-Null
 }
 
 # --- Native AOT gate ----------------------------------------------------------------------------------
@@ -460,29 +491,40 @@ Invoke-Step 'Native AOT gate' {
 # project-referenced test can see. NUGET_PACKAGES and RestoreConfigFile are overridden so a run cannot
 # quietly resolve a ResXLocalization assembly that did not come out of the packages just packed.
 
-Invoke-Step 'Package consumers' {
-    if ($SkipConsumers)
-    {
-        Write-Output 'Skipped (-SkipConsumers).'
-
-        return
-    }
+function Invoke-PackageConsumers
+{
+    <#
+        Runs each consumer from the consumer directory - so a global.json there decides the SDK - and sets
+        $script:stepSucceeded to $false on the first one that fails. Each entry is @{ Name; Arguments }.
+    #>
+    param([Parameter(Mandatory)] [Object[]] $Consumers)
 
     $packageVersion = Get-DeclaredVersion
     $originalNuGetPackages = $env:NUGET_PACKAGES
     $consumerNuGetConfig = Join-Path $consumerDirectory 'nuget.config'
-    # AvaloniaConsumer multi-targets, so the framework is named explicitly - `dotnet run` refuses to
-    # guess, and a leg that guessed would not be the leg it claims to be. Both of the packages' target
-    # frameworks are exercised. WpfConsumer and CombinedConsumer target one framework each.
-    $consumers = @(
-        @{ Name = 'AvaloniaConsumer'; Framework = 'net8.0' }
-        @{ Name = 'AvaloniaConsumer'; Framework = 'net10.0' }
-    )
 
-    if ($onWindows)
+    # NuGet resolves by version and not by content, so a ResXLocalization package an earlier run left in the
+    # consumers' cache would satisfy the reference instead of the one just packed - the Native AOT gate empties
+    # that cache, but it can be skipped. Remove our packages from it here, whatever ran before; the build
+    # server goes first because one of its nodes can still hold a package assembly open. NuGet extracts
+    # read-only, hence the attribute reset.
+    & dotnet build-server shutdown 2>&1 | Out-Null
+
+    try
     {
-        $consumers += @{ Name = 'WpfConsumer'; Framework = $null }
-        $consumers += @{ Name = 'CombinedConsumer'; Framework = $null }
+        Get-ChildItem -LiteralPath (Join-Path $consumerDirectory '.packages') -Directory -Filter 'resxlocalization.*' -ErrorAction SilentlyContinue |
+            ForEach-Object {
+                Get-ChildItem -LiteralPath $_.FullName -Recurse -Force -File | ForEach-Object { $_.IsReadOnly = $false }
+                Remove-Item -LiteralPath $_.FullName -Recurse -Force
+            }
+    }
+    catch
+    {
+        Write-Output "FAILED - the cached ResXLocalization packages could not be removed: $($_.Exception.Message)"
+        Write-Output 'Running against them would test whatever was cached last. Close anything holding a file there and re-run.'
+        $script:stepSucceeded = $false
+
+        return
     }
 
     Push-Location -LiteralPath $consumerDirectory
@@ -490,15 +532,19 @@ Invoke-Step 'Package consumers' {
     {
         $env:NUGET_PACKAGES = Join-Path $consumerDirectory '.packages'
 
-        foreach ($consumer in $consumers)
+        foreach ($consumer in $Consumers)
         {
             $name = $consumer.Name
-            $framework = @(if ($consumer.Framework) { @('--framework', $consumer.Framework) } else { @() })
+            $arguments = @($consumer.Arguments)
 
             Write-Output ''
-            Write-Output "--- $name$(if ($consumer.Framework) { " ($($consumer.Framework))" }) ---"
+            Write-Output "--- $((@($name) + $arguments) -join ' ') ---"
 
-            & dotnet run --project "$name/$name.csproj" -c $Configuration @framework `
+            # A build left by the previous run - possibly by the other SDK - could let MSBuild and WPF's
+            # markup compiler decide that nothing changed and skip exactly the passes under test.
+            Remove-Item -LiteralPath (Join-Path $name 'bin'), (Join-Path $name 'obj') -Recurse -Force -ErrorAction SilentlyContinue
+
+            & dotnet run --project "$name/$name.csproj" -c $Configuration @arguments `
                 -p:RestoreConfigFile=$consumerNuGetConfig -p:ResXLocalizationVersion=$packageVersion
 
             if ($LASTEXITCODE -ne 0)
@@ -512,13 +558,132 @@ Invoke-Step 'Package consumers' {
         if (-not $onWindows)
         {
             Write-Output ''
-            Write-Output 'NOT RUN: WpfConsumer and CombinedConsumer. They need Windows.'
+            Write-Output 'NOT RUN: WpfConsumer, WpfDerivedNamespaceConsumer and CombinedConsumer. They need Windows.'
         }
     }
     finally
     {
         $env:NUGET_PACKAGES = $originalNuGetPackages
         Pop-Location
+    }
+}
+
+# The WPF consumers target one framework each. WpfDerivedNamespaceConsumer derives its RootNamespace from
+# its project name; see the comment "WPF's temporary markup-compile pass" in
+# build/ResXLocalization.Resx.targets.
+$wpfConsumers = @(
+    @{ Name = 'WpfConsumer'; Arguments = @() }
+    @{ Name = 'WpfDerivedNamespaceConsumer'; Arguments = @() }
+    @{ Name = 'CombinedConsumer'; Arguments = @() }
+)
+
+Invoke-Step 'Package consumers' {
+    if ($SkipConsumers)
+    {
+        Write-Output 'Skipped (-SkipConsumers).'
+
+        return
+    }
+
+    # AvaloniaConsumer and MessageFormatConsumer target net8.0 and net10.0, and `dotnet run` runs a project
+    # with several target frameworks only when one is named, so each consumer runs once per framework with
+    # `--framework`. That way both of the packages' target frameworks are exercised.
+    $consumers = @(
+        @{ Name = 'AvaloniaConsumer'; Arguments = @('--framework', 'net8.0') }
+        @{ Name = 'AvaloniaConsumer'; Arguments = @('--framework', 'net10.0') }
+        @{ Name = 'MessageFormatConsumer'; Arguments = @('--framework', 'net8.0') }
+        @{ Name = 'MessageFormatConsumer'; Arguments = @('--framework', 'net10.0') }
+    )
+
+    if ($onWindows)
+    {
+        $consumers += $wpfConsumers
+    }
+
+    Invoke-PackageConsumers -Consumers $consumers
+}
+
+# --- Package consumers on the .NET 8 SDK ---------------------------------------------------------------
+# The same consumers, built by the oldest SDK the packages support - what CI's "Consume packages on .NET 8
+# SDK" job does, with the same temporary pin. The SDKs differ in more than the compiler - for example in
+# WPF's temporary markup-compile pass, which only WpfConsumer built by the .NET 8 SDK gets wrong without
+# the fix; see the comment "WPF's temporary markup-compile pass" in build/ResXLocalization.Resx.targets.
+
+Invoke-Step 'Package consumers (.NET 8 SDK)' {
+    if ($SkipConsumers -or $SkipMinimumSdk)
+    {
+        Write-Output "Skipped ($(if ($SkipConsumers) { '-SkipConsumers' } else { '-SkipMinimumSdk' }))."
+
+        return
+    }
+
+    if (-not (& dotnet --list-sdks | Where-Object { $_ -like '8.*' }))
+    {
+        Write-Output 'FAILED - no .NET 8 SDK is installed. Install one (see CONTRIBUTING.md), or pass -SkipMinimumSdk.'
+        $script:stepSucceeded = $false
+
+        return
+    }
+
+    if (Test-Path -LiteralPath $consumerSdkPin)
+    {
+        Write-Output "FAILED - $consumerSdkPin already exists; this step writes and removes its own. Delete it and re-run."
+        $script:stepSucceeded = $false
+
+        return
+    }
+
+    # The pin covers the consumer directory only: `dotnet` resolves global.json from the current directory
+    # upward, and Invoke-PackageConsumers runs from there. It is gitignored, and removed again below.
+    Set-Content -LiteralPath $consumerSdkPin -Value '{ "sdk": { "version": "8.0.100", "rollForward": "latestFeature" } }'
+
+    try
+    {
+        Push-Location -LiteralPath $consumerDirectory
+        try
+        {
+            $activeSdk = & dotnet --version
+        }
+        finally
+        {
+            Pop-Location
+        }
+
+        Write-Output "Active SDK: $activeSdk"
+
+        if ($activeSdk -notlike '8.*')
+        {
+            Write-Output 'FAILED - the pin did not select an 8.0 SDK.'
+            $script:stepSucceeded = $false
+
+            return
+        }
+
+        # -p:TargetFrameworks as well as --framework: restore evaluates every entry in TargetFrameworks, and
+        # an 8.0 SDK cannot evaluate net10.0 (NETSDK1045).
+        $consumers = @(
+            @{ Name = 'AvaloniaConsumer'; Arguments = @('--framework', 'net8.0', '-p:TargetFrameworks=net8.0') }
+            @{ Name = 'MessageFormatConsumer'; Arguments = @('--framework', 'net8.0', '-p:TargetFrameworks=net8.0') }
+        )
+
+        if ($onWindows)
+        {
+            $consumers += $wpfConsumers
+        }
+
+        Invoke-PackageConsumers -Consumers $consumers
+    }
+    finally
+    {
+        # Never let a failed delete escape: the summary line must still be written, and the leftover is
+        # named so the next run's first step does not have to explain it.
+        Remove-Item -LiteralPath $consumerSdkPin -Force -ErrorAction SilentlyContinue
+
+        if (Test-Path -LiteralPath $consumerSdkPin)
+        {
+            Write-Output "FAILED - the temporary pin $consumerSdkPin could not be removed. Delete it by hand."
+            $script:stepSucceeded = $false
+        }
     }
 }
 

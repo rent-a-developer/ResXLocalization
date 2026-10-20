@@ -1,16 +1,25 @@
 namespace RentADeveloper.ResXLocalization.WPF;
 
 /// <summary>
-/// Multi-value converter that localizes an enumeration value bound as a real value (rather than as a
-/// <c>DataContext</c>). Use it in a <c>MultiBinding</c> whose first binding is the enumeration value
-/// and whose second binding is <see cref="Localizer.CurrentCulture" />, so the result re-converts on
-/// every culture change. The value is mapped to a resource key using the convention
-/// <c>{KeyPrefix}{EnumTypeName}_{Value}</c>.
+/// Multi-value converter that localizes an enumeration value in a hand-written <c>MultiBinding</c>, for places
+/// where a markup extension such as <see cref="LocalizeEnumExtension" /> is not accepted, for example a
+/// <c>Binding</c>-typed property. The children of the <c>MultiBinding</c> are: 0, the refresh trigger
+/// <c>&lt;Binding Path="RefreshTriggeringRevision" Source="{x:Static core:Localizer.Current}" /&gt;</c>, which
+/// re-runs the conversion on every change of <see cref="ILocalizer.RefreshTriggeringRevision" />; 1, the
+/// enumeration value; 2 and up, the format arguments, in order. The value is mapped to a resource key by
+/// <see cref="ILocalizer.EnumKeyBuilder" />, by default <c>{KeyPrefix}{EnumTypeName}_{Value}</c>.
 /// </summary>
+/// <remarks>
+/// A <c>MultiBinding</c> whose first child is the enumeration value, followed by <c>CurrentCulture</c>, renders
+/// an empty string; the enumeration value must be child 1, after the refresh trigger.
+/// </remarks>
 public sealed class LocalizeEnumConverter : IMultiValueConverter
 {
     /// <summary>Indicates whether this is the read-only shared <see cref="Default" /> instance.</summary>
     private readonly bool isSharedInstance;
+
+    /// <summary>The argument names parsed from <see cref="ArgumentNames" />, one per argument, in order.</summary>
+    private string?[] argumentNames = [];
 
     /// <summary>Initializes a new instance of the <see cref="LocalizeEnumConverter" /> class.</summary>
     public LocalizeEnumConverter() { }
@@ -28,27 +37,75 @@ public sealed class LocalizeEnumConverter : IMultiValueConverter
     /// Gets the shared, search-all converter instance with default settings. Reference it from XAML
     /// as <c>{x:Static l:LocalizeEnumConverter.Default}</c> when no file scoping is required. The
     /// shared instance is read-only - create your own converter to customize
-    /// <see cref="KeyPrefix" /> or <see cref="ResourceManager" />.
+    /// <see cref="KeyPrefix" />, <see cref="ResourceManager" /> or <see cref="ArgumentNames" />.
     /// </summary>
     public static LocalizeEnumConverter Default { get; } = new(isSharedInstance: true);
 
     /// <summary>
-    /// Gets or sets the prefix prepended to the generated resource key. Defaults to <c>Enum_</c>.
+    /// Gets or sets the names of the format arguments, as one comma-separated string: entry <c>i</c> names the
+    /// argument at child <c>2 + i</c>. For example, <c>ArgumentNames="Count,Total"</c> names child 2
+    /// <c>Count</c> and child 3 <c>Total</c>. Entries are trimmed; an empty entry leaves that argument unnamed
+    /// (<c>",Total"</c> names only the second). <see langword="null" /> (the default) or an empty string means
+    /// no names. Every argument keeps its position whether it is named or not, and names matter only to a
+    /// formatter that understands them, such as ICU MessageFormat; the default formatter ignores them. Extra
+    /// names are ignored, and arguments without an entry are unnamed.
     /// </summary>
-    /// <exception cref="ArgumentNullException">The supplied value is <see langword="null" />.</exception>
+    /// <exception cref="ArgumentException">Two entries have the same name, compared ordinally.</exception>
     /// <exception cref="InvalidOperationException">
     /// The converter is the shared <see cref="Default" /> instance, which is read-only.
     /// </exception>
-    public string KeyPrefix
+    public string? ArgumentNames
     {
         get;
         set
         {
-            ArgumentNullException.ThrowIfNull(value);
+            this.ThrowIfShared();
+
+            string?[] names = string.IsNullOrEmpty(value)
+                ? []
+                :
+                [
+                    .. value
+                        .Split(',')
+                        .Select(static name => name.Trim())
+                        .Select(static name => name.Length == 0 ? null : name),
+                ];
+
+            var duplicate = names
+                .OfType<string>()
+                .GroupBy(static name => name, StringComparer.Ordinal)
+                .FirstOrDefault(static group => group.Skip(1).Any())
+                ?.Key;
+            if (duplicate is not null)
+            {
+                throw new ArgumentException(
+                    $"ArgumentNames contains the name '{duplicate}' twice. Argument names must be unique.",
+                    nameof(value)
+                );
+            }
+
+            this.argumentNames = names;
+            field = value;
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets the key prefix passed to <see cref="ILocalizer.EnumKeyBuilder" />.
+    /// <see langword="null" /> (the default) means "the <see cref="ILocalizer.EnumKeyBuilder" /> decides",
+    /// which by default is <c>Enum_</c>; a value overrides the prefix for this converter.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// The converter is the shared <see cref="Default" /> instance, which is read-only.
+    /// </exception>
+    public string? KeyPrefix
+    {
+        get;
+        set
+        {
             this.ThrowIfShared();
             field = value;
         }
-    } = EnumKeyConvention.DefaultEnumKeyPrefix;
+    }
 
     /// <summary>
     /// Gets or sets the resource manager that scopes the lookup to a single <c>.resx</c> file. When
@@ -67,13 +124,10 @@ public sealed class LocalizeEnumConverter : IMultiValueConverter
         }
     }
 
-    /// <summary>
-    /// Converts the bound enumeration value to its localized string.
-    /// </summary>
+    /// <summary>Converts the enumeration value to its localized, formatted string.</summary>
     /// <param name="values">
-    /// The bound values. The first element is expected to be the <see cref="Enum" /> value to
-    /// localize; any further bindings (such as the current culture) exist only to trigger
-    /// re-conversion.
+    /// The bound values: 0, the refresh trigger, whose value is ignored; 1, the <see cref="Enum" /> value to
+    /// localize; 2 and up, the format arguments, named by <see cref="ArgumentNames" />.
     /// </param>
     /// <param name="targetType">The type of the binding target property.</param>
     /// <param name="parameter">An optional converter parameter; not used.</param>
@@ -82,21 +136,37 @@ public sealed class LocalizeEnumConverter : IMultiValueConverter
     /// taken from <see cref="Localizer.Current" />).
     /// </param>
     /// <returns>
-    /// The localized string for the enumeration value, or <see cref="string.Empty" /> when no value
-    /// is supplied or the first value is not an <see cref="Enum" />.
+    /// The localized string for the enumeration value, or <see cref="string.Empty" /> when there are fewer than
+    /// two values or value 1 is not an <see cref="Enum" />.
     /// </returns>
     public object Convert(object?[] values, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (values.Length == 0 || values[0] is not Enum enumValue)
+        if (values.Length < 2 || values[1] is not Enum enumValue)
         {
             return string.Empty;
         }
 
-        var key = EnumKeyConvention.BuildEnumKey(enumValue, this.KeyPrefix);
+        // Only two values means there are no arguments; every further value becomes (Name, Value), positioned from child 2 on.
+        var arguments =
+            values.Length == 2
+                ? null
+                : MessageArguments.FromTuples([
+                    .. values
+                        .Skip(2)
+                        .Select(
+                            (value, index) =>
+                                (
+                                    index < this.argumentNames.Length ? this.argumentNames[index] : null,
+                                    value == DependencyProperty.UnsetValue ? null : value
+                                )
+                        ),
+                ]);
 
-        return this.ResourceManager is null
-            ? Localizer.Current.Get(key)
-            : Localizer.Current.Get(key, this.ResourceManager);
+        return Localizer.Current.Get(
+            Localizer.Current.BuildEnumKey(enumValue, this.KeyPrefix),
+            arguments,
+            this.ResourceManager
+        );
     }
 
     /// <summary>Not supported; this converter is one-way.</summary>
@@ -119,7 +189,7 @@ public sealed class LocalizeEnumConverter : IMultiValueConverter
         {
             throw new InvalidOperationException(
                 "The shared LocalizeEnumConverter.Default instance is read-only; "
-                    + "create your own LocalizeEnumConverter to customize KeyPrefix or ResourceManager."
+                    + "create your own LocalizeEnumConverter to customize KeyPrefix, ResourceManager or ArgumentNames."
             );
         }
     }

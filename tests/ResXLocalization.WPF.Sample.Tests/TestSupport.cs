@@ -1,3 +1,6 @@
+using System.Windows.Markup;
+using System.Xaml;
+
 namespace RentADeveloper.ResXLocalization.WPF.Sample.Tests;
 
 /// <summary>
@@ -7,17 +10,17 @@ namespace RentADeveloper.ResXLocalization.WPF.Sample.Tests;
 /// </summary>
 internal static class TestSupport
 {
+    /// <summary>The test-only Catalog file; registered first so it wins search-all ties for "Shared".</summary>
+    public static readonly ResourceManager CatalogResources = new(
+        "RentADeveloper.ResXLocalization.WPF.Sample.Tests.Resources.Catalog",
+        typeof(TestSupport).Assembly
+    );
+
     /// <summary>English culture, used to reset the ambient localizer at the start of each test.</summary>
     public static readonly CultureInfo English = new("en");
 
     /// <summary>German culture. Used to assert that values switch live.</summary>
     public static readonly CultureInfo German = new("de");
-
-    /// <summary>The test-only Catalog file; registered first so it wins search-all ties for "Shared".</summary>
-    private static readonly ResourceManager CatalogResources = new(
-        "RentADeveloper.ResXLocalization.WPF.Sample.Tests.Resources.Catalog",
-        typeof(TestSupport).Assembly
-    );
 
     /// <summary>The test-only Fallback file; registered after <see cref="CatalogResources" />.</summary>
     private static readonly ResourceManager FallbackResources = new(
@@ -36,33 +39,41 @@ internal static class TestSupport
             .ToArray();
 
     /// <summary>
-    /// Binds a <see cref="LocalizeEnumExtension" /> to a fresh text block whose <c>DataContext</c> is the
-    /// supplied enumeration value, mirroring how the extension is used inside an item template.
+    /// Binds a <see cref="LocalizeEnumExtension" /> to a fresh text block's Text, then sets the text block's
+    /// <c>DataContext</c> and flushes pending binding transfers.
     /// </summary>
     /// <param name="extension">The markup extension that creates the localization binding.</param>
-    /// <param name="value">The enumeration value to expose as the text block's data context.</param>
+    /// <param name="dataContext">
+    /// The data context: the enumeration value itself for <c>Value = new Binding()</c>, or a view model.
+    /// </param>
     /// <returns>The bound text block after pending binding transfers have been applied.</returns>
-    public static TextBlock BindLocalizedEnum(LocalizeEnumExtension extension, Enum value)
-    {
-        var textBlock = new TextBlock { DataContext = value };
-        textBlock.SetBinding(
-            TextBlock.TextProperty,
-            (BindingBase)extension.ProvideValue(EmptyServiceProvider.Instance)
-        );
-        Flush();
-        return textBlock;
-    }
-
-    /// <summary>Binds a <see cref="LocalizeExtension" /> to a fresh text block's Text and returns it.</summary>
-    /// <param name="extension">The markup extension that creates the localization binding.</param>
-    /// <returns>The bound text block after pending binding transfers have been applied.</returns>
-    public static TextBlock BindLocalizedText(LocalizeExtension extension)
+    public static TextBlock BindLocalizedEnum(LocalizeEnumExtension extension, object? dataContext)
     {
         var textBlock = new TextBlock();
         textBlock.SetBinding(
             TextBlock.TextProperty,
             (BindingBase)extension.ProvideValue(EmptyServiceProvider.Instance)
         );
+        textBlock.DataContext = dataContext;
+        Flush();
+        return textBlock;
+    }
+
+    /// <summary>
+    /// Binds a <see cref="LocalizeExtension" /> to a fresh text block's Text, then sets the text block's
+    /// <c>DataContext</c> and flushes pending binding transfers.
+    /// </summary>
+    /// <param name="extension">The markup extension that creates the localization binding.</param>
+    /// <param name="dataContext">The data context for the argument bindings, if any.</param>
+    /// <returns>The bound text block after pending binding transfers have been applied.</returns>
+    public static TextBlock BindLocalizedText(LocalizeExtension extension, object? dataContext = null)
+    {
+        var textBlock = new TextBlock();
+        textBlock.SetBinding(
+            TextBlock.TextProperty,
+            (BindingBase)extension.ProvideValue(EmptyServiceProvider.Instance)
+        );
+        textBlock.DataContext = dataContext;
         Flush();
         return textBlock;
     }
@@ -85,9 +96,9 @@ internal static class TestSupport
     public static void ResetToEnglishWithTestCatalogs()
     {
         Localizer.Current.CurrentCulture = English;
-        Localizer.Current.RegisterResourceManager(ApplicationStrings.ResourceManager);
-        Localizer.Current.RegisterResourceManager(SortingStrings.ResourceManager);
-        Localizer.Current.RegisterResourceManager(BrandingStrings.ResourceManager);
+        Localizer.Current.RegisterResourceManager(ApplicationStringsKeys.ResourceManager);
+        Localizer.Current.RegisterResourceManager(SortingStringsKeys.ResourceManager);
+        Localizer.Current.RegisterResourceManager(BrandingStringsKeys.ResourceManager);
         Localizer.Current.RegisterResourceManager(CatalogResources);
         Localizer.Current.RegisterResourceManager(FallbackResources);
     }
@@ -103,6 +114,61 @@ internal static class TestSupport
                 yield return descendant;
             }
         }
+    }
+
+    /// <summary>
+    /// Forces <c>DesignMode.IsInDesignMode</c> to a value and restores the previous value on dispose. The suite
+    /// runs without parallelization, so the process-wide value cannot leak into a concurrent test.
+    /// </summary>
+    internal sealed class DesignModeScope : IDisposable
+    {
+        private readonly bool previousValue;
+
+        /// <summary>Initializes a new instance of the <see cref="DesignModeScope" /> class.</summary>
+        /// <param name="value">The value <c>DesignMode.IsInDesignMode</c> has until the scope is disposed.</param>
+        public DesignModeScope(bool value)
+        {
+            this.previousValue = DesignMode.IsInDesignMode;
+            DesignMode.IsInDesignMode = value;
+        }
+
+        public void Dispose() => DesignMode.IsInDesignMode = this.previousValue;
+    }
+
+    /// <summary>An <see cref="IProvideValueTarget" /> with a fixed target object and target property.</summary>
+    /// <param name="targetObject">The object whose property the markup extension provides a value for.</param>
+    /// <param name="targetProperty">
+    /// The target property: a <see cref="DependencyProperty" />, or a CLR <c>PropertyInfo</c> as Rider's WPF
+    /// previewer supplies it.
+    /// </param>
+    internal sealed class SimpleProvideValueTarget(object targetObject, object targetProperty) : IProvideValueTarget
+    {
+        public object TargetObject { get; } = targetObject;
+
+        public object TargetProperty { get; } = targetProperty;
+    }
+
+    /// <summary>
+    /// A service provider that supplies an <see cref="IProvideValueTarget" /> and, as the XAML loader does, an
+    /// <see cref="IXamlSchemaContextProvider" />. WPF needs the schema context to let a <see cref="Setter" />
+    /// receive a binding for its <c>Value</c> property; without it, WPF throws for a <see cref="Setter" />.
+    /// </summary>
+    /// <param name="target">The target to supply.</param>
+    internal sealed class SimpleServiceProvider(IProvideValueTarget target)
+        : IServiceProvider,
+            IXamlSchemaContextProvider
+    {
+        private static readonly XamlSchemaContext SharedSchemaContext = new();
+
+        public XamlSchemaContext SchemaContext => SharedSchemaContext;
+
+        public object? GetService(Type serviceType) =>
+            serviceType switch
+            {
+                _ when serviceType == typeof(IProvideValueTarget) => target,
+                _ when serviceType == typeof(IXamlSchemaContextProvider) => this,
+                _ => null,
+            };
     }
 
     private sealed class EmptyServiceProvider : IServiceProvider

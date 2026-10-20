@@ -12,6 +12,8 @@
     <PackageVersion Include="Avalonia.Fonts.Inter" Version="12.1.2" />
     <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.1.2" />
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <!-- Shipped by ResXLocalization.MessageFormat, so this version is also that package's floor. -->
+    <PackageVersion Include="MessageFormat" Version="8.0.0" />
 
     <!-- Source generator toolchain. -->
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
@@ -64,8 +66,9 @@
 
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'ResXLocalization.SourceGenerators'">
     <!-- The SHIPPED analyzer is built against the lowest Roslyn that carries the APIs it uses
-         (IIncrementalGenerator, AdditionalTextsProvider, SymbolDisplay.FormatLiteral - all present
-         since 4.8). A generator built against a newer Roslyn only loads in compilers of that version
+         (IIncrementalGenerator, AdditionalTextsProvider, AnalyzerConfigOptionsProvider with
+         GetOptions(AdditionalText) and AnalyzerConfigOptions.TryGetValue, SymbolDisplay.FormatLiteral -
+         all present since 4.8). A generator built against a newer Roslyn only loads in compilers of that version
          or later, so a consumer on the .NET 8 or 9 SDK would get CS9057 and no generated keys.
          4.8.0 == VS 2022 17.8 / the .NET 8 SDK baseline. Every other Roslyn reference in the
          repository, including the generator's own test project, uses the version above. -->

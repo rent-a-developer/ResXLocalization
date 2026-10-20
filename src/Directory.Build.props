@@ -100,6 +100,11 @@ hold in that pass too.
          The baseline is the version currently on nuget.org. At a release it moves to the version being
          replaced, alongside the <Version> bump in the repository-root Directory.Build.props. -->
     <EnablePackageValidation>true</EnablePackageValidation>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(_IsShippingPackage)' == 'true' AND '$(_ConventionProjectName)' != 'ResXLocalization.MessageFormat'">
+    <!-- ResXLocalization.MessageFormat has no published baseline yet, so it is validated without one.
+         Drop this exclusion at the first release after it is published. -->
     <PackageValidationBaselineVersion>1.1.0</PackageValidationBaselineVersion>
   </PropertyGroup>
 

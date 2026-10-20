@@ -2,8 +2,9 @@
 
 Use this whenever a change touches resource lookup, culture fallback, satellite discovery, the source
 generator's output, or the analyzer and `buildTransitive` wiring the packages carry. This is a
-**standing** checklist: `ResXLocalization.Avalonia` and `ResXLocalization.Core` advertise Native AOT
-support, and everything here exists to keep it from regressing.
+**standing** checklist: `ResXLocalization.Core`, `ResXLocalization.Avalonia` and
+`ResXLocalization.MessageFormat` advertise Native AOT support, and everything here exists to keep it
+from regressing.
 
 Read [docs/guides/native-aot.md](../../../docs/guides/native-aot.md) before reviewing.
 
@@ -13,11 +14,12 @@ This is a **review**: report findings, cite file and line, do not edit files.
 
 Trimming damage does not announce itself. A resource that is no longer found, a satellite assembly
 that is no longer loaded, a typed key whose `ResourceManager` was trimmed away — each produces a
-binary that builds, starts, and answers with the `!key!` sentinel or the wrong language. Nothing is
+binary that builds, starts, and answers with the `!key!` failure text or the wrong language. Nothing is
 trimmed on the just-in-time compiler, so **every test suite in this repository passes throughout**.
 
-The only check that can see it is `scripts/verify-package-aot.ps1`, which publishes a package-only
-consumer natively and runs it. A green test run is not evidence here. Neither is a native binary that
+The only check that can see it is `scripts/verify-package-aot.ps1`, which publishes two package-only
+consumers natively and runs them: `AvaloniaConsumer`, and `MessageFormatConsumer` for the ICU formatter
+of `ResXLocalization.MessageFormat`. A green test run is not evidence here. Neither is a native binary that
 exists: the gate runs it and asserts exact strings for exactly this reason.
 
 ## Blocking findings
@@ -31,9 +33,16 @@ exists: the gate runs it and asserts exact strings for exactly this reason.
   the requirement to the caller. But adding either to a public member is its own blocking finding —
   it changes what a consumer sees when they publish, and the packages promise they see nothing.
 
-- **`IsAotCompatible` removed from `ResXLocalization.Core` or `ResXLocalization.Avalonia`**, or added
-  to `ResXLocalization.WPF`. The first two set it through `src/Directory.Build.props`; WPF is
-  excluded there deliberately, because WPF has no Native AOT.
+- **`IsAotCompatible` removed from `ResXLocalization.Core`, `ResXLocalization.Avalonia` or
+  `ResXLocalization.MessageFormat`**, or added to `ResXLocalization.WPF`. The first three set it
+  through `src/Directory.Build.props`; WPF is excluded there deliberately, because WPF has no Native
+  AOT.
+
+- **A call to an `object args` overload of the `MessageFormat` library** in
+  `src/ResXLocalization.MessageFormat` - the extension `MessageFormatterExtensions.FormatMessage` or the
+  static `MessageFormatter.Format(string, object, CultureInfo?)`. Both read properties by reflection,
+  carry `[RequiresUnreferencedCode]` and lose every argument in a Native AOT binary. The package calls
+  only the `IReadOnlyDictionary` overload of `FormatMessage`.
 
 - **A new reflection call** — `Type.GetType`, `Assembly.Load`, `Activator.CreateInstance`,
   `GetMethod`, `GetProperty`, `MakeGenericType` — reachable from a public entry point without a
@@ -42,8 +51,9 @@ exists: the gate runs it and asserts exact strings for exactly this reason.
   reflection site is a change of kind rather than of degree.
 
 - **Anything that makes a satellite assembly optional.** The German satellite is what the AOT gate
-  asserts on: a change that stops the consumer producing `de/AvaloniaConsumer.resources.dll`, or
-  stops the library finding it, is the exact failure this gate exists for.
+  asserts on: a change that stops a consumer producing `de/AvaloniaConsumer.resources.dll` or
+  `de/MessageFormatConsumer.resources.dll`, or stops the library finding it, is the exact failure this
+  gate exists for.
 
 ## The generator's output
 
@@ -63,6 +73,28 @@ than published, so trimming cannot reach them — but packaging can drop them.
 - **No generator or compiler dependency in a runtime nuspec.** The `ProjectReference` to the
   generator carries `PrivateAssets="all"` and `ReferenceOutputAssembly="false"` for that reason;
   losing either leaks `Microsoft.CodeAnalysis.CSharp` into the package's dependency list.
+
+## The build wiring on every supported SDK
+
+`build/ResXLocalization.Resx.targets` runs inside every consumer's build, on whichever SDK that consumer
+has - the .NET 8 SDK as much as the one this repository pins - and inside WPF's temporary markup-compile
+pass, a copy of the project named `<Name>_<random>_wpftmp` that WPF builds before the real one. Neither
+is visible to a test suite here, which builds on the pinned SDK with the repository's own
+`Directory.Build.props`.
+
+- **Anything the wiring or the generator derives from a project property must hold in the temporary
+  pass, on every supported SDK.** `MSBuildProjectName`, and every `RootNamespace` computed from it,
+  differ there; the whole mechanism, the fix and its limits are explained in the comment "WPF's temporary markup-compile pass" in `build/ResXLocalization.Resx.targets`. The fix
+  changes only `ManifestResourceName`, `LogicalName` and `CustomToolNamespace` of the targets file's own
+  copies of the `.resx` items. A change that removes it, widens it to `RootNamespace` or to other items
+  or metadata, or adds a new dependency on a property derived from the project name, is a finding.
+- **A claim about what an SDK does is checked, not assumed.** Cite the targets file or the task of each
+  supported SDK that the claim is about, with file and line - for example
+  `sdk/<version>/Sdks/Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.WinFX.targets`. A claim you
+  could not check is reported as unchecked, never as a fact.
+- **What catches it:** the "Package consumers (.NET 8 SDK)" step of `scripts/pre-release-gate.ps1`,
+  and CI's "Consume packages on .NET 8 SDK" job, through `WpfConsumer` and `WpfDerivedNamespaceConsumer`
+  (the second also on the pinned SDK).
 
 ## What the tooling cannot tell you
 
@@ -84,8 +116,9 @@ check would have caught it. Where the answer needs a build, a pack or the AOT ga
 name the command:
 
 ```text
-pwsh -File scripts/verify-package-aot.ps1 -Pack                     # both frameworks, from a fresh pack
-pwsh -File scripts/verify-package-aot.ps1 -Framework net8.0         # the LTS floor alone
+pwsh -File scripts/verify-package-aot.ps1 -Pack                     # both consumers on net10.0, from a fresh pack
+pwsh -File scripts/verify-package-aot.ps1 -Framework net8.0         # both consumers on the LTS floor
+pwsh -File scripts/pre-release-gate.ps1 -SkipNativeAot -SkipDocumentation   # every consumer, pinned SDK and .NET 8 SDK
 ```
 
 Do not run them yourself, and do not fix what you found.

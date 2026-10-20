@@ -1,3 +1,6 @@
+using System.ComponentModel;
+using System.Reflection;
+
 namespace RentADeveloper.ResXLocalization.Core.Tests;
 
 /// <summary>
@@ -29,16 +32,14 @@ public class LocalizerContractTests
     public void AssigningTheSameCulture_RaisesNoNotifications()
     {
         var localizer = this.resources.CreateLocalizer();
-        var eventCount = 0;
-        localizer.PropertyChanged += (_, _) => eventCount++;
-        localizer.CultureChanged += (_, _) => eventCount++;
+        using var monitor = localizer.Monitor();
 
         // Both the very same instance and a distinct-but-equal culture must be treated as "no change".
         var sameInstance = localizer.CurrentCulture;
         localizer.CurrentCulture = sameInstance;
         localizer.CurrentCulture = new("en");
 
-        eventCount.Should().Be(0);
+        monitor.EventLog().Should().BeEmpty();
         localizer.CurrentCulture.Should().BeSameAs(sameInstance);
     }
 
@@ -46,27 +47,35 @@ public class LocalizerContractTests
     public void CultureChange_RaisesCurrentCulture_ThenIndexer_ThenCultureChanged()
     {
         var localizer = this.resources.CreateLocalizer();
-        var events = new List<string>();
-        localizer.PropertyChanged += (_, args) => events.Add($"PropertyChanged({args.PropertyName})");
-        localizer.CultureChanged += (_, _) => events.Add("CultureChanged");
+        using var monitor = localizer.Monitor();
 
         localizer.CurrentCulture = TestResources.German;
 
-        events.Should().Equal("PropertyChanged(CurrentCulture)", "PropertyChanged(Item[])", "CultureChanged");
+        monitor
+            .EventLog()
+            .Should()
+            .Equal(
+                "PropertyChanged(CurrentCulture)",
+                "PropertyChanged(RefreshTriggeringRevision)",
+                "PropertyChanged(Item[])",
+                "CultureChanged"
+            );
     }
 
     [Fact]
     public void CultureChanged_CarriesOldAndNewCulture()
     {
         var localizer = this.resources.CreateLocalizer();
-        CultureChangedEventArgs? captured = null;
-        localizer.CultureChanged += (_, args) => captured = args;
+        using var monitor = localizer.Monitor();
 
         localizer.CurrentCulture = TestResources.German;
 
-        captured.Should().NotBeNull();
-        captured.OldCulture.Should().Be(TestResources.English);
-        captured.NewCulture.Should().Be(TestResources.German);
+        monitor
+            .Should()
+            .Raise(nameof(ILocalizer.CultureChanged))
+            .WithArgs<CultureChangedEventArgs>(args =>
+                args.OldCulture.Equals(TestResources.English) && args.NewCulture.Equals(TestResources.German)
+            );
     }
 
     [Fact]
@@ -78,6 +87,37 @@ public class LocalizerContractTests
     {
         Localizer.Current.Should().BeSameAs(Localizer.Current);
         Localizer.Current.Should().BeAssignableTo<ILocalizer>();
+    }
+
+    [Fact]
+    public void GetOverloads_AreExactlyOnePerKeyKind_WithoutParamsOrEditorBrowsable()
+    {
+        string[] expected =
+        [
+            "Get(Enum, MessageArguments, ResourceManager, String)",
+            "Get(ResourceKey, MessageArguments)",
+            "Get(String, MessageArguments, ResourceManager)",
+        ];
+
+        foreach (var type in new[] { typeof(ILocalizer), typeof(Localizer) })
+        {
+            var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                .Where(method => method.Name == nameof(ILocalizer.Get))
+                .ToArray();
+
+            methods
+                .Select(method =>
+                    $"Get({string.Join(", ", method.GetParameters().Select(parameter => parameter.ParameterType.Name))})"
+                )
+                .Order(StringComparer.Ordinal)
+                .Should()
+                .Equal(expected);
+            methods
+                .SelectMany(method => method.GetParameters())
+                .Should()
+                .NotContain(parameter => parameter.IsDefined(typeof(ParamArrayAttribute)));
+            methods.Should().NotContain(method => method.IsDefined(typeof(EditorBrowsableAttribute)));
+        }
     }
 
     [Fact]

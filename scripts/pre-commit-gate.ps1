@@ -26,11 +26,12 @@
                           Run: pwsh -File scripts/verify-package-aot.ps1 -Pack
 
       Package consumers   Trigger: any change to the package contents, the buildTransitive wiring, the
-                          generator's compiler floor, or a dependency version. They install the packages
+                          generator's output or compiler floor, or a dependency version. They install the packages
                           the way a stranger would, which a project-referenced test cannot.
                           Run: pwsh -File scripts/pre-release-gate.ps1 -SkipNativeAot -SkipDocumentation
-                               which packs and then runs all of them, on both of AvaloniaConsumer's
-                               target frameworks.
+                               which packs and then runs all of them on the pinned SDK, on both of
+                               the target frameworks of AvaloniaConsumer and MessageFormatConsumer,
+                               and again on the .NET 8 SDK.
 
 .PARAMETER Fix
     Apply style, formatting and member ordering to the working tree before the checks, instead of only
@@ -323,7 +324,7 @@ if ($failures.Count -gt 0)
 Write-Output 'PASSED. Not covered here, and not needed for every change:'
 Write-Output '  - the Native AOT gate, after a change to resource lookup, the generated keys or the packaging'
 Write-Output '    (pwsh -File scripts/verify-package-aot.ps1 -Pack)'
-Write-Output '  - the package consumers, after a change to what the packages contain'
+Write-Output '  - the package consumers on the pinned and the .NET 8 SDK, after a change to what the packages contain'
 Write-Output '    (pwsh -File scripts/pre-release-gate.ps1 -SkipNativeAot -SkipDocumentation)'
 
 exit 0

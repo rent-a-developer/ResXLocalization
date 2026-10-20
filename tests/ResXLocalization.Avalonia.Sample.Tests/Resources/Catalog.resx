@@ -1,14 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
   <!--
-    Test-only resource file. It has no .Designer.cs, so the typed-key generator skips it; the tests load
-    it through a plain ResourceManager. It defines:
+    Test-only resource file. This test project does not run the typed-key generator, so no keys class
+    exists for it; the tests load it through a plain ResourceManager. It defines:
       * Shared            - also defined in Fallback.resx, to test search-all first-match-wins and scoping.
       * CatalogOnly       - unique to this file, to prove search-all reaches it.
       * Display_*         - custom-prefix enum keys, to test scoped custom-prefix enum lookups.
-      * FormatPair        - a two-argument composite format string, for the LocalizeArgs tests.
-      * FormatGap         - references {0} and {2}, to test a higher argument slot used alone.
+      * FormatPair        - a two-argument composite format string, for the argument tests.
+      * PartitionDisplay  - a four-argument composite format string, for named arguments.
+      * Twelve            - twelve placeholders, to prove there is no upper limit on arguments.
       * CurlyNoArgs       - literal braces, to prove the no-argument path never composite-formats.
+      * FormatBroken      - a malformed composite format string, to test the formatting-failure path.
+      * Count_*           - an enum key with a placeholder, for the enum argument tests.
+      * Braces_*          - an enum key with literal braces, to prove two converter values never format.
   -->
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -34,10 +38,25 @@
   <data name="FormatPair" xml:space="preserve">
     <value>File {0} of {1}</value>
   </data>
-  <data name="FormatGap" xml:space="preserve">
-    <value>[{0}|{2}]</value>
+  <data name="PartitionDisplay" xml:space="preserve">
+    <value>{0} ({1}:) - drive {2}, partition {3}</value>
+  </data>
+  <data name="Twelve" xml:space="preserve">
+    <value>{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}</value>
   </data>
   <data name="CurlyNoArgs" xml:space="preserve">
     <value>Literal {braces} stay</value>
+  </data>
+  <data name="FormatBroken" xml:space="preserve">
+    <value>Broken {0</value>
+  </data>
+  <data name="Text_FileSortOrder.Ascending" xml:space="preserve">
+    <value>Custom ascending</value>
+  </data>
+  <data name="Count_FileSortOrder_Ascending" xml:space="preserve">
+    <value>{0} files, ascending</value>
+  </data>
+  <data name="Braces_FileSortOrder_Ascending" xml:space="preserve">
+    <value>{Ascending}</value>
   </data>
 </root>

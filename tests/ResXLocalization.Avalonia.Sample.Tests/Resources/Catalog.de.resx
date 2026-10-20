@@ -22,4 +22,13 @@
   <data name="Display_FileSortOrder_Ascending" xml:space="preserve">
     <value>CatalogAufsteigend</value>
   </data>
+  <data name="FormatPair" xml:space="preserve">
+    <value>Datei {0} von {1}</value>
+  </data>
+  <data name="PartitionDisplay" xml:space="preserve">
+    <value>{0} ({1}:) - Laufwerk {2}, Partition {3}</value>
+  </data>
+  <data name="Count_FileSortOrder_Ascending" xml:space="preserve">
+    <value>{0} Dateien, aufsteigend</value>
+  </data>
 </root>

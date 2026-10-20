@@ -32,6 +32,7 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   DOTNET_NOLOGO: true
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  MESSAGEFORMAT_CONSUMER_PROJECT: tests/package-consumption/MessageFormatConsumer/MessageFormatConsumer.csproj
   NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
   NUGET_CONFIG: NuGet.config
   PACKAGE_OUTPUT: artifacts/packages
@@ -414,10 +415,21 @@ jobs:
         working-directory: ${{ env.CONSUMER_DIRECTORY }}
         run: dotnet run --project AvaloniaConsumer/AvaloniaConsumer.csproj --framework net8.0 -p:TargetFrameworks=net8.0 --configuration ${{ env.CONFIGURATION }} -p:ResXLocalizationVersion=${{ needs.package-and-docs.outputs.version }}
 
+      - name: Run MessageFormat package consumer (net8.0 SDK)
+        working-directory: ${{ env.CONSUMER_DIRECTORY }}
+        run: dotnet run --project MessageFormatConsumer/MessageFormatConsumer.csproj --framework net8.0 -p:TargetFrameworks=net8.0 --configuration ${{ env.CONFIGURATION }} -p:ResXLocalizationVersion=${{ needs.package-and-docs.outputs.version }}
+
       - name: Run WPF package consumer (net8.0 SDK)
         if: runner.os == 'Windows'
         working-directory: ${{ env.CONSUMER_DIRECTORY }}
         run: dotnet run --project WpfConsumer/WpfConsumer.csproj --configuration ${{ env.CONFIGURATION }} -p:ResXLocalizationVersion=${{ needs.package-and-docs.outputs.version }}
+
+      # RootNamespace derived from the project name, which WPF's temporary markup-compile pass gets wrong;
+      # see the comment "WPF's temporary markup-compile pass" in build/ResXLocalization.Resx.targets.
+      - name: Run WPF package consumer with a derived RootNamespace (net8.0 SDK)
+        if: runner.os == 'Windows'
+        working-directory: ${{ env.CONSUMER_DIRECTORY }}
+        run: dotnet run --project WpfDerivedNamespaceConsumer/WpfDerivedNamespaceConsumer.csproj --configuration ${{ env.CONFIGURATION }} -p:ResXLocalizationVersion=${{ needs.package-and-docs.outputs.version }}
 
       - name: Run combined Avalonia and WPF package consumer (net8.0 SDK)
         if: runner.os == 'Windows'
@@ -431,12 +443,12 @@ jobs:
         shell: bash
         run: rm -f "${CONSUMER_DIRECTORY}/global.json"
 
-  # The packed-package Native AOT gate. It publishes the Avalonia consumer with PublishAot, requires zero
-  # IL2xxx/IL3xxx diagnostics, and RUNS the native binary - a file that exists proves nothing, because
-  # everything trimming can break (a satellite that is no longer loaded, a resource name that no longer
-  # resolves) produces a binary that starts and answers wrongly.
+  # The packed-package Native AOT gate. It publishes AvaloniaConsumer and MessageFormatConsumer with
+  # PublishAot, requires zero IL2xxx/IL3xxx diagnostics, and RUNS each native binary - a file that exists
+  # proves nothing, because everything trimming can break (a satellite that is no longer loaded, a
+  # resource name that no longer resolves) produces a binary that starts and answers wrongly.
   #
-  # Three legs. The trimming behaviour under test belongs to the ILC compiler and does not vary by host,
+  # Three runs. The trimming behaviour under test belongs to the ILC compiler and does not vary by host,
   # so net8.0 - the LTS floor the packages promise - is exercised on Linux, and net10.0 on both.
   verify-package-aot:
     name: Verify packed-package Native AOT (${{ matrix.framework }}, ${{ matrix.runtime }})
@@ -466,7 +478,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          # The 8.0 runtime is what the net8.0 leg's build-time tooling runs on.
+          # The 8.0 runtime is what the build-time tooling of the net8.0 run runs on.
           dotnet-version: |
             8.0.x
             10.0.x
@@ -522,7 +534,8 @@ jobs:
           path: ${{ env.PACKAGE_OUTPUT }}
 
       # The script is the gate, not this job: it validates the artifact set from each nuspec, isolates the
-      # consumer package cache, publishes, requires zero IL diagnostics, and runs the binary.
+      # consumer package cache, then publishes both consumers, requires zero IL diagnostics, and runs each
+      # binary.
       - name: Native AOT gate
         run: pwsh -NoProfile -NonInteractive -File scripts/verify-package-aot.ps1 -Framework ${{ matrix.framework }} -Runtime ${{ matrix.runtime }} -PackageVersion ${{ needs.package-and-docs.outputs.version }} -Configuration ${{ env.CONFIGURATION }}
 
@@ -611,7 +624,7 @@ jobs:
         run: |
           tag_version="${GITHUB_REF_NAME#v}"
           status=0
-          for id in ResXLocalization.Core ResXLocalization.Avalonia ResXLocalization.WPF; do
+          for id in ResXLocalization.Core ResXLocalization.Avalonia ResXLocalization.MessageFormat ResXLocalization.WPF; do
             if [[ ! -f "${PACKAGE_OUTPUT}/${id}.${tag_version}.nupkg" ]]; then
               echo "::error title=Tag/version mismatch::Tag ${GITHUB_REF_NAME} expects ${id}.${tag_version}.nupkg, but the build produced:"
               ls -1 "${PACKAGE_OUTPUT}"

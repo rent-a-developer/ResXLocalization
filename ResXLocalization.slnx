@@ -2,6 +2,7 @@
   <Folder Name="/01_src/">
     <Project Path="src/ResXLocalization.Avalonia/ResXLocalization.Avalonia.csproj" />
     <Project Path="src/ResXLocalization.Core/ResXLocalization.Core.csproj" />
+    <Project Path="src/ResXLocalization.MessageFormat/ResXLocalization.MessageFormat.csproj" />
     <Project Path="src/ResXLocalization.SourceGenerators/ResXLocalization.SourceGenerators.csproj" />
     <Project Path="src/ResXLocalization.WPF/ResXLocalization.WPF.csproj" />
   </Folder>
@@ -12,6 +13,7 @@
   <Folder Name="/03_tests/">
     <Project Path="tests/ResXLocalization.Avalonia.Sample.Tests/ResXLocalization.Avalonia.Sample.Tests.csproj" />
     <Project Path="tests/ResXLocalization.Core.Tests/ResXLocalization.Core.Tests.csproj" />
+    <Project Path="tests/ResXLocalization.MessageFormat.Tests/ResXLocalization.MessageFormat.Tests.csproj" />
     <Project Path="tests/ResXLocalization.SourceGenerators.Tests/ResXLocalization.SourceGenerators.Tests.csproj" />
     <Project Path="tests/ResXLocalization.WPF.Sample.Tests/ResXLocalization.WPF.Sample.Tests.csproj" />
   </Folder>
