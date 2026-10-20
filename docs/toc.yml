@@ -12,6 +12,8 @@
       href: guides/format-arguments.md
     - name: ICU MessageFormat
       href: guides/message-format.md
+    - name: Design time and previewers
+      href: guides/design-time.md
     - name: Native AOT and trimming
       href: guides/native-aot.md
     - name: Migrating to 2.0

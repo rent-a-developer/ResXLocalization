@@ -20,6 +20,8 @@ both, so anything that is not framework-specific belongs there rather than in on
 | Composite-format arguments | `Argument` children in `LocalizeExtension.Arguments` | `Argument` children in `LocalizeExtension.Arguments` |
 | Assigning a binding to `Argument.Value`, `LocalizeEnumExtension.Value` or `LocalizeExtension.Key` instead of applying it | `[AssignBinding]` on the property | the `XamlSetMarkupExtension` handler of `Argument`, of `LocalizeEnumExtension` and of `LocalizeExtension` |
 | An argument, enum-value or key binding that is a `MultiBinding` or a `PriorityBinding` | accepted | rejected by `ProvideValue`: WPF's `MultiBinding` accepts only plain `Binding` children |
+| Select the previewer's language | `DesignTime.Culture`, an attached property on `AvaloniaObject`; design mode from `Design.IsDesignMode` | `DesignTime.Culture`, an attached property on `DependencyObject`; design mode from the internal `DesignMode.IsInDesignMode` |
+| A designer that supplies the target property as a CLR property (Rider's WPF previewer) | no fallback: the Avalonia previewer evaluates bindings | deliberate difference: `LocalizeExtension` and `LocalizeEnumExtension` return the lookup without arguments as a string, before validation, when `DesignMode.ShouldReturnDesignTimeText` is true |
 
 Where the frameworks genuinely differ, the difference is expected to be **local and explained**:
 `LocalizeExtension` and `LocalizeEnumExtension` build their `MultiBinding` through

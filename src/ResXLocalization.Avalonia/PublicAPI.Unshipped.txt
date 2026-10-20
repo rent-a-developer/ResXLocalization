@@ -38,6 +38,7 @@ RentADeveloper.ResXLocalization.Avalonia.Argument.Name.get -> string?
 RentADeveloper.ResXLocalization.Avalonia.Argument.Name.set -> void
 RentADeveloper.ResXLocalization.Avalonia.Argument.Value.get -> object?
 RentADeveloper.ResXLocalization.Avalonia.Argument.Value.set -> void
+RentADeveloper.ResXLocalization.Avalonia.DesignTime
 RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter.ArgumentNames.get -> string?
 RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter.ArgumentNames.set -> void
 RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumConverter.KeyPrefix.get -> string?
@@ -48,3 +49,6 @@ RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension.Value.get -> obje
 RentADeveloper.ResXLocalization.Avalonia.LocalizeEnumExtension.Value.set -> void
 RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension.Arguments.get -> System.Collections.ObjectModel.Collection<RentADeveloper.ResXLocalization.Avalonia.Argument!>!
 RentADeveloper.ResXLocalization.Avalonia.LocalizeExtension.Key.get -> object?
+static readonly RentADeveloper.ResXLocalization.Avalonia.DesignTime.CultureProperty -> Avalonia.AttachedProperty<string?>!
+static RentADeveloper.ResXLocalization.Avalonia.DesignTime.GetCulture(Avalonia.AvaloniaObject! element) -> string?
+static RentADeveloper.ResXLocalization.Avalonia.DesignTime.SetCulture(Avalonia.AvaloniaObject! element, string? value) -> void

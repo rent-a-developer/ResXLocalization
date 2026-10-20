@@ -25,6 +25,11 @@
     <ProjectReference Include="..\ResXLocalization.SourceGenerators\ResXLocalization.SourceGenerators.csproj" OutputItemType="Analyzer" PrivateAssets="all" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Needed, so the the WPF test suite can force RentADeveloper.ResXLocalization.WPF.DesignMode.IsInDesignMode on and off. -->
+    <InternalsVisibleTo Include="ResXLocalization.WPF.Sample.Tests" />
+  </ItemGroup>
+
   <!-- Shared analyzer + buildTransitive packaging (mirrored by ResXLocalization.Avalonia). -->
   <Import Project="..\..\build\ResXLocalization.Packaging.targets" />
 

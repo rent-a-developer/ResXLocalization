@@ -57,6 +57,11 @@ When you opt in, review every resource value for ICU syntax, including the texts
 wrapper. The default formatter (`StringFormatMessageFormatter`) keeps returning a value without arguments
 unchanged.
 
+> [!NOTE]
+> In Rider's WPF previewer, `{l:Localize}` and `{l:LocalizeEnum}` look up their text without arguments
+> (see [Design time and previewers](design-time.md#riders-wpf-previewer)). With ICU installed there,
+> escaping is interpreted, and a value that needs a variable renders the failure text.
+
 ## `plural` and `select`
 
 | Key | `AppStrings.resx` (English) | `AppStrings.de.resx` (German) |
