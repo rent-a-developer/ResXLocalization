@@ -69,7 +69,10 @@ public sealed class LocalizeExtension : MarkupExtension
     /// <param name="serviceProvider">The service provider supplied by the XAML loader.</param>
     /// <returns>
     /// The value of the WPF multi-binding for the target: the binding expression for a dependency property,
-    /// the multi-binding itself for a <c>Setter</c>.
+    /// the multi-binding itself for a <c>Setter</c>. Inside a XAML designer that supplies the target property
+    /// as a CLR property instead of a dependency property, such as Rider's WPF previewer, a string instead,
+    /// without validation: the lookup of a constant <see cref="Key" /> without arguments, or an empty string
+    /// when <see cref="Key" /> is <see langword="null" /> or a binding.
     /// </returns>
     /// <exception cref="InvalidOperationException">
     /// <see cref="Key" /> is <see langword="null" />, a constant that is neither a <see cref="string" /> nor a
@@ -84,6 +87,13 @@ public sealed class LocalizeExtension : MarkupExtension
     /// </exception>
     public override object ProvideValue(IServiceProvider serviceProvider)
     {
+        // Before the validation: Rider's previewer often delivers Key as null, and an exception takes the
+        // preview down.
+        if (DesignMode.ShouldReturnDesignTimeText(serviceProvider))
+        {
+            return this.GetDesignTimeText();
+        }
+
         this.ValidateKey();
         LocalizedMultiBindingBuilder.ValidateArguments(this.Arguments);
 
@@ -114,6 +124,20 @@ public sealed class LocalizeExtension : MarkupExtension
             eventArgs.Handled = true;
         }
     }
+
+    /// <summary>
+    /// Gets the design-time text: the lookup of a constant <see cref="Key" /> without arguments - under the
+    /// default formatter the resource value as written, such as <c>{0} people invited</c> - or an empty string
+    /// for any other <see cref="Key" />, because there is no key to look up.
+    /// </summary>
+    /// <returns>The design-time text.</returns>
+    private string GetDesignTimeText() =>
+        this.Key switch
+        {
+            ResourceKey { Manager: not null } resourceKey => Localizer.Current.Get(resourceKey),
+            string { Length: > 0 } key => Localizer.Current.Get(key, resourceManager: this.ResourceManager),
+            _ => string.Empty,
+        };
 
     /// <summary>
     /// Checks that <see cref="Key" /> is a <see cref="string" />, a usable resource key or a plain binding.

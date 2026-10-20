@@ -1,3 +1,6 @@
+using System.Windows.Markup;
+using System.Xaml;
+
 namespace RentADeveloper.ResXLocalization.WPF.Sample.Tests;
 
 /// <summary>
@@ -111,6 +114,61 @@ internal static class TestSupport
                 yield return descendant;
             }
         }
+    }
+
+    /// <summary>
+    /// Forces <c>DesignMode.IsInDesignMode</c> to a value and restores the previous value on dispose. The suite
+    /// runs without parallelization, so the process-wide value cannot leak into a concurrent test.
+    /// </summary>
+    internal sealed class DesignModeScope : IDisposable
+    {
+        private readonly bool previousValue;
+
+        /// <summary>Initializes a new instance of the <see cref="DesignModeScope" /> class.</summary>
+        /// <param name="value">The value <c>DesignMode.IsInDesignMode</c> has until the scope is disposed.</param>
+        public DesignModeScope(bool value)
+        {
+            this.previousValue = DesignMode.IsInDesignMode;
+            DesignMode.IsInDesignMode = value;
+        }
+
+        public void Dispose() => DesignMode.IsInDesignMode = this.previousValue;
+    }
+
+    /// <summary>An <see cref="IProvideValueTarget" /> with a fixed target object and target property.</summary>
+    /// <param name="targetObject">The object whose property the markup extension provides a value for.</param>
+    /// <param name="targetProperty">
+    /// The target property: a <see cref="DependencyProperty" />, or a CLR <c>PropertyInfo</c> as Rider's WPF
+    /// previewer supplies it.
+    /// </param>
+    internal sealed class SimpleProvideValueTarget(object targetObject, object targetProperty) : IProvideValueTarget
+    {
+        public object TargetObject { get; } = targetObject;
+
+        public object TargetProperty { get; } = targetProperty;
+    }
+
+    /// <summary>
+    /// A service provider that supplies an <see cref="IProvideValueTarget" /> and, as the XAML loader does, an
+    /// <see cref="IXamlSchemaContextProvider" />. WPF needs the schema context to let a <see cref="Setter" />
+    /// receive a binding for its <c>Value</c> property; without it, WPF throws for a <see cref="Setter" />.
+    /// </summary>
+    /// <param name="target">The target to supply.</param>
+    internal sealed class SimpleServiceProvider(IProvideValueTarget target)
+        : IServiceProvider,
+            IXamlSchemaContextProvider
+    {
+        private static readonly XamlSchemaContext SharedSchemaContext = new();
+
+        public XamlSchemaContext SchemaContext => SharedSchemaContext;
+
+        public object? GetService(Type serviceType) =>
+            serviceType switch
+            {
+                _ when serviceType == typeof(IProvideValueTarget) => target,
+                _ when serviceType == typeof(IXamlSchemaContextProvider) => this,
+                _ => null,
+            };
     }
 
     private sealed class EmptyServiceProvider : IServiceProvider

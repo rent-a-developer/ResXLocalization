@@ -11,7 +11,8 @@
         Title="{l:Localize {x:Static res:ApplicationStringsKeys.WindowTitle}}"
         Width="900"
         Height="857"
-        d:DataContext="{d:DesignInstance viewModels:MainWindowViewModel}"
+        d:DataContext="{d:DesignInstance viewModels:MainWindowViewModel,
+                                         IsDesignTimeCreatable=True}"
         Background="White"
         Icon="../Assets/logo.ico"
         WindowStartupLocation="CenterScreen"

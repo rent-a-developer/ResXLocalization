@@ -54,6 +54,12 @@ this project adheres to [Semantic Versioning](https://semver.org/).
   `Localizer.Current.UseMessageFormat()`, which parses every resolved value as an ICU message, with or
   without arguments, optionally with a configured `MessageFormatter` of the `MessageFormat` library. See
   [ICU MessageFormat](docs/guides/message-format.md).
+- `DesignTime.Culture`, an attached property in both UI packages that selects the language of XAML
+  previewers (`<Window ... l:DesignTime.Culture="de">`). It sets `Localizer.Current.CurrentCulture` inside
+  a previewer and has no effect at run time. See [Design time and previewers](docs/guides/design-time.md).
+- A workaround for a defect in Rider's WPF XAML previewer (RIDER-143207): localized strings, which
+  rendered nothing there, now render their raw resource pattern under the default formatter, for example
+  `{0} people invited`. See [Design time and previewers](docs/guides/design-time.md).
 
 ### Changed
 

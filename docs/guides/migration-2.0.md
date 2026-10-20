@@ -1,6 +1,7 @@
 # Migrating to 2.0
 
-2.0 is a major version; each section below is one breaking change, with what to do.
+2.0 is a major version; each section below is one breaking change, with what to do. The last section
+is a design-time change that needs no action.
 
 ## A formatting failure returns the failure text instead of throwing
 
@@ -532,3 +533,14 @@ After:
   <Binding Path="SortOrder" />
 </MultiBinding>
 ```
+
+## Rider's WPF previewer renders raw patterns (not a breaking change)
+
+Listed for completeness; nothing to do. In Rider's WPF XAML previewer, localized strings rendered nothing,
+because of a defect in the previewer (JetBrains
+[RIDER-143207](https://youtrack.jetbrains.com/issue/RIDER-143207/WPF-XAML-previewer-supplies-RuntimePropertyInfo-instead-of-DependencyProperty-to-a-custom-markup-extension-causing-exceptions)).
+As a workaround, they now render their raw resource pattern there under the default formatter, for
+example `{0} people invited`. With ICU MessageFormat installed, that lookup without arguments interprets
+escaping and returns the failure text for a variable it is not given. The running application, the Visual
+Studio WPF designer and the Avalonia previewer are unchanged. See
+[Design time and previewers](design-time.md#riders-wpf-previewer).

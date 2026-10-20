@@ -63,7 +63,11 @@ public sealed class LocalizeEnumExtension : MarkupExtension
     /// <param name="serviceProvider">The service provider supplied by the XAML loader.</param>
     /// <returns>
     /// The binding expression of a WPF multi-binding that yields the localized string, or the multi-binding
-    /// itself when the target is not a dependency property, such as a <see cref="Setter" /> value.
+    /// itself when the target is not a dependency property, such as a <see cref="Setter" /> value. Inside a
+    /// XAML designer that supplies the target property as a CLR property instead of a dependency property,
+    /// such as Rider's WPF previewer, a string instead, without validation: the lookup of a constant
+    /// <see cref="Enum" /> <see cref="Value" /> without arguments, or an empty string for any other
+    /// <see cref="Value" />.
     /// </returns>
     /// <exception cref="InvalidOperationException">
     /// <see cref="Value" /> is <see langword="null" />, a constant that is not an <see cref="Enum" />, or a
@@ -73,6 +77,13 @@ public sealed class LocalizeEnumExtension : MarkupExtension
     /// </exception>
     public override object ProvideValue(IServiceProvider serviceProvider)
     {
+        // Before the validation: Rider's previewer does not deliver bound values, and an exception takes the
+        // preview down.
+        if (DesignMode.ShouldReturnDesignTimeText(serviceProvider))
+        {
+            return this.GetDesignTimeText();
+        }
+
         this.ValidateValue();
         LocalizedMultiBindingBuilder.ValidateArguments(this.Arguments);
 
@@ -101,6 +112,17 @@ public sealed class LocalizeEnumExtension : MarkupExtension
             eventArgs.Handled = true;
         }
     }
+
+    /// <summary>
+    /// Gets the design-time text: the lookup of a constant <see cref="Enum" /> <see cref="Value" /> without
+    /// arguments, or an empty string for any other <see cref="Value" />, such as a binding, because there is no
+    /// enumeration value to look up.
+    /// </summary>
+    /// <returns>The design-time text.</returns>
+    private string GetDesignTimeText() =>
+        this.Value is Enum value
+            ? Localizer.Current.Get(value, resourceManager: this.ResourceManager, keyPrefix: this.KeyPrefix)
+            : string.Empty;
 
     /// <summary>Checks that <see cref="Value" /> is a plain binding or an <see cref="Enum" /> member.</summary>
     /// <exception cref="InvalidOperationException">

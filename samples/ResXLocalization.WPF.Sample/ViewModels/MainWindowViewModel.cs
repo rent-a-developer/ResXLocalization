@@ -34,6 +34,14 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private readonly ILocalizer localizer;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="MainWindowViewModel" /> class over
+    /// <see cref="Localizer.Current" />. XAML designers need a parameterless constructor to create the
+    /// design-time data context that <c>d:DesignInstance</c> in <see cref="Views.MainWindow" /> declares.
+    /// </summary>
+    public MainWindowViewModel()
+        : this(Localizer.Current) { }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="MainWindowViewModel" /> class.
     /// </summary>
     /// <param name="localizer">
