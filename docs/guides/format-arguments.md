@@ -50,8 +50,9 @@ the same, so a custom formatter reads `Position`.
 
 **Names matter only to a formatter that understands them.** The default `string.Format` formatter
 ignores names and uses positions, so `MessageArguments.FromObject(new { Count = 1.5, Where = "x" })` fills `{0}` and `{1}`
-exactly like `MessageArguments.FromValues(1.5, "x")`. A formatter that knows names (ICU MessageFormat) finds a named
-argument both under its position and under its name.
+exactly like `MessageArguments.FromValues(1.5, "x")`. The ICU MessageFormat formatter of the
+`ResXLocalization.MessageFormat` package finds a named argument both under its position and under its name;
+see [ICU MessageFormat](message-format.md).
 
 ## In XAML
 
@@ -114,8 +115,9 @@ Localizer.Current.Get("FilePosition", MessageArguments.FromTuples((null, index),
 Both become `MessageArgument`s - a position, an optional name and the resolved value - which is what a
 custom formatter receives. The position of an `<l:Argument>` is its index among the children, whether it
 has a name or not; the default formatter ignores names, so `File {0} of {1}` renders `File 3 of 10`
-for `Index` 3 and `Count` 10. A formatter that understands names (ICU MessageFormat) finds a named
-argument under its name too.
+for `Index` 3 and `Count` 10. The ICU MessageFormat formatter of the `ResXLocalization.MessageFormat`
+package finds a named argument under its name too, so `File {0} of {Total}` works there; see
+[ICU MessageFormat](message-format.md).
 
 ## Worth knowing
 
@@ -181,5 +183,7 @@ argument under its name too.
   ```
 - **Keep it simple.** For a very complex string, compose the text in the view model with
   `Get(key, MessageArguments.FromValues(…))` rather than writing many `<l:Argument>` elements.
-- **Composite formatting does not pluralize.** `1 people invited` is on the resource author; use
-  separate singular and plural resources where it matters.
+- **Composite formatting does not pluralize.** Under the default formatter, `1 people invited` is on the
+  resource author; use separate singular and plural resources where it matters, or install the ICU
+  MessageFormat formatter of the `ResXLocalization.MessageFormat` package, whose `plural` chooses the form
+  by the count: see [ICU MessageFormat](message-format.md).

@@ -13,7 +13,7 @@
     PublicAPI.Unshipped.txt. It creates the two files first where they are missing: dotnet format applies
     the fix but will not create the files, and without them the analyzer reports nothing at all.
 
-    Only the three runtime projects are covered. ResXLocalization.SourceGenerators ships inside the UI
+    Only the four runtime projects are covered. ResXLocalization.SourceGenerators ships inside the UI
     packages as an analyzer, has no package identity of its own and no tracked public API; its equivalent
     is analyzer release tracking in AnalyzerReleases.*.md, which is a separate file and a separate step.
 
@@ -27,7 +27,7 @@
     maintainer step - see -MarkShipped - and is never part of an ordinary contribution.
 
 .PARAMETER Project
-    One or more project files to update. Defaults to the three runtime projects under src/.
+    One or more project files to update. Defaults to the four runtime projects under src/.
 
 .PARAMETER MarkShipped
     The MAINTAINER's release step, not the edit step: fold PublicAPI.Unshipped.txt into
@@ -60,7 +60,7 @@ $repositoryRoot = (Resolve-Path -LiteralPath (Split-Path -Parent $PSScriptRoot))
 
 # The runtime projects, named rather than globbed: a glob over src/ would also pick up the source
 # generator, which has no public API to track.
-$runtimeProjectNames = @('ResXLocalization.Core', 'ResXLocalization.Avalonia', 'ResXLocalization.WPF')
+$runtimeProjectNames = @('ResXLocalization.Core', 'ResXLocalization.Avalonia', 'ResXLocalization.WPF', 'ResXLocalization.MessageFormat')
 
 if (-not $Project -or $Project.Count -eq 0)
 {

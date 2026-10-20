@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- The package multi-targets net8.0;net10.0, so its contract is verified on both. -->
+    <TargetFrameworks>$(LibraryTargetFrameworks)</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ResXLocalization.MessageFormat\ResXLocalization.MessageFormat.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Shared test helper, compiled into this suite from the Core suite rather than copied. -->
+    <Compile Include="..\ResXLocalization.Core.Tests\LocalizerMonitorExtensions.cs" Link="LocalizerMonitorExtensions.cs" />
+  </ItemGroup>
+
+</Project>

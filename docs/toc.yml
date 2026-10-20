@@ -10,6 +10,8 @@
       href: guides/enums.md
     - name: Dynamic format arguments
       href: guides/format-arguments.md
+    - name: ICU MessageFormat
+      href: guides/message-format.md
     - name: Native AOT and trimming
       href: guides/native-aot.md
     - name: Migrating to 2.0

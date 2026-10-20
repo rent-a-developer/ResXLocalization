@@ -50,6 +50,10 @@ this project adheres to [Semantic Versioning](https://semver.org/).
   formatter that understands named arguments.
 - `{l:LocalizeEnum}` re-resolves on every change of `ILocalizer.RefreshTriggeringRevision`, and so does
   `LocalizeEnumConverter` with its new refresh-trigger child.
+- The opt-in package `ResXLocalization.MessageFormat`: ICU MessageFormat (`plural`, `select`) through
+  `Localizer.Current.UseMessageFormat()`, which parses every resolved value as an ICU message, with or
+  without arguments, optionally with a configured `MessageFormatter` of the `MessageFormat` library. See
+  [ICU MessageFormat](docs/guides/message-format.md).
 
 ### Changed
 

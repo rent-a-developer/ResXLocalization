@@ -81,6 +81,9 @@ explicitly:
 
 Under the default formatter, a text that needs a plural - `1 file` and `3 files` - needs one enum
 member per plural case: the default formatter is `string.Format` and does not choose between forms.
+With the ICU MessageFormat formatter of the `ResXLocalization.MessageFormat` package, one member and a
+`plural` pattern suffice, for example `{0, plural, one {# file} other {# files}}`; see
+[ICU MessageFormat](message-format.md).
 
 ## Where a markup extension is not accepted: `LocalizeEnumConverter`
 
