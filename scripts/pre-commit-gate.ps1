@@ -30,7 +30,8 @@
                           the way a stranger would, which a project-referenced test cannot.
                           Run: pwsh -File scripts/pre-release-gate.ps1 -SkipNativeAot -SkipDocumentation
                                which packs and then runs all of them on the pinned SDK, on both of
-                               AvaloniaConsumer's target frameworks, and again on the .NET 8 SDK.
+                               the target frameworks of AvaloniaConsumer and MessageFormatConsumer,
+                               and again on the .NET 8 SDK.
 
 .PARAMETER Fix
     Apply style, formatting and member ordering to the working tree before the checks, instead of only

@@ -32,6 +32,7 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   DOTNET_NOLOGO: true
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  MESSAGEFORMAT_CONSUMER_PROJECT: tests/package-consumption/MessageFormatConsumer/MessageFormatConsumer.csproj
   NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
   NUGET_CONFIG: NuGet.config
   PACKAGE_OUTPUT: artifacts/packages
@@ -414,6 +415,10 @@ jobs:
         working-directory: ${{ env.CONSUMER_DIRECTORY }}
         run: dotnet run --project AvaloniaConsumer/AvaloniaConsumer.csproj --framework net8.0 -p:TargetFrameworks=net8.0 --configuration ${{ env.CONFIGURATION }} -p:ResXLocalizationVersion=${{ needs.package-and-docs.outputs.version }}
 
+      - name: Run MessageFormat package consumer (net8.0 SDK)
+        working-directory: ${{ env.CONSUMER_DIRECTORY }}
+        run: dotnet run --project MessageFormatConsumer/MessageFormatConsumer.csproj --framework net8.0 -p:TargetFrameworks=net8.0 --configuration ${{ env.CONFIGURATION }} -p:ResXLocalizationVersion=${{ needs.package-and-docs.outputs.version }}
+
       - name: Run WPF package consumer (net8.0 SDK)
         if: runner.os == 'Windows'
         working-directory: ${{ env.CONSUMER_DIRECTORY }}
@@ -438,10 +443,10 @@ jobs:
         shell: bash
         run: rm -f "${CONSUMER_DIRECTORY}/global.json"
 
-  # The packed-package Native AOT gate. It publishes the Avalonia consumer with PublishAot, requires zero
-  # IL2xxx/IL3xxx diagnostics, and RUNS the native binary - a file that exists proves nothing, because
-  # everything trimming can break (a satellite that is no longer loaded, a resource name that no longer
-  # resolves) produces a binary that starts and answers wrongly.
+  # The packed-package Native AOT gate. It publishes AvaloniaConsumer and MessageFormatConsumer with
+  # PublishAot, requires zero IL2xxx/IL3xxx diagnostics, and RUNS each native binary - a file that exists
+  # proves nothing, because everything trimming can break (a satellite that is no longer loaded, a
+  # resource name that no longer resolves) produces a binary that starts and answers wrongly.
   #
   # Three runs. The trimming behaviour under test belongs to the ILC compiler and does not vary by host,
   # so net8.0 - the LTS floor the packages promise - is exercised on Linux, and net10.0 on both.
@@ -529,7 +534,8 @@ jobs:
           path: ${{ env.PACKAGE_OUTPUT }}
 
       # The script is the gate, not this job: it validates the artifact set from each nuspec, isolates the
-      # consumer package cache, publishes, requires zero IL diagnostics, and runs the binary.
+      # consumer package cache, then publishes both consumers, requires zero IL diagnostics, and runs each
+      # binary.
       - name: Native AOT gate
         run: pwsh -NoProfile -NonInteractive -File scripts/verify-package-aot.ps1 -Framework ${{ matrix.framework }} -Runtime ${{ matrix.runtime }} -PackageVersion ${{ needs.package-and-docs.outputs.version }} -Configuration ${{ env.CONFIGURATION }}
 
@@ -618,7 +624,7 @@ jobs:
         run: |
           tag_version="${GITHUB_REF_NAME#v}"
           status=0
-          for id in ResXLocalization.Core ResXLocalization.Avalonia ResXLocalization.WPF; do
+          for id in ResXLocalization.Core ResXLocalization.Avalonia ResXLocalization.MessageFormat ResXLocalization.WPF; do
             if [[ ! -f "${PACKAGE_OUTPUT}/${id}.${tag_version}.nupkg" ]]; then
               echo "::error title=Tag/version mismatch::Tag ${GITHUB_REF_NAME} expects ${id}.${tag_version}.nupkg, but the build produced:"
               ls -1 "${PACKAGE_OUTPUT}"

@@ -1,0 +1,27 @@
+﻿<UserControl x:Class="MessageFormatConsumer.LocalizedView"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:consumer="using:MessageFormatConsumer"
+             xmlns:l="using:RentADeveloper.ResXLocalization.Avalonia"
+             xmlns:resources="using:MessageFormatConsumer.Resources"
+             x:CompileBindings="True"
+             x:DataType="consumer:LocalizedViewModel">
+    <StackPanel>
+        <!--
+            An ICU plural pattern whose named argument is an <l:Argument> with a compiled binding to the
+            view model. Compiled bindings are what keeps the argument path free of IL diagnostics.
+        -->
+        <TextBlock x:Name="PeopleInvitedText">
+            <TextBlock.Text>
+                <l:Localize Key="{x:Static resources:StringsKeys.PeopleInvited}">
+                    <l:Argument Name="Count"
+                                Value="{Binding Count}" />
+                </l:Localize>
+            </TextBlock.Text>
+        </TextBlock>
+
+        <!--  A value without arguments, which the ICU formatter parses as well: its escaped apostrophe is interpreted.  -->
+        <TextBlock x:Name="ReadyText"
+                   Text="{l:Localize {x:Static resources:StringsKeys.Ready}}" />
+    </StackPanel>
+</UserControl>
