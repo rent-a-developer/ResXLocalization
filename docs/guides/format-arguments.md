@@ -147,7 +147,7 @@ package finds a named argument under its name too, so `File {0} of {Total}` work
 - **Per-argument format specifiers belong in the resource string** — `{0:N0} people invited` — where
   a translator can adjust them per language.
 - **No arguments, no formatting.** Under the default formatter, a lookup without arguments returns the
-  resource value unchanged - in code `Localizer.Current.Get(key, MessageArguments.FromValues())` or
+  resource value unchanged - in code `Localizer.Current.Get(key, MessageArguments.Empty)` or
   `Get(key, null)`, like `Get(key)`, and in XAML a `{l:Localize}` without `<l:Argument>` children.
    A resource value containing a literal `{` or `}` keeps working without `{{` escaping. The failure
    text of a missing key is never formatted.

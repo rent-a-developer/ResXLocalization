@@ -19,7 +19,7 @@ This project has a [Code of Conduct](CODE_OF_CONDUCT.md); by participating, you 
 | You need | For |
 | --- | --- |
 | **.NET 10 SDK** | Everything. It is pinned in `global.json` |
-| **.NET 8 SDK** | Running the Core tests on `net8.0`, and reproducing the minimum-SDK consumer checks |
+| **.NET 8 SDK** | Running the Core and MessageFormat tests on `net8.0`, and reproducing the minimum-SDK consumer checks |
 | **PowerShell 7** (`pwsh`) | Every script in `scripts/`. They declare `#requires -Version 7.0` and stop on the first line under an older host |
 | **Windows** | The WPF projects, the WPF tests, and the full package and documentation build |
 | **A C++ toolchain** | The Native AOT gate only. MSVC and the Windows SDK on Windows; `clang` and `zlib1g-dev` on Linux |
@@ -45,14 +45,14 @@ dotnet build ResXLocalization.NonWindows.slnf -c Release
 ```
 
 ```shell
-# Test. One command; dotnet test discovers the suites and every target framework, so the Core suite
-# runs on net8.0 and net10.0 from here.
+# Test. One command; dotnet test discovers the suites and every target framework, so the Core and
+# MessageFormat suites run on net8.0 and net10.0 from here.
 dotnet test ResXLocalization.slnx -c Release              # Windows
 dotnet test ResXLocalization.NonWindows.slnf -c Release   # Linux/macOS, without the WPF suite
 ```
 
-There are four suites: the Core engine (on both target frameworks), the source generator, and one
-sample-driven suite per UI framework. The Avalonia suite runs headless; the WPF suite drives a real
+There are five suites: the Core engine and the ICU MessageFormat formatter (each on both target
+frameworks), the source generator, and one sample-driven suite per UI framework. The Avalonia suite runs headless; the WPF suite drives a real
 dispatcher on its own thread and is Windows-only.
 
 ### One optional per-clone setting
@@ -88,7 +88,7 @@ The script names them, with their trigger and their command, in its own summary 
 | Run it when the change touches | Command |
 | --- | --- |
 | Resource lookup, culture fallback, satellite discovery, the generated keys, or the packaging that carries them | `pwsh -File scripts/verify-package-aot.ps1 -Pack` |
-| What the packages contain, the `buildTransitive` wiring, the generated keys, or a dependency version | `pwsh -File scripts/pre-release-gate.ps1 -SkipNativeAot -SkipDocumentation`, which packs and then runs every consumer on the pinned SDK, on both of AvaloniaConsumer's target frameworks, and again on the .NET 8 SDK, on net8.0 |
+| What the packages contain, the `buildTransitive` wiring, the generated keys, or a dependency version | `pwsh -File scripts/pre-release-gate.ps1 -SkipNativeAot -SkipDocumentation`, which packs and then runs every consumer on the pinned SDK, on both target frameworks of AvaloniaConsumer and MessageFormatConsumer, and again on the .NET 8 SDK, on net8.0 |
 
 **`pre-release-gate.ps1`** is everything CI checks that can honestly be checked on your machine, in CI's
 order, stopping at the first failure: the ignored-revision check, line endings, tidiness, a Release build,
@@ -168,20 +168,20 @@ Anything that is not framework-specific belongs in `ResXLocalization.Core`, wher
 
 ## Native AOT
 
-`ResXLocalization.Avalonia` and `ResXLocalization.Core` publish with `PublishAot=true` and produce no IL2xxx
-or IL3xxx diagnostic, from anywhere. Keep it that way: no reflection over resources, no new suppressed IL
+`ResXLocalization.Avalonia`, `ResXLocalization.Core` and `ResXLocalization.MessageFormat` publish with
+`PublishAot=true` and produce no IL2xxx or IL3xxx diagnostic, from anywhere. Keep it that way: no reflection over resources, no new suppressed IL
 diagnostic, and no `[RequiresUnreferencedCode]` or `[RequiresDynamicCode]` on a public member.
 
 **Nothing is trimmed on the just-in-time compiler, so no test suite here can see trimming damage.** A
 satellite that is no longer loaded or a resource name that no longer resolves produces a binary that builds,
-starts and answers wrongly. `scripts/verify-package-aot.ps1` publishes a package-only consumer natively and
-**runs** it, asserting exact strings; that is the only check that can see it.
+starts and answers wrongly. `scripts/verify-package-aot.ps1` publishes the package-only consumers
+`AvaloniaConsumer` and `MessageFormatConsumer` natively and **runs** them, asserting exact strings; that is the only check that can see it.
 
 The WPF package is exempt — WPF does not support Native AOT.
 
 ## Public API
 
-The three runtime projects track their public surface with
+The four runtime projects track their public surface with
 [PublicApiAnalyzers](https://github.com/dotnet/roslyn/tree/main/src/RoslynAnalyzers/PublicApiAnalyzers). An
 undeclared public member is `RS0016` and a declared one that is gone is `RS0017` — both build errors here.
 
