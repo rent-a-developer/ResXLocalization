@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
-    Publishes the Avalonia package consumer with Native AOT, gates its IL diagnostics, and runs the native
-    binary.
+    Publishes the two Native AOT package consumers - AvaloniaConsumer and MessageFormatConsumer - with
+    Native AOT, gates their IL diagnostics, and runs each native binary.
 
 .DESCRIPTION
     This is the only check in the repository that can catch silent trimming damage. The library finds
@@ -10,16 +10,20 @@
     trimmed on the JIT, which is why the whole test suite passes while a trimmed application finds no
     translation at all.
 
-    The consumer reaches the library through PackageReference, never through a project reference. That
+    AvaloniaConsumer covers ResXLocalization.Core and ResXLocalization.Avalonia. MessageFormatConsumer
+    covers ResXLocalization.MessageFormat and its MessageFormat dependency next to them: ICU plural rules,
+    named arguments from a compiled binding, and the format culture.
+
+    Each consumer reaches the library through PackageReference, never through a project reference. That
     matters: the packed source generator, the buildTransitive resx wiring that feeds it, the satellite
     assemblies and the trimming metadata all have to survive packing, and a project-referenced test would
     pass even if packing dropped every one of them.
 
-    Five things have to hold, and all five are gated here:
+    Five things have to hold, and all five are gated here, for each consumer in turn:
 
     1. The expected packages exist locally, at the expected version, by the id and version in their own
        nuspec - not by their file name.
-    2. They restore into a consumer that has nothing but a PackageReference, from the local feed and never
+    2. They restore into a consumer that has nothing but PackageReferences, from the local feed and never
        from nuget.org.
     3. The Native AOT publish succeeds and produces the native binary and the German satellite assembly.
     4. NO IL2xxx/IL3xxx diagnostic is reported, from anywhere - not from the library, not from a package in
@@ -45,8 +49,8 @@
 
 .PARAMETER Pack
     Pack first, into artifacts/packages. On Windows that is every shipping project; elsewhere the WPF
-    project cannot build, so Core and Avalonia are packed on their own - which is all this gate consumes.
-    Full release packaging stays on Windows.
+    project cannot build, so Core, Avalonia and MessageFormat are packed on their own - which is all the
+    two consumers of this gate consume. Full release packaging stays on Windows.
 
     CI does not use this: it downloads the exact packages the publish job produced.
 
@@ -95,15 +99,16 @@ if ($Runtime -notin $supportedRuntimes)
 # scripts/<this file> - the repository root is one level up, whatever the current directory is. Every path
 # below is anchored to it.
 $repositoryRoot = (Resolve-Path -LiteralPath (Split-Path -Parent $PSScriptRoot)).Path
-$consumerDirectory = Join-Path $repositoryRoot 'tests/package-consumption/AvaloniaConsumer'
 $packageDirectory = Join-Path $repositoryRoot 'artifacts/packages'
 $packageCache = Join-Path $repositoryRoot 'tests/package-consumption/.packages'
 $consumerNuGetConfig = Join-Path $repositoryRoot 'tests/package-consumption/nuget.config'
-$publishDirectory = Join-Path $repositoryRoot "artifacts/package-aot/$Framework-$Runtime"
 $logDirectory = Join-Path $repositoryRoot 'artifacts/package-aot/logs'
 
-# The Avalonia gate consumes these two. WPF is not among them and never will be.
-$requiredPackageIds = @('ResXLocalization.Core', 'ResXLocalization.Avalonia')
+# The consumers this gate publishes and runs, in this order, under tests/package-consumption.
+$consumerNames = @('AvaloniaConsumer', 'MessageFormatConsumer')
+
+# The two consumers consume these three. WPF is not among them and never will be.
+$requiredPackageIds = @('ResXLocalization.Core', 'ResXLocalization.Avalonia', 'ResXLocalization.MessageFormat')
 
 if (-not $PackageVersion)
 {
@@ -158,9 +163,9 @@ try
         }
         else
         {
-            # ResXLocalization.WPF targets net*-windows and cannot build here. Packing the two this gate
+            # ResXLocalization.WPF targets net*-windows and cannot build here. Packing the three this gate
             # needs is the honest thing to do; a full release pack stays on Windows.
-            Write-Host "Packing ResXLocalization.Core and ResXLocalization.Avalonia ($PackageVersion) - WPF needs Windows..." -ForegroundColor Cyan
+            Write-Host "Packing $($requiredPackageIds -join ', ') ($PackageVersion) - WPF needs Windows..." -ForegroundColor Cyan
 
             foreach ($packageId in $requiredPackageIds)
             {
@@ -326,9 +331,6 @@ try
 
     Write-Host "Every package this gate needs is present at $PackageVersion, by their nuspec metadata." -ForegroundColor Cyan
 
-    Write-Host "Publishing the Avalonia package consumer ($Framework, $Runtime, packages $PackageVersion)..." `
-        -ForegroundColor Cyan
-
     # NUGET_PACKAGES is set explicitly, and to the CONSUMER's isolated cache. The environment variable takes
     # precedence over the globalPackagesFolder setting in tests/package-consumption/nuget.config, so an
     # inherited one - CI sets NUGET_PACKAGES to a workspace-wide cache - would silently defeat the isolation
@@ -336,168 +338,177 @@ try
     # never came out of these packages. It is restored in the finally block at the end of the script.
     $env:NUGET_PACKAGES = $packageCache
 
-    # PublishAot is passed here rather than set in the project file, so that an ordinary `dotnet run` of the
-    # consumer stays a genuine JIT baseline.
-    #
-    # RestoreConfigFile names the CONSUMER's NuGet configuration explicitly rather than relying on NuGet's
-    # upward search finding it. That file is what maps ResXLocalization.* to the local artifact feed and
-    # <clear />s the sources first - so a missing local package fails instead of resolving from nuget.org,
-    # where a published package of the same version exists and would look like a pass.
-    #
-    # TrimmerSingleWarn=false is what makes the gate meaningful: left at its default, ILC collapses every
-    # diagnostic from one assembly into a single IL2104 "assembly produced trim warnings" line, and the
-    # individual IL2xxx codes this script counts never appear.
-    #
-    # Run from the consumer directory, which is where a consumer would run it.
-    Push-Location -LiteralPath $consumerDirectory
-    try
+    foreach ($consumerName in $consumerNames)
     {
-        $publishOutput = & dotnet publish 'AvaloniaConsumer.csproj' `
-            --configuration $Configuration `
-            --framework $Framework `
-            --runtime $Runtime `
-            --self-contained true `
-            -p:RestoreConfigFile=$consumerNuGetConfig `
-            -p:PublishAot=true `
-            -p:TrimmerSingleWarn=false `
-            -p:SuppressTrimAnalysisWarnings=false `
-            -p:ResXLocalizationVersion=$PackageVersion `
-            --output $publishDirectory 2>&1
-    }
-    finally
-    {
-        Pop-Location
-    }
-
-    $publishExitCode = $LASTEXITCODE
-
-    $publishOutput | ForEach-Object { Write-Host $_ }
-
-    # The log is kept whatever happens, because a failure here is the one worth reading twice and the
-    # console scrolls.
-    New-Item -ItemType Directory -Force -Path $logDirectory | Out-Null
-    $publishLog = Join-Path $logDirectory "publish-$Framework-$Runtime.log"
-    $publishOutput | Out-File -LiteralPath $publishLog -Encoding utf8
-
-    if ($publishExitCode -ne 0)
-    {
-        Write-Host ''
-        Write-Host "FAILED. The Native AOT publish exited with code $publishExitCode. Log: $publishLog" -ForegroundColor Red
-
-        exit 1
-    }
-
-    # --- The warning gate -----------------------------------------------------------------------------
-
-    $diagnostics = $publishOutput |
-        Select-String -Pattern 'IL[23]\d{3}' |
-        ForEach-Object {
-            # Every diagnostic line ends with the MSBuild project suffix "[...csproj::TargetFramework=...]",
-            # which names this project no matter which assembly the diagnostic came from. Strip it before
-            # deciding where the diagnostic originated, or everything would look like it came from the
-            # consumer.
-            $origin = $_.Line.Trim() -replace '\s*\[[^\[\]]*\]\s*$', ''
-
-            [PSCustomObject] @{
-                Origin = $origin
-                Code = [Regex]::Match($_.Line, 'IL[23]\d{3}').Value
-                Text = $_.Line.Trim()
-            }
-        }
-
-    # The gate is ZERO diagnostics, from anywhere. The packages advertise Native AOT support without
-    # [RequiresUnreferencedCode] or [RequiresDynamicCode] on any public member, so a consumer publishing
-    # this way sees nothing - and a warning appearing anywhere is a regression against that promise.
-    #
-    # The split below only shapes the failure message, because "the library started warning" and "our own
-    # call site started warning" have different causes. The same site is reported twice, once by the Roslyn
-    # analyzer and once by ILC, so the list is de-duplicated.
-    $fromConsumer = @($diagnostics | Where-Object { $_.Origin.StartsWith($consumerDirectory, [StringComparison]::OrdinalIgnoreCase) })
-    $fromElsewhere = @($diagnostics | Where-Object { -not $_.Origin.StartsWith($consumerDirectory, [StringComparison]::OrdinalIgnoreCase) })
-
-    Write-Host ''
-
-    if ($diagnostics.Count -eq 0)
-    {
-        Write-Host 'IL diagnostics: none, from anywhere. A consumer publishing this way sees no warnings.' -ForegroundColor Cyan
-    }
-    else
-    {
-        Write-Host 'FAILED. The publish reported IL diagnostics, and the gate is zero:' -ForegroundColor Red
-
-        if ($fromElsewhere.Count -gt 0)
-        {
-            Write-Host ''
-            Write-Host "  From the library or a package ($($fromElsewhere.Count) before de-duplication):" -ForegroundColor Red
-            $fromElsewhere | Sort-Object Text -Unique | ForEach-Object { Write-Host "    $($_.Text)" -ForegroundColor Red }
-        }
-
-        if ($fromConsumer.Count -gt 0)
-        {
-            Write-Host ''
-            Write-Host "  At the consumer's own call sites ($($fromConsumer.Count) before de-duplication):" -ForegroundColor Red
-            $fromConsumer | Sort-Object Origin -Unique | Group-Object Code | Sort-Object Name | ForEach-Object {
-                Write-Host ("    {0,-8} {1} call site(s)" -f $_.Name, $_.Count) -ForegroundColor Red
-            }
-            Write-Host ''
-            Write-Host '  A diagnostic here means a public API started carrying [RequiresUnreferencedCode] or' -ForegroundColor Red
-            Write-Host '  [RequiresDynamicCode], which the packages promise their consumers they do not.' -ForegroundColor Red
-        }
+        $consumerDirectory = Join-Path $repositoryRoot "tests/package-consumption/$consumerName"
+        $publishDirectory = Join-Path $repositoryRoot "artifacts/package-aot/$consumerName-$Framework-$Runtime"
 
         Write-Host ''
-        Write-Host "Log: $publishLog" -ForegroundColor Red
-        Write-Host 'Do not silence these at the call site or with NoWarn. An IL2xxx warning is the only' -ForegroundColor Red
-        Write-Host 'build-time evidence that a reflection path survives trimming - restructure the code, or' -ForegroundColor Red
-        Write-Host 'answer the diagnostic where it occurs with a justified, tested suppression.' -ForegroundColor Red
+        Write-Host "Publishing $consumerName ($Framework, $Runtime, packages $PackageVersion)..." -ForegroundColor Cyan
 
-        exit 1
-    }
+        # PublishAot is passed here rather than set in the project file, so that an ordinary `dotnet run` of
+        # the consumer stays a genuine JIT baseline.
+        #
+        # RestoreConfigFile names the CONSUMER's NuGet configuration explicitly rather than relying on NuGet's
+        # upward search finding it. That file is what maps ResXLocalization.* to the local artifact feed and
+        # <clear />s the sources first - so a missing local package fails instead of resolving from nuget.org,
+        # where a published package of the same version exists and would look like a pass.
+        #
+        # TrimmerSingleWarn=false is what makes the gate meaningful: left at its default, ILC collapses every
+        # diagnostic from one assembly into a single IL2104 "assembly produced trim warnings" line, and the
+        # individual IL2xxx codes this script counts never appear.
+        #
+        # Run from the consumer directory, which is where a consumer would run it.
+        Push-Location -LiteralPath $consumerDirectory
+        try
+        {
+            $publishOutput = & dotnet publish "$consumerName.csproj" `
+                --configuration $Configuration `
+                --framework $Framework `
+                --runtime $Runtime `
+                --self-contained true `
+                -p:RestoreConfigFile=$consumerNuGetConfig `
+                -p:PublishAot=true `
+                -p:TrimmerSingleWarn=false `
+                -p:SuppressTrimAnalysisWarnings=false `
+                -p:ResXLocalizationVersion=$PackageVersion `
+                --output $publishDirectory 2>&1
+        }
+        finally
+        {
+            Pop-Location
+        }
 
-    # --- The published output -------------------------------------------------------------------------
+        $publishExitCode = $LASTEXITCODE
 
-    $executableName = $IsWindows ? 'AvaloniaConsumer.exe' : 'AvaloniaConsumer'
-    $executable = Join-Path $publishDirectory $executableName
-    $germanSatellite = Join-Path $publishDirectory 'de/AvaloniaConsumer.resources.dll'
+        $publishOutput | ForEach-Object { Write-Host $_ }
 
-    foreach ($expected in @($executable, $germanSatellite))
-    {
-        if (-not (Test-Path -LiteralPath $expected))
+        # The log is kept whatever happens, because a failure here is the one worth reading twice and the
+        # console scrolls.
+        New-Item -ItemType Directory -Force -Path $logDirectory | Out-Null
+        $publishLog = Join-Path $logDirectory "publish-$consumerName-$Framework-$Runtime.log"
+        $publishOutput | Out-File -LiteralPath $publishLog -Encoding utf8
+
+        if ($publishExitCode -ne 0)
         {
             Write-Host ''
-            Write-Host "FAILED. The publish did not produce $expected." -ForegroundColor Red
+            Write-Host "FAILED. The Native AOT publish exited with code $publishExitCode. Log: $publishLog" -ForegroundColor Red
+
+            exit 1
+        }
+
+        # --- The warning gate -------------------------------------------------------------------------
+
+        $diagnostics = $publishOutput |
+            Select-String -Pattern 'IL[23]\d{3}' |
+            ForEach-Object {
+                # Every diagnostic line ends with the MSBuild project suffix
+                # "[...csproj::TargetFramework=...]", which names this project no matter which assembly the
+                # diagnostic came from. Strip it before deciding where the diagnostic originated, or
+                # everything would look like it came from the consumer.
+                $origin = $_.Line.Trim() -replace '\s*\[[^\[\]]*\]\s*$', ''
+
+                [PSCustomObject] @{
+                    Origin = $origin
+                    Code = [Regex]::Match($_.Line, 'IL[23]\d{3}').Value
+                    Text = $_.Line.Trim()
+                }
+            }
+
+        # The gate is ZERO diagnostics, from anywhere. The packages advertise Native AOT support without
+        # [RequiresUnreferencedCode] or [RequiresDynamicCode] on any public member, so a consumer publishing
+        # this way sees nothing - and a warning appearing anywhere is a regression against that promise.
+        #
+        # The split below only shapes the failure message, because "the library started warning" and "our
+        # own call site started warning" have different causes. The same site is reported twice, once by the
+        # Roslyn analyzer and once by ILC, so the list is de-duplicated.
+        $fromConsumer = @($diagnostics | Where-Object { $_.Origin.StartsWith($consumerDirectory, [StringComparison]::OrdinalIgnoreCase) })
+        $fromElsewhere = @($diagnostics | Where-Object { -not $_.Origin.StartsWith($consumerDirectory, [StringComparison]::OrdinalIgnoreCase) })
+
+        Write-Host ''
+
+        if ($diagnostics.Count -eq 0)
+        {
+            Write-Host 'IL diagnostics: none, from anywhere. A consumer publishing this way sees no warnings.' -ForegroundColor Cyan
+        }
+        else
+        {
+            Write-Host 'FAILED. The publish reported IL diagnostics, and the gate is zero:' -ForegroundColor Red
+
+            if ($fromElsewhere.Count -gt 0)
+            {
+                Write-Host ''
+                Write-Host "  From the library or a package ($($fromElsewhere.Count) before de-duplication):" -ForegroundColor Red
+                $fromElsewhere | Sort-Object Text -Unique | ForEach-Object { Write-Host "    $($_.Text)" -ForegroundColor Red }
+            }
+
+            if ($fromConsumer.Count -gt 0)
+            {
+                Write-Host ''
+                Write-Host "  At the consumer's own call sites ($($fromConsumer.Count) before de-duplication):" -ForegroundColor Red
+                $fromConsumer | Sort-Object Origin -Unique | Group-Object Code | Sort-Object Name | ForEach-Object {
+                    Write-Host ("    {0,-8} {1} call site(s)" -f $_.Name, $_.Count) -ForegroundColor Red
+                }
+                Write-Host ''
+                Write-Host '  A diagnostic here means a public API started carrying [RequiresUnreferencedCode] or' -ForegroundColor Red
+                Write-Host '  [RequiresDynamicCode], which the packages promise their consumers they do not.' -ForegroundColor Red
+            }
+
+            Write-Host ''
             Write-Host "Log: $publishLog" -ForegroundColor Red
+            Write-Host 'Do not silence these at the call site or with NoWarn. An IL2xxx warning is the only' -ForegroundColor Red
+            Write-Host 'build-time evidence that a reflection path survives trimming - restructure the code, or' -ForegroundColor Red
+            Write-Host 'answer the diagnostic where it occurs with a justified, tested suppression.' -ForegroundColor Red
+
+            exit 1
+        }
+
+        # --- The published output ---------------------------------------------------------------------
+
+        $executableName = $IsWindows ? "$consumerName.exe" : $consumerName
+        $executable = Join-Path $publishDirectory $executableName
+        $germanSatellite = Join-Path $publishDirectory "de/$consumerName.resources.dll"
+
+        foreach ($expected in @($executable, $germanSatellite))
+        {
+            if (-not (Test-Path -LiteralPath $expected))
+            {
+                Write-Host ''
+                Write-Host "FAILED. The publish did not produce $expected." -ForegroundColor Red
+                Write-Host "Log: $publishLog" -ForegroundColor Red
+
+                exit 1
+            }
+        }
+
+        # --- Running the native binary ----------------------------------------------------------------
+        # The file existing is not the check. Everything that can go wrong under trimming - a resource that is
+        # no longer found, a satellite that is no longer loaded, a typed key whose ResourceManager was trimmed
+        # away - produces a binary that exists, starts, and answers wrongly.
+
+        Write-Host ''
+        Write-Host "Running the native $consumerName binary..." -ForegroundColor Cyan
+        Write-Host ''
+
+        $runOutput = & $executable 2>&1
+        $runExitCode = $LASTEXITCODE
+
+        $runOutput | ForEach-Object { Write-Host $_ }
+
+        $runLog = Join-Path $logDirectory "run-$consumerName-$Framework-$Runtime.log"
+        $runOutput | Out-File -LiteralPath $runLog -Encoding utf8
+
+        Write-Host ''
+
+        if ($runExitCode -ne 0)
+        {
+            Write-Host "FAILED. The native binary exited with code $runExitCode. Log: $runLog" -ForegroundColor Red
 
             exit 1
         }
     }
 
-    # --- Running the native binary --------------------------------------------------------------------
-    # The file existing is not the check. Everything that can go wrong under trimming - a resource that is
-    # no longer found, a satellite that is no longer loaded, a typed key whose ResourceManager was trimmed
-    # away - produces a binary that exists, starts, and answers wrongly.
-
-    Write-Host ''
-    Write-Host 'Running the native binary...' -ForegroundColor Cyan
-    Write-Host ''
-
-    $runOutput = & $executable 2>&1
-    $runExitCode = $LASTEXITCODE
-
-    $runOutput | ForEach-Object { Write-Host $_ }
-
-    $runLog = Join-Path $logDirectory "run-$Framework-$Runtime.log"
-    $runOutput | Out-File -LiteralPath $runLog -Encoding utf8
-
-    Write-Host ''
-
-    if ($runExitCode -ne 0)
-    {
-        Write-Host "FAILED. The native binary exited with code $runExitCode. Log: $runLog" -ForegroundColor Red
-
-        exit 1
-    }
-
-    Write-Host "PASSED. $Framework/$Runtime published from the packages with no IL diagnostics at all, and every assertion passed." `
+    Write-Host "PASSED. $($consumerNames -join ' and ') published for $Framework/$Runtime from the packages with no IL diagnostics at all, and every assertion passed." `
         -ForegroundColor Green
 
     exit 0

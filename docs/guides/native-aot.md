@@ -1,8 +1,8 @@
 # Native AOT and trimming
 
-`ResXLocalization.Avalonia` and `ResXLocalization.Core` publish with `PublishAot=true` and produce no
-IL2xxx or IL3xxx diagnostic — not from the library, not from a package in the closure, and not at
-your own call sites. There is no `[RequiresUnreferencedCode]` or `[RequiresDynamicCode]` on any
+`ResXLocalization.Avalonia`, `ResXLocalization.Core` and `ResXLocalization.MessageFormat` publish with
+`PublishAot=true` and produce no IL2xxx or IL3xxx diagnostic — not from the library, not from a package
+in the closure, and not at your own call sites. There is no `[RequiresUnreferencedCode]` or `[RequiresDynamicCode]` on any
 public member, so nothing about a trimmed publish is a warning you have to read and dismiss.
 
 One annotation reaches your code: `MessageArguments.FromObject<T>` reads the public properties of `T`,
@@ -41,6 +41,24 @@ Two more are worth setting for an Avalonia application in general:
 </PropertyGroup>
 ```
 
+Format arguments in XAML are trim safe when their bindings are compiled bindings: in Avalonia,
+`Value="{Binding ...}"` of an `<l:Argument>` is a compiled binding under
+`AvaloniaUseCompiledBindingsByDefault` or `x:CompileBindings="True"`, and a reflection binding
+otherwise. See [Dynamic format arguments](format-arguments.md#worth-knowing).
+
+## ICU MessageFormat
+
+The opt-in package `ResXLocalization.MessageFormat` adds about 160 KB to a Native AOT binary, the
+`MessageFormat` library included. It produces no IL diagnostic on `net8.0` or `net10.0`, because it
+calls only the `IReadOnlyDictionary` overload of the library's `FormatMessage`; the library's overloads
+that take an `object` read the properties of that object by reflection and are not called. See
+[ICU MessageFormat](message-format.md).
+
+`InvariantGlobalization=true` is often recommended for a small Native AOT binary, but it leaves a
+localized application with the invariant culture only — with `PredefinedCulturesOnly=false` as well,
+with named cultures whose numbers and dates format invariantly. See
+[Globalization-invariant mode](message-format.md#globalization-invariant-mode).
+
 ## Publishing
 
 ```shell
@@ -58,14 +76,15 @@ longer loaded, a typed key whose resource manager was trimmed away — each of t
 that builds, starts, and answers wrongly. Nothing is trimmed on the just-in-time compiler, so a test
 suite passes throughout.
 
-This repository's own gate therefore publishes a package-only consumer natively and **runs** it,
-asserting exact strings before and after a culture change, through the typed, scoped and search-all
-lookups, the enum convention, composite formatting, named arguments built by reflection with
-`MessageArguments.FromObject`, and the fallback to the neutral culture. See
-`scripts/verify-package-aot.ps1`. A check that only asserts the executable exists proves that the
+This repository's own gate therefore publishes two package-only consumers natively and **runs** them,
+asserting exact strings before and after a culture change. The first covers the typed, scoped and
+search-all lookups, the enum convention, composite formatting, named arguments built by reflection with
+`MessageArguments.FromObject`, and the fallback to the neutral culture. The second covers the ICU
+formatter: `plural` patterns with a named argument from a compiled binding, in code and in XAML, and
+the invariant culture formatted with English plural rules. See `scripts/verify-package-aot.ps1`. A check that only asserts the executable exists proves that the
 linker ran, and nothing else.
 
-## If a lookup returns the sentinel only after publishing
+## If a lookup returns the failure text only after publishing
 
 In order of likelihood:
 

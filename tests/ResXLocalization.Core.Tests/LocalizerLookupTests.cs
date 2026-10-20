@@ -18,7 +18,7 @@ public class LocalizerLookupTests
     }
 
     [Fact]
-    public void MissingKey_ReturnsTheBangSentinel()
+    public void MissingKey_ReturnsTheFailureText()
     {
         var localizer = this.resources.CreateLocalizer();
 
@@ -97,7 +97,7 @@ public class LocalizerLookupTests
     }
 
     [Fact]
-    public void SearchAll_WithNothingRegistered_ReturnsTheSentinel()
+    public void SearchAll_WithNothingRegistered_ReturnsTheFailureText()
     {
         var localizer = new Localizer { CurrentCulture = TestResources.English };
 

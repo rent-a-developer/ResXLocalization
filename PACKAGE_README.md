@@ -15,7 +15,7 @@ you keep the `.resx` files and editors you already use, and get **compile-checke
 - 🗂️ **First-class multiple `.resx` support** - look up by typed key, scope to one file, or search across all registered files.
 - 🔤 **Enum localization built in** - localize enum members by naming convention.
 - 🧮 **Format arguments** - `Get(key, args…)` formats in the active culture; in XAML, give `{l:Localize}` `<l:Argument>` children with constant or bound values.
-- 🩺 **Missing-translation diagnostics** - a visible, configurable `!key!` sentinel plus a `TranslationNotFound` event.
+- 🩺 **Missing-translation diagnostics** - a visible, configurable `!key!` failure text plus a `TranslationNotFound` event.
 - 🌐 **Language-picker ready** - `GetAvailableCultures()` discovers the cultures your app actually ships.
 - 🚀 **Native AOT & trim clean** (Avalonia package) - no reflection over your resources.
 

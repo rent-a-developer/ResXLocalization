@@ -22,7 +22,7 @@ Two things separate it from plain `.resx`:
 
 Around those: three lookup modes (typed, scoped, and search-all across registered resource managers) over
 .NET's own culture fallback chain, enum localization by naming convention, format arguments in code and in
-XAML, a `!key!` sentinel plus a `TranslationNotFound` event for missing translations, and Native AOT and
+XAML, a `!key!` failure text plus a `TranslationNotFound` event for missing translations, and Native AOT and
 trimming support on the Avalonia side (WPF supports neither).
 
 [`README.md`](README.md) is the user-facing version of the same story, with the quick start and the examples.

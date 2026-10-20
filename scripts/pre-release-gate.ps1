@@ -585,12 +585,14 @@ Invoke-Step 'Package consumers' {
         return
     }
 
-    # AvaloniaConsumer targets net8.0 and net10.0, and `dotnet run` runs a project with several target
-    # frameworks only when one is named, so the consumer runs once per framework with `--framework`. That
-    # way both of the packages' target frameworks are exercised.
+    # AvaloniaConsumer and MessageFormatConsumer target net8.0 and net10.0, and `dotnet run` runs a project
+    # with several target frameworks only when one is named, so each consumer runs once per framework with
+    # `--framework`. That way both of the packages' target frameworks are exercised.
     $consumers = @(
         @{ Name = 'AvaloniaConsumer'; Arguments = @('--framework', 'net8.0') }
         @{ Name = 'AvaloniaConsumer'; Arguments = @('--framework', 'net10.0') }
+        @{ Name = 'MessageFormatConsumer'; Arguments = @('--framework', 'net8.0') }
+        @{ Name = 'MessageFormatConsumer'; Arguments = @('--framework', 'net10.0') }
     )
 
     if ($onWindows)
@@ -659,7 +661,10 @@ Invoke-Step 'Package consumers (.NET 8 SDK)' {
 
         # -p:TargetFrameworks as well as --framework: restore evaluates every entry in TargetFrameworks, and
         # an 8.0 SDK cannot evaluate net10.0 (NETSDK1045).
-        $consumers = @(@{ Name = 'AvaloniaConsumer'; Arguments = @('--framework', 'net8.0', '-p:TargetFrameworks=net8.0') })
+        $consumers = @(
+            @{ Name = 'AvaloniaConsumer'; Arguments = @('--framework', 'net8.0', '-p:TargetFrameworks=net8.0') }
+            @{ Name = 'MessageFormatConsumer'; Arguments = @('--framework', 'net8.0', '-p:TargetFrameworks=net8.0') }
+        )
 
         if ($onWindows)
         {

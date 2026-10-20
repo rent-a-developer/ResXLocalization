@@ -50,7 +50,7 @@ Localizer.Current.CurrentCulture = new CultureInfo("de");
 - 🗂️ **First-class multiple `.resx`** - look up by **typed key**, **scope** to one file, or **search across all** registered files in a defined order.
 - 🔤 **Enum localization built in** - localize enum members by naming convention, in item templates and as bound values.
 - 🧮 **Format arguments** - `Get(key, args…)` formats the translation in the active culture; in XAML, give `{l:Localize}` `<l:Argument>` children with constant or bound values.
-- 🩺 **Missing-translation diagnostics** - a visible `!key!` sentinel (configurable) plus a `TranslationNotFound` event for logging and coverage reports.
+- 🩺 **Missing-translation diagnostics** - a visible `!key!` failure text (configurable) plus a `TranslationNotFound` event for logging and coverage reports.
 - 🌐 **Language-picker ready** - `GetAvailableCultures()` discovers the cultures your app actually ships.
 - 🧩 **MVVM-friendly** - an injectable `ILocalizer` service with `INotifyPropertyChanged`, markup extensions for XAML, and a clean code-behind API.
 - 🪶 **Leak-safe** - discarded controls stay collectable (Avalonia uses weak events; WPF binds to the singleton through WPF's own weak binding-target references).
@@ -176,7 +176,7 @@ public partial class App : Application
 Registration is only needed for **search-all** lookups; typed and scoped lookups need no registration.
 
 > [!TIP]
-> In Avalonia, put the registration (and the initial `CurrentCulture`) inside **`BuildAvaloniaApp()`** rather than `Main`. `BuildAvaloniaApp` runs at runtime *and* under the XAML previewer, so search-all lookups like `{l:Localize Greeting}` resolve at design time too instead of showing the `!Greeting!` sentinel.
+> In Avalonia, put the registration (and the initial `CurrentCulture`) inside **`BuildAvaloniaApp()`** rather than `Main`. `BuildAvaloniaApp` runs at runtime *and* under the XAML previewer, so search-all lookups like `{l:Localize Greeting}` resolve at design time too instead of showing the `!Greeting!` failure text.
 
 ### 4. Use it in XAML
 
@@ -232,7 +232,7 @@ Localizer.Current.Get("Greeting");                                  // search-al
 ```
 
 Fallback is .NET's own: a missing `de-DE` entry falls back to `de`, then to the neutral resources. A
-key that cannot be resolved anywhere renders the configurable `!key!` sentinel and raises
+key that cannot be resolved anywhere renders the configurable `!key!` failure text and raises
 `TranslationNotFound`. Because fallback runs first, a key that resolves from a parent or neutral
 value is not reported as missing.
 

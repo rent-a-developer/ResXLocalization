@@ -149,7 +149,7 @@ Check(
 
 // --- Culture fallback, which is what a trimmed satellite would break silently ------------------------
 //
-// Neither key exists in the German files. The neutral value has to come back - not the sentinel, and not
+// Neither key exists in the German files. The neutral value has to come back - not the failure text, and not
 // an empty string.
 
 Check(
