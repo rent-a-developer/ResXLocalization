@@ -19,7 +19,10 @@ namespace RentADeveloper.ResXLocalization;
 /// <see langword="null" /> for a positional-only argument; otherwise the name under which a formatter
 /// that understands names (ICU MessageFormat) also finds the argument. The default
 /// (<see cref="string.Format(IFormatProvider, string, object[])" />) formatter uses positions only and
-/// ignores names.
+/// ignores names. The ICU MessageFormat formatter of the ResXLocalization.MessageFormat package makes every
+/// argument reachable under its position (<c>"0"</c>, <c>"1"</c>, and so on) and, if it has a name, under
+/// that name as well; a name overwrites a position with the same text, so the argument named <c>"0"</c>
+/// replaces the argument at position 0 as <c>{0}</c>.
 /// </param>
 /// <param name="Value">The argument's value; may be <see langword="null" />.</param>
 public readonly record struct MessageArgument(int Position, string? Name, object? Value);

@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <!-- The same frameworks as ResXLocalization supports; MessageFormat ships both without further dependencies. -->
+    <TargetFrameworks>$(LibraryTargetFrameworks)</TargetFrameworks>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Description>The opt-in ICU MessageFormat formatter for ResXLocalization: plural and select messages for every localized text, in code and in XAML. Activated with Localizer.Current.UseMessageFormat().</Description>
+    <PackageTags>localization;resx;i18n;l10n;icu;messageformat;plural;aot</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MessageFormat" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ResXLocalization.Core\ResXLocalization.Core.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -179,6 +179,11 @@ public interface ILocalizer : INotifyPropertyChanged
     /// the one hook for all translated texts (see <see cref="ILocalizer" />).
     /// </para>
     /// <para>
+    /// <c>Localizer.Current.UseMessageFormat()</c> from the ResXLocalization.MessageFormat package installs an
+    /// ICU MessageFormat formatter here (<c>plural</c>, <c>select</c>). That formatter parses every resolved
+    /// value as an ICU message, including the values of lookups without arguments.
+    /// </para>
+    /// <para>
     /// Assigning a different instance advances <see cref="RefreshTriggeringRevision" />; assigning the
     /// current instance again does nothing. Exceptions thrown by
     /// <see cref="INotifyPropertyChanged.PropertyChanged" /> handlers propagate from the assignment.

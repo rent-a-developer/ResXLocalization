@@ -15,6 +15,7 @@ installation and a quick start. These pages are the full documentation.
 | [Registering resource files](guides/registration.md) | What to register for search-all lookups, where - including the WPF designer and class libraries - dependency injection, resources from other assemblies |
 | [Localizing enum values](guides/enums.md) | The naming convention, item templates, the converter, custom prefixes and scoping |
 | [Dynamic format arguments](guides/format-arguments.md) | `Get(key, MessageArguments.FromValues(…))`, the `MessageArguments` factory, and `<l:Argument>` children of `{l:Localize}` with constant or bound values, optionally named |
+| [ICU MessageFormat](guides/message-format.md) | The opt-in `ResXLocalization.MessageFormat` package: `plural` and `select` through `Localizer.Current.UseMessageFormat()`, argument mapping, format culture, styles, and migrating resource values to ICU syntax |
 | [Native AOT and trimming](guides/native-aot.md) | What to declare, how to publish, and why the repository's own gate runs the native binary |
 | [Migrating to 2.0](guides/migration-2.0.md) | Each breaking change of 2.0, with what to do |
 
@@ -33,6 +34,7 @@ The generated reference covers the runtime assemblies:
 | [`RentADeveloper.ResXLocalization`](xref:RentADeveloper.ResXLocalization) | `ResXLocalization.Core` | `ILocalizer`, `Localizer`, `ResourceKey` — the shared engine |
 | [`RentADeveloper.ResXLocalization.Avalonia`](xref:RentADeveloper.ResXLocalization.Avalonia) | `ResXLocalization.Avalonia` | The Avalonia markup extensions and converter |
 | [`RentADeveloper.ResXLocalization.WPF`](xref:RentADeveloper.ResXLocalization.WPF) | `ResXLocalization.WPF` | The WPF markup extensions and converter |
+| [`RentADeveloper.ResXLocalization.MessageFormat`](xref:RentADeveloper.ResXLocalization.MessageFormat) | `ResXLocalization.MessageFormat` | `UseMessageFormat`, which installs the ICU MessageFormat formatter |
 
 ## The packages
 
@@ -41,10 +43,12 @@ The generated reference covers the runtime assemblies:
 | `ResXLocalization.Avalonia` | Avalonia 12 | `net8.0`, `net10.0` | Supported |
 | `ResXLocalization.WPF` | WPF | `net8.0-windows`, `net10.0-windows` | Not supported — a WPF limitation |
 | `ResXLocalization.Core` | none | `net8.0`, `net10.0` | Supported |
+| `ResXLocalization.MessageFormat` | none | `net8.0`, `net10.0` | Supported |
 
 Install the package for your UI framework; it brings the engine, the source generator and the build
 wiring with it. Core arrives as a dependency, and one copy of it satisfies both UI packages in an
-application that uses them together.
+application that uses them together. `ResXLocalization.MessageFormat` is optional: add it next to the UI
+package to format with ICU MessageFormat, see [ICU MessageFormat](guides/message-format.md).
 
 ## Project
 

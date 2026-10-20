@@ -12,6 +12,8 @@
     <PackageVersion Include="Avalonia.Fonts.Inter" Version="12.1.2" />
     <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.1.2" />
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <!-- Shipped by ResXLocalization.MessageFormat, so this version is also that package's floor. -->
+    <PackageVersion Include="MessageFormat" Version="8.0.0" />
 
     <!-- Source generator toolchain. -->
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
