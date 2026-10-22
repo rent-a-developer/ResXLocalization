@@ -6,7 +6,7 @@
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <ResXLocalizationVersion Condition="'$(ResXLocalizationVersion)' == ''">1.0.0</ResXLocalizationVersion>
+    <ResXLocalizationVersion Condition="'$(ResXLocalizationVersion)' == ''">2.0.0</ResXLocalizationVersion>
   </PropertyGroup>
 
   <ItemGroup>
