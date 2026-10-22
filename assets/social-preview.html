@@ -1,0 +1,213 @@
+<!doctype html>
+<!--
+  ResXLocalization - GitHub social preview (source of truth for social-preview.png)
+
+  Canvas: exactly 1280 x 640 px (GitHub's recommended social preview size).
+  Render: run render-social-preview.ps1 next to this file; it screenshots this page with
+          headless Edge/Chrome into social-preview.png.
+
+  Editing guide (for people and AI assistants):
+  - All colours, fonts and sizes are design tokens in :root below. Change a token, not individual elements.
+  - Text is plain HTML. Keep the overall height at 640 px: if you add lines to the code panel,
+    remove lines elsewhere or reduce --gap-section.
+  - Code panels use white-space: pre, so indentation in the markup is the indentation on screen.
+    Syntax colouring uses the classes .p (punctuation), .k (keyword / attribute name), .n (name / element).
+  - Icons are inline Lucide-style stroke SVGs (24x24 viewBox, stroke = currentColor). Never use emoji.
+  - Fonts load from Google Fonts (Geist, Geist Mono); rendering needs network access.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ResXLocalization social preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    /* Colours */
+    --bg: #0A0C10;            /* page ground */
+    --surface: #10131A;       /* code panel */
+    --line: #1F2430;          /* hairlines on the ground */
+    --line-panel: #222837;    /* hairlines inside the panel */
+    --text: #E8EAEE;          /* primary text */
+    --text-strong: #F2F4F7;   /* rendered output */
+    --muted: #8B93A3;         /* secondary text, labels (4.5:1+ on --bg) */
+    --punct: #6B7385;         /* code punctuation */
+    --accent: #5AA9FF;        /* logo azure: logo, .resx, icons, names */
+    --keyword: #E2B86B;       /* code keywords and attribute names */
+
+    /* Type */
+    --font-sans: 'Geist', system-ui, sans-serif;
+    --font-mono: 'Geist Mono', ui-monospace, monospace;
+
+    /* Layout */
+    --pad-top: 56px;
+    --pad-x: 64px;
+    --pad-bottom: 40px;
+    --gap-section: 28px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); }
+
+  .canvas {
+    width: 1280px; height: 640px; overflow: hidden;
+    padding: var(--pad-top) var(--pad-x) var(--pad-bottom);
+    background: var(--bg); color: var(--text); font-family: var(--font-sans);
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .mono { font-family: var(--font-mono); }
+
+  /* Top bar */
+  .topbar { display: flex; align-items: center; justify-content: space-between; }
+  .brand { display: flex; align-items: center; gap: 16px; }
+  .brand svg { color: var(--accent); flex: none; }
+  .brand-name { font-size: 30px; font-weight: 600; letter-spacing: -0.03em; }
+  .platform { font-family: var(--font-mono); font-size: 15px; color: var(--muted); }
+
+  /* Headline */
+  .hero { display: flex; flex-direction: column; gap: var(--gap-section); }
+  h1 { margin: 0; font-size: 60px; line-height: 1.06; font-weight: 600; letter-spacing: -0.035em; }
+  h1 .resx { font-family: var(--font-mono); font-weight: 500; font-size: 56px; letter-spacing: -0.04em; color: var(--accent); }
+  h1 .sub { color: var(--muted); }
+
+  /* Code panel: .resx value | XAML usage | rendered output */
+  .panel {
+    display: grid; grid-template-columns: 284px minmax(0, 1fr) 248px;
+    background: var(--surface); border: 1px solid var(--line-panel); border-radius: 10px; overflow: hidden;
+    font-family: var(--font-mono);
+  }
+  .pane { display: flex; flex-direction: column; min-width: 0; }
+  .pane + .pane { border-left: 1px solid var(--line-panel); }
+  .pane-head {
+    display: flex; align-items: center; gap: 8px; padding: 9px 20px;
+    border-bottom: 1px solid var(--line-panel); font-size: 13px; color: var(--muted);
+  }
+  .pane-head svg { flex: none; }
+  .code { padding: 16px 20px; font-size: 15px; line-height: 1.7; color: var(--text); white-space: pre; }
+  .code .p { color: var(--punct); }
+  .code .k { color: var(--keyword); }
+  .code .n { color: var(--accent); }
+  .output { padding: 16px 20px; font-size: 15px; line-height: 1.7; display: flex; flex-direction: column; }
+  .output div { display: flex; align-items: baseline; gap: 12px; }
+  .output .lang { font-size: 12px; color: var(--muted); width: 18px; }
+  .output .text { color: var(--text-strong); }
+
+  /* Feature row */
+  .bottom { display: flex; flex-direction: column; gap: 22px; }
+  .features { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+  .feature { display: flex; flex-direction: column; gap: 8px; padding: 20px 24px 0; }
+  .feature:first-child { padding-left: 0; }
+  .feature:last-child { padding-right: 0; }
+  .feature + .feature { border-left: 1px solid var(--line); }
+  .feature-title { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 500; }
+  .feature-title svg { color: var(--accent); flex: none; }
+  .feature-desc { font-size: 15px; line-height: 1.4; color: var(--muted); }
+
+  /* Footer */
+  .footer { display: flex; align-items: center; justify-content: space-between; font-family: var(--font-mono); font-size: 14px; color: var(--muted); }
+</style>
+</head>
+<body>
+<main class="canvas">
+
+  <header class="topbar">
+    <div class="brand">
+      <!-- Logo: assets/logo-mono.svg, stroked in --accent -->
+      <svg width="42" height="32" viewBox="12 21 76 58" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M27 25.5 Q21.5 25.5 21.5 33.667 L21.5 41.833 Q21.5 50 16.5 50 Q21.5 50 21.5 58.167 L21.5 66.333 Q21.5 74.5 27 74.5" stroke-width="6.2"/>
+        <path d="M73 25.5 Q78.5 25.5 78.5 33.667 L78.5 41.833 Q78.5 50 83.5 50 Q78.5 50 78.5 58.167 L78.5 66.333 Q78.5 74.5 73 74.5" stroke-width="6.2"/>
+        <circle cx="50" cy="50" r="18.5" stroke-width="5.8"/>
+        <line x1="31.5" y1="50" x2="68.5" y2="50" stroke-width="3.94"/>
+        <ellipse cx="50" cy="50" rx="8.88" ry="18.5" stroke-width="3.94"/>
+      </svg>
+      <span class="brand-name">ResXLocalization</span>
+    </div>
+    <span class="platform">.NET 8 / 10+</span>
+  </header>
+
+  <section class="hero">
+    <h1>Type-safe <span class="resx">.resx</span> localization<br><span class="sub">for Avalonia and WPF.</span></h1>
+
+    <div class="panel">
+      <div class="pane">
+        <div class="pane-head">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+          <span>AppStrings.resx</span>
+        </div>
+<div class="code"><span class="p">{</span><span class="n">Count</span><span class="p">,</span> <span class="k">plural</span><span class="p">,</span>
+  <span class="k">one</span> <span class="p">{</span><span class="n">#</span> file deleted<span class="p">}</span>
+  <span class="k">other</span> <span class="p">{</span><span class="n">#</span> files deleted<span class="p">}}</span></div>
+      </div>
+
+      <div class="pane">
+        <div class="pane-head">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
+          <span>MainWindow.axaml</span>
+        </div>
+<div class="code"><span class="p">&lt;TextBlock.Text&gt;</span>
+  <span class="p">&lt;</span><span class="n">l:Localize</span> <span class="k">Key</span><span class="p">="</span>{x:Static res:AppStringsKeys.FilesDeleted}<span class="p">"&gt;</span>
+    <span class="p">&lt;</span><span class="n">l:Argument</span> <span class="k">Name</span><span class="p">="</span>Count<span class="p">"</span> <span class="k">Value</span><span class="p">="</span>{Binding DeletedCount}<span class="p">" /&gt;</span>
+  <span class="p">&lt;/</span><span class="n">l:Localize</span><span class="p">&gt;</span>
+<span class="p">&lt;/TextBlock.Text&gt;</span></div>
+      </div>
+
+      <div class="pane">
+        <div class="pane-head">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
+          <span>Rendered</span>
+        </div>
+        <div class="output">
+          <div><span class="lang">en</span><span class="text">1 file deleted</span></div>
+          <div><span class="lang">en</span><span class="text">5 files deleted</span></div>
+          <div><span class="lang">de</span><span class="text">1 Datei gelöscht</span></div>
+          <div><span class="lang">de</span><span class="text">5 Dateien gelöscht</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="bottom">
+    <div class="features">
+      <div class="feature">
+        <div class="feature-title">
+          <!-- Lucide "hash" -->
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/></svg>
+          <span>ICU MessageFormat</span>
+        </div>
+        <span class="feature-desc">plural and select, in code and XAML</span>
+      </div>
+      <div class="feature">
+        <div class="feature-title">
+          <!-- Lucide "languages" -->
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
+          <span>Live language switching</span>
+        </div>
+        <span class="feature-desc">every binding updates in place</span>
+      </div>
+      <div class="feature">
+        <div class="feature-title">
+          <!-- Lucide "shield-check" -->
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+          <span>Compile-checked keys</span>
+        </div>
+        <span class="feature-desc">generated from your .resx files</span>
+      </div>
+      <div class="feature">
+        <div class="feature-title">
+          <!-- Lucide "cpu" -->
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></svg>
+          <span>Native AOT &amp; trim-safe</span>
+        </div>
+        <span class="feature-desc">no reflection over resources</span>
+      </div>
+    </div>
+    <div class="footer">
+      <span>Open source, MIT</span>
+      <span>github.com/rent-a-developer/ResXLocalization</span>
+    </div>
+  </footer>
+
+</main>
+</body>
+</html>
