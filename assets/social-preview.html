@@ -3,6 +3,9 @@
   ResXLocalization - GitHub social preview (source of truth for social-preview.png)
 
   Canvas: exactly 1280 x 640 px (GitHub's recommended social preview size).
+  Safe area: GitHub and X show the full 2:1 image, but Reddit crops link previews to about 16:9
+          (roughly 70 px off each side) and Facebook/LinkedIn to 1.91:1 (about 30 px). Keep every
+          element inside --pad-x, which leaves a margin even after a 16:9 crop.
   Render: run render-social-preview.ps1 next to this file; it screenshots this page with
           headless Edge/Chrome into social-preview.png.
 
@@ -42,7 +45,7 @@
 
     /* Layout */
     --pad-top: 56px;
-    --pad-x: 64px;
+    --pad-x: 112px;           /* 16:9 crop removes ~71 px per side; this keeps ~40 px of margin after it */
     --pad-bottom: 40px;
     --gap-section: 28px;
   }
@@ -73,36 +76,36 @@
 
   /* Code panel: .resx value | XAML usage | rendered output */
   .panel {
-    display: grid; grid-template-columns: 284px minmax(0, 1fr) 248px;
+    display: grid; grid-template-columns: 232px minmax(0, 1fr) 260px;
     background: var(--surface); border: 1px solid var(--line-panel); border-radius: 10px; overflow: hidden;
     font-family: var(--font-mono);
   }
   .pane { display: flex; flex-direction: column; min-width: 0; }
   .pane + .pane { border-left: 1px solid var(--line-panel); }
   .pane-head {
-    display: flex; align-items: center; gap: 8px; padding: 9px 20px;
+    display: flex; align-items: center; gap: 8px; padding: 9px 18px;
     border-bottom: 1px solid var(--line-panel); font-size: 13px; color: var(--muted);
   }
   .pane-head svg { flex: none; }
-  .code { padding: 16px 20px; font-size: 15px; line-height: 1.7; color: var(--text); white-space: pre; }
+  .code { padding: 16px 18px; font-size: 14px; line-height: 1.75; color: var(--text); white-space: pre; }
   .code .p { color: var(--punct); }
   .code .k { color: var(--keyword); }
   .code .n { color: var(--accent); }
-  .output { padding: 16px 20px; font-size: 15px; line-height: 1.7; display: flex; flex-direction: column; }
+  .output { padding: 16px 18px; font-size: 14px; line-height: 1.75; display: flex; flex-direction: column; }
   .output div { display: flex; align-items: baseline; gap: 12px; }
-  .output .lang { font-size: 12px; color: var(--muted); width: 18px; }
-  .output .text { color: var(--text-strong); }
+  .output .lang { font-size: 12px; color: var(--muted); width: 18px; flex: none; }
+  .output .text { color: var(--text-strong); white-space: nowrap; }
 
   /* Feature row */
   .bottom { display: flex; flex-direction: column; gap: 22px; }
   .features { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--line); }
-  .feature { display: flex; flex-direction: column; gap: 8px; padding: 20px 24px 0; }
+  .feature { display: flex; flex-direction: column; gap: 8px; padding: 20px 20px 0; }
   .feature:first-child { padding-left: 0; }
   .feature:last-child { padding-right: 0; }
   .feature + .feature { border-left: 1px solid var(--line); }
-  .feature-title { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 500; }
+  .feature-title { display: flex; align-items: center; gap: 9px; font-size: 17px; font-weight: 500; white-space: nowrap; }
   .feature-title svg { color: var(--accent); flex: none; }
-  .feature-desc { font-size: 15px; line-height: 1.4; color: var(--muted); }
+  .feature-desc { font-size: 14px; line-height: 1.4; color: var(--muted); }
 
   /* Footer */
   .footer { display: flex; align-items: center; justify-content: space-between; font-family: var(--font-mono); font-size: 14px; color: var(--muted); }
@@ -136,8 +139,8 @@
           <span>AppStrings.resx</span>
         </div>
 <div class="code"><span class="p">{</span><span class="n">Count</span><span class="p">,</span> <span class="k">plural</span><span class="p">,</span>
-  <span class="k">one</span> <span class="p">{</span><span class="n">#</span> file deleted<span class="p">}</span>
-  <span class="k">other</span> <span class="p">{</span><span class="n">#</span> files deleted<span class="p">}}</span></div>
+  <span class="k">one</span> <span class="p">{</span><span class="n">#</span> file saved<span class="p">}</span>
+  <span class="k">other</span> <span class="p">{</span><span class="n">#</span> files saved<span class="p">}}</span></div>
       </div>
 
       <div class="pane">
@@ -146,8 +149,8 @@
           <span>MainWindow.axaml</span>
         </div>
 <div class="code"><span class="p">&lt;TextBlock.Text&gt;</span>
-  <span class="p">&lt;</span><span class="n">l:Localize</span> <span class="k">Key</span><span class="p">="</span>{x:Static res:AppStringsKeys.FilesDeleted}<span class="p">"&gt;</span>
-    <span class="p">&lt;</span><span class="n">l:Argument</span> <span class="k">Name</span><span class="p">="</span>Count<span class="p">"</span> <span class="k">Value</span><span class="p">="</span>{Binding DeletedCount}<span class="p">" /&gt;</span>
+  <span class="p">&lt;</span><span class="n">l:Localize</span> <span class="k">Key</span><span class="p">="</span>{x:Static res:AppStringsKeys.FilesSaved}<span class="p">"&gt;</span>
+    <span class="p">&lt;</span><span class="n">l:Argument</span> <span class="k">Name</span><span class="p">="</span>Count<span class="p">"</span> <span class="k">Value</span><span class="p">="</span>{Binding SavedCount}<span class="p">" /&gt;</span>
   <span class="p">&lt;/</span><span class="n">l:Localize</span><span class="p">&gt;</span>
 <span class="p">&lt;/TextBlock.Text&gt;</span></div>
       </div>
@@ -158,10 +161,10 @@
           <span>Rendered</span>
         </div>
         <div class="output">
-          <div><span class="lang">en</span><span class="text">1 file deleted</span></div>
-          <div><span class="lang">en</span><span class="text">5 files deleted</span></div>
-          <div><span class="lang">de</span><span class="text">1 Datei gelöscht</span></div>
-          <div><span class="lang">de</span><span class="text">5 Dateien gelöscht</span></div>
+          <div><span class="lang">en</span><span class="text">1 file saved</span></div>
+          <div><span class="lang">en</span><span class="text">5 files saved</span></div>
+          <div><span class="lang">de</span><span class="text">1 Datei gespeichert</span></div>
+          <div><span class="lang">de</span><span class="text">5 Dateien gespeichert</span></div>
         </div>
       </div>
     </div>
