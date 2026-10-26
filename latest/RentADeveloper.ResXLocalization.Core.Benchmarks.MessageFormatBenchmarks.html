@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>RentADeveloper.ResXLocalization.Core.Benchmarks.MessageFormatBenchmarks-20261026-183219</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; text-align: right; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet v0.15.8, Windows 11 (10.0.26100.33650/24H2/2024Update/HudsonValley) (Hyper-V)
+AMD EPYC 7763 2.44GHz, 1 CPU, 4 logical and 2 physical cores
+.NET SDK 10.0.403
+  [Host] : .NET 10.0.14 (10.0.14, 10.0.1426.52326), X64 RyuJIT x86-64-v3
+</code></pre>
+<pre><code>Toolchain=InProcessEmitToolchain  IterationCount=15  IterationTime=100ms  
+WarmupCount=3  
+</code></pre>
+
+<table>
+<thead><tr><th>Method          </th><th>Mean</th><th>Error</th><th>StdDev</th><th>Ratio</th><th>RatioSD</th><th>Gen0</th><th>Allocated</th><th>Alloc Ratio</th>
+</tr>
+</thead><tbody><tr><td>GetWithMessageFormat</td><td>1.817 &mu;s</td><td>0.0201 &mu;s</td><td>0.0178 &mu;s</td><td>1.66</td><td>0.02</td><td>0.1440</td><td>2.48 KB</td><td>2.14</td>
+</tr><tr><td>MessageFormatterDirect</td><td>1.097 &mu;s</td><td>0.0077 &mu;s</td><td>0.0060 &mu;s</td><td>1.00</td><td>0.01</td><td>0.0664</td><td>1.16 KB</td><td>1.00</td>
+</tr></tbody></table>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>RentADeveloper.ResXLocalization.Avalonia.Benchmarks.AvaloniaFormsBenchmarks-20261026-183133</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; text-align: right; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet v0.15.8, Windows 11 (10.0.26100.33650/24H2/2024Update/HudsonValley) (Hyper-V)
+AMD EPYC 9V45 2.60GHz, 1 CPU, 4 logical and 2 physical cores
+.NET SDK 10.0.403
+  [Host] : .NET 10.0.14 (10.0.14, 10.0.1426.52326), X64 RyuJIT x86-64-v4
+</code></pre>
+<pre><code>Toolchain=InProcessEmitToolchain  InvocationCount=1  IterationCount=15  
+IterationTime=100ms  UnrollFactor=1  WarmupCount=50  
+</code></pre>
+
+<table>
+<thead><tr><th>Method         </th><th>Mean</th><th>Error</th><th>StdDev</th><th>Ratio</th><th>RatioSD</th><th>Allocated</th><th>Alloc Ratio</th>
+</tr>
+</thead><tbody><tr><td>Localize</td><td>8.112 ms</td><td>1.8605 ms</td><td>1.7403 ms</td><td>2.12</td><td>0.49</td><td>2.54 MB</td><td>1.19</td>
+</tr><tr><td>LocalizeEnum</td><td>5.258 ms</td><td>1.1490 ms</td><td>1.0748 ms</td><td>1.38</td><td>0.31</td><td>2.5 MB</td><td>1.17</td>
+</tr><tr><td>LocalizeWithArguments</td><td>4.777 ms</td><td>0.6741 ms</td><td>0.5263 ms</td><td>1.25</td><td>0.18</td><td>3.27 MB</td><td>1.53</td>
+</tr><tr><td>Static</td><td>3.855 ms</td><td>0.4214 ms</td><td>0.3941 ms</td><td>1.01</td><td>0.14</td><td>2.14 MB</td><td>1.00</td>
+</tr></tbody></table>
+</body>
+</html>

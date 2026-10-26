@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>RentADeveloper.ResXLocalization.WPF.Benchmarks.WpfFormsBenchmarks-20261026-183203</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; text-align: right; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet v0.15.8, Windows 11 (10.0.26100.33650/24H2/2024Update/HudsonValley) (Hyper-V)
+AMD EPYC 7763 2.44GHz, 1 CPU, 4 logical and 2 physical cores
+.NET SDK 10.0.403
+  [Host] : .NET 10.0.14 (10.0.14, 10.0.1426.52326), X64 RyuJIT x86-64-v3
+</code></pre>
+<pre><code>Toolchain=InProcessEmitToolchain  InvocationCount=1  IterationCount=15  
+IterationTime=100ms  UnrollFactor=1  WarmupCount=300  
+</code></pre>
+
+<table>
+<thead><tr><th>Method         </th><th>Mean</th><th>Error</th><th>StdDev</th><th>Ratio</th><th>RatioSD</th><th>Allocated</th><th>Alloc Ratio</th>
+</tr>
+</thead><tbody><tr><td>Localize</td><td>5.704 ms</td><td>0.9023 ms</td><td>0.8440 ms</td><td>2.25</td><td>0.32</td><td>932.62 KB</td><td>2.51</td>
+</tr><tr><td>LocalizeEnum</td><td>3.586 ms</td><td>0.1807 ms</td><td>0.1410 ms</td><td>1.42</td><td>0.06</td><td>933.09 KB</td><td>2.51</td>
+</tr><tr><td>LocalizeWithArguments</td><td>5.563 ms</td><td>0.2112 ms</td><td>0.1649 ms</td><td>2.20</td><td>0.07</td><td>1604.48 KB</td><td>4.31</td>
+</tr><tr><td>Static</td><td>2.533 ms</td><td>0.0344 ms</td><td>0.0305 ms</td><td>1.00</td><td>0.02</td><td>372.12 KB</td><td>1.00</td>
+</tr></tbody></table>
+</body>
+</html>
