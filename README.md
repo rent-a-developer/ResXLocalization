@@ -324,6 +324,13 @@ trim clean.
 Plural categories per language, `select`, how arguments reach ICU, the format culture and number and
 date styles are in [ICU MessageFormat](docs/guides/message-format.md).
 
+## Benchmarks
+
+Every push to `main` benchmarks ResXLocalization against the code an application writes without it - the
+`.resx` designer class and hand-written code over it - for code lookups, format arguments, ICU
+MessageFormat, and opening and switching the culture of Avalonia and WPF views. [Benchmarks](docs/guides/benchmarks.md)
+explains what each benchmark measures and links the latest results and their history.
+
 ## Documentation
 
 | Page | What it covers |

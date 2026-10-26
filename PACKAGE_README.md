@@ -104,6 +104,14 @@ order. Register the generated `<FileName>Keys.ResourceManager`, the instance the
 Localizer.Current.RegisterResourceManager(AppStringsKeys.ResourceManager);
 ```
 
+## Benchmarks
+
+Every push to `main` benchmarks ResXLocalization against the code an application writes without it - the
+`.resx` designer class and hand-written code over it - for code lookups, format arguments, ICU
+MessageFormat, and opening and switching the culture of Avalonia and WPF views. The
+[benchmarks guide](https://rent-a-developer.github.io/ResXLocalization/guides/benchmarks.html) explains what
+each benchmark measures and links the latest results and their history.
+
 ## Documentation
 
 The full documentation - lookup modes and fallback, registering resource files, enum localization,
