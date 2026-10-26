@@ -17,4 +17,9 @@
     <Project Path="tests/ResXLocalization.SourceGenerators.Tests/ResXLocalization.SourceGenerators.Tests.csproj" />
     <Project Path="tests/ResXLocalization.WPF.Sample.Tests/ResXLocalization.WPF.Sample.Tests.csproj" />
   </Folder>
+  <Folder Name="/04_benchmarks/">
+    <Project Path="benchmarks/ResXLocalization.Avalonia.Benchmarks/ResXLocalization.Avalonia.Benchmarks.csproj" />
+    <Project Path="benchmarks/ResXLocalization.Core.Benchmarks/ResXLocalization.Core.Benchmarks.csproj" />
+    <Project Path="benchmarks/ResXLocalization.WPF.Benchmarks/ResXLocalization.WPF.Benchmarks.csproj" />
+  </Folder>
 </Solution>

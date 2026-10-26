@@ -7,6 +7,14 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- A BenchmarkDotNet suite under `benchmarks/` that measures code lookups, ICU MessageFormat and the Avalonia
+  and WPF markup extensions against the `.resx` designer class.
+- A [benchmark results page](https://rent-a-developer.github.io/ResXLocalization/guides/benchmarks.html) in
+  the documentation: what each lookup, markup extension and culture switch costs compared with the `.resx`
+  designer class, with the latest results and their history on `main`.
+
 ## [2.0.0] - 2026-10-20
 
 ### Added

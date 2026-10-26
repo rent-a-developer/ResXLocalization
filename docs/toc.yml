@@ -18,6 +18,8 @@
       href: guides/native-aot.md
     - name: Migrating to 2.0
       href: guides/migration-2.0.md
+    - name: Benchmarks
+      href: guides/benchmarks.md
 - name: Reference
   items:
     - name: Generated keys

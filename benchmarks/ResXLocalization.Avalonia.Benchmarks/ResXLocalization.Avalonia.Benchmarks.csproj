@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Compiled bindings everywhere, as in the sample: the TranslationSource baseline binds with them too. -->
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <TargetFramework>$(CurrentTargetFramework)</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Headless" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ResXLocalization.Avalonia\ResXLocalization.Avalonia.csproj" />
+    <!-- Core is referenced privately by the Avalonia engine, so reference it directly here for the typed
+         keys and the ILocalizer API. -->
+    <ProjectReference Include="..\..\src\ResXLocalization.Core\ResXLocalization.Core.csproj" />
+    <!-- Source generator that turns each .resx into its typed <Name>Keys class (analyzer, not a runtime
+         reference). UndefineProperties stops publish-time properties from flowing into the netstandard2.0
+         generator project, which would otherwise fail with NETSDK1207. -->
+    <ProjectReference Include="..\..\src\ResXLocalization.SourceGenerators\ResXLocalization.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" UndefineProperties="PublishAot;RuntimeIdentifier;SelfContained;PublishTrimmed" />
+  </ItemGroup>
+
+
+</Project>

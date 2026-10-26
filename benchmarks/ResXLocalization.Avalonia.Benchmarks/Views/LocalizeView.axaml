@@ -1,0 +1,18 @@
+﻿<UserControl x:Class="RentADeveloper.ResXLocalization.Avalonia.Benchmarks.Views.LocalizeView"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:RentADeveloper.ResXLocalization.Avalonia;assembly=ResXLocalization.Avalonia"
+             xmlns:shared="clr-namespace:RentADeveloper.ResXLocalization.Benchmarks">
+    <StackPanel>
+        <TextBlock Text="{l:Localize {x:Static shared:BenchmarkStringsKeys.Title}}" />
+        <TextBlock Text="{l:Localize {x:Static shared:BenchmarkStringsKeys.Save}}" />
+        <TextBlock Text="{l:Localize {x:Static shared:BenchmarkStringsKeys.Cancel}}" />
+        <TextBlock Text="{l:Localize {x:Static shared:BenchmarkStringsKeys.Open}}" />
+        <TextBlock Text="{l:Localize {x:Static shared:BenchmarkStringsKeys.Close}}" />
+        <TextBlock Text="{l:Localize {x:Static shared:BenchmarkStringsKeys.Delete}}" />
+        <TextBlock Text="{l:Localize {x:Static shared:BenchmarkStringsKeys.UserMessages}}" />
+        <TextBlock Text="{l:Localize {x:Static shared:BenchmarkStringsKeys.Enum_Priority_Priority1}}" />
+        <TextBlock Text="{l:Localize {x:Static shared:BenchmarkStringsKeys.Enum_Priority_Priority2}}" />
+        <TextBlock Text="{l:Localize {x:Static shared:BenchmarkStringsKeys.Enum_Priority_Priority3}}" />
+    </StackPanel>
+</UserControl>
