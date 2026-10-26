@@ -179,6 +179,36 @@ starts and answers wrongly. `scripts/verify-package-aot.ps1` publishes the packa
 
 The WPF package is exempt — WPF does not support Native AOT.
 
+## Running the benchmarks
+
+`benchmarks/` holds three BenchmarkDotNet suites: `ResXLocalization.Core.Benchmarks` (Core and
+MessageFormat), `ResXLocalization.Avalonia.Benchmarks` (headless) and `ResXLocalization.WPF.Benchmarks`
+(Windows only). Each compares the library with the code an application writes without it, see
+[`docs/guides/benchmarks.md`](docs/guides/benchmarks.md). Run one suite from the repository root, all of its
+benchmarks or the classes `--filter` selects:
+
+```shell
+dotnet run --project benchmarks/ResXLocalization.Core.Benchmarks -c Release
+dotnet run --project benchmarks/ResXLocalization.Core.Benchmarks -c Release -- --filter "*CodeLookup*"
+```
+
+The reports land in `artifacts/benchmarks/<project>/results`. Every class checks once, before it measures,
+that each benchmark produces the expected text, and stops with an error naming the benchmark when it does
+not.
+
+CI runs the three suites on every pull request and every push to `main` that changes code, and compares
+them with the latest results from `main`:
+
+- **More allocations fail the check**: a benchmark that allocates more than 125% of its bytes on `main`, or
+  anything at all where it allocated nothing.
+- **A slower time is an alert, not a failure**: above 150% of the time on `main` it is listed in the job
+  summary and commented on the pull request. Shared CI machines vary too much in speed to fail on time.
+
+When an allocation increase is deliberate - a feature that has to allocate - a maintainer reviews it and adds
+the label `accept-allocation-increase` to the pull request. The check then reports the increase and passes,
+and the merged values become the baseline for every later pull request. Removing the label makes the check
+fail again.
+
 ## Public API
 
 The four runtime projects track their public surface with

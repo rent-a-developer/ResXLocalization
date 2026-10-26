@@ -1,0 +1,18 @@
+﻿<UserControl x:Class="RentADeveloper.ResXLocalization.Avalonia.Benchmarks.Views.EnumView"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:RentADeveloper.ResXLocalization.Avalonia;assembly=ResXLocalization.Avalonia"
+             xmlns:shared="clr-namespace:RentADeveloper.ResXLocalization.Benchmarks">
+    <StackPanel>
+        <TextBlock Text="{l:LocalizeEnum {x:Static shared:Priority.Priority1}}" />
+        <TextBlock Text="{l:LocalizeEnum {x:Static shared:Priority.Priority2}}" />
+        <TextBlock Text="{l:LocalizeEnum {x:Static shared:Priority.Priority3}}" />
+        <TextBlock Text="{l:LocalizeEnum {x:Static shared:Priority.Priority4}}" />
+        <TextBlock Text="{l:LocalizeEnum {x:Static shared:Priority.Priority5}}" />
+        <TextBlock Text="{l:LocalizeEnum {x:Static shared:Priority.Priority6}}" />
+        <TextBlock Text="{l:LocalizeEnum {x:Static shared:Priority.Priority7}}" />
+        <TextBlock Text="{l:LocalizeEnum {x:Static shared:Priority.Priority8}}" />
+        <TextBlock Text="{l:LocalizeEnum {x:Static shared:Priority.Priority9}}" />
+        <TextBlock Text="{l:LocalizeEnum {x:Static shared:Priority.Priority10}}" />
+    </StackPanel>
+</UserControl>

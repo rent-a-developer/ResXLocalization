@@ -1,0 +1,82 @@
+<Project>
+
+  <!--
+Shared build properties for the benchmark projects.
+
+MSBuild uses the NEAREST Directory.Build.props and stops there, so this file imports the repository
+root one explicitly, like tests/Directory.Build.props does - without that import the benchmarks would lose
+the language settings, the style analyzers and the style gate. They do not import tests/: a BenchmarkDotNet
+console app must not carry the test SDK, xUnit or the coverage collector.
+
+What belongs here is what every benchmark project needs: BenchmarkDotNet, and the code under Shared/ (the
+configuration, the self-check and the entry point), compiled into each project rather than copied.
+-->
+
+  <Import Project="$(MSBuildThisFileDirectory)../Directory.Build.props" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- CS1591 (missing XML comment) and CS1574 (unresolvable cref) are only reported because every
+         project generates a documentation file, which is what makes IDE0005 work - see the comment in
+         the repository-root Directory.Build.props. Nothing consumes the benchmarks as an API, and the typed
+         key classes the source generator emits are public and deliberately carry no per-member
+         documentation.
+
+         This is NoWarn rather than an .editorconfig severity because .editorconfig cannot reach a
+         source-generated document: Roslyn resolves analyzer configuration from a syntax tree's path,
+         and a generated tree has none, so no section - not even [*] - applies to it. Under src/ both
+         diagnostics stay errors, which is what keeps the public API documented. -->
+    <NoWarn>$(NoWarn);CS1574;CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The tiered JIT promotes a method to optimized code only after 30 calls and once no new method was
+         compiled for 100 ms. One UI operation keeps compiling new methods, so with the delay its methods stayed
+         unoptimized through a whole class: the first UI class's first row measured up to three times as slow
+         as the same operation later in the process. Without the delay the methods are promoted as soon as they
+         have their calls; dynamic PGO still runs, so the code and its allocations are the ones a long-running
+         application has. The benchmarks run in-process, so this has to be the host's own configuration. -->
+    <RuntimeHostConfigurationOption Include="System.Runtime.TieredCompilation.CallCountingDelayMs" Value="0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Shared\*.cs" Link="Shared\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <!-- The texts every benchmark looks up: one resx with the keys of all three suites, linked into each
+       project like the code under Shared/. The neutral file embeds into the project's assembly and the .de
+       file builds the project's de satellite. A suite carrying keys it does not use changes no number:
+       ResourceManager finds a key in a dictionary.
+
+       BenchmarkStrings.Designer.cs is hand-authored to mirror exactly what PublicResXFileCodeGenerator emits
+       (that generator only runs inside Visual Studio); its properties are the baselines. Its namespace is the
+       one of the code under Shared/, so every benchmark file reaches BenchmarkStrings and the generated
+       BenchmarkStringsKeys through the using of that namespace it already has. The LogicalName is that
+       class's base name: a linked file would otherwise be named after the project's RootNamespace and its
+       link path, which the designer class does not match. The resx and Designer.cs files are handed to the
+       typed-key generator by the repo-level Directory.Build.targets. -->
+  <ItemGroup>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Shared\Resources\BenchmarkStrings.resx"
+                      Link="Shared\Resources\BenchmarkStrings.resx"
+                      LogicalName="RentADeveloper.ResXLocalization.Benchmarks.BenchmarkStrings.resources"
+                      Generator="PublicResXFileCodeGenerator"
+                      LastGenOutput="BenchmarkStrings.Designer.cs" />
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Shared\Resources\BenchmarkStrings.de.resx"
+                      Link="Shared\Resources\BenchmarkStrings.de.resx"
+                      LogicalName="RentADeveloper.ResXLocalization.Benchmarks.BenchmarkStrings.de.resources"
+                      DependentUpon="BenchmarkStrings.resx" />
+    <Compile Include="$(MSBuildThisFileDirectory)Shared\Resources\BenchmarkStrings.Designer.cs"
+             Link="Shared\Resources\BenchmarkStrings.Designer.cs"
+             DependentUpon="BenchmarkStrings.resx"
+             DesignTime="True"
+             AutoGen="True" />
+  </ItemGroup>
+
+</Project>

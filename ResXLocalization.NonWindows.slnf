@@ -10,7 +10,9 @@
       "tests\\ResXLocalization.Avalonia.Sample.Tests\\ResXLocalization.Avalonia.Sample.Tests.csproj",
       "tests\\ResXLocalization.Core.Tests\\ResXLocalization.Core.Tests.csproj",
       "tests\\ResXLocalization.MessageFormat.Tests\\ResXLocalization.MessageFormat.Tests.csproj",
-      "tests\\ResXLocalization.SourceGenerators.Tests\\ResXLocalization.SourceGenerators.Tests.csproj"
+      "tests\\ResXLocalization.SourceGenerators.Tests\\ResXLocalization.SourceGenerators.Tests.csproj",
+      "benchmarks\\ResXLocalization.Core.Benchmarks\\ResXLocalization.Core.Benchmarks.csproj",
+      "benchmarks\\ResXLocalization.Avalonia.Benchmarks\\ResXLocalization.Avalonia.Benchmarks.csproj"
     ]
   }
 }

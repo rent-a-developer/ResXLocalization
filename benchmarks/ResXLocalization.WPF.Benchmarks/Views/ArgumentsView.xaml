@@ -1,0 +1,88 @@
+﻿<UserControl x:Class="RentADeveloper.ResXLocalization.WPF.Benchmarks.Views.ArgumentsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:RentADeveloper.ResXLocalization.WPF;assembly=ResXLocalization.WPF"
+             xmlns:shared="clr-namespace:RentADeveloper.ResXLocalization.Benchmarks">
+    <StackPanel>
+        <TextBlock>
+            <TextBlock.Text>
+                <l:Localize Key="{x:Static shared:BenchmarkStringsKeys.Title}">
+                    <l:Argument Value="{Binding Name}" />
+                    <l:Argument Value="{Binding Count}" />
+                </l:Localize>
+            </TextBlock.Text>
+        </TextBlock>
+        <TextBlock>
+            <TextBlock.Text>
+                <l:Localize Key="{x:Static shared:BenchmarkStringsKeys.Save}">
+                    <l:Argument Value="{Binding Name}" />
+                    <l:Argument Value="{Binding Count}" />
+                </l:Localize>
+            </TextBlock.Text>
+        </TextBlock>
+        <TextBlock>
+            <TextBlock.Text>
+                <l:Localize Key="{x:Static shared:BenchmarkStringsKeys.Cancel}">
+                    <l:Argument Value="{Binding Name}" />
+                    <l:Argument Value="{Binding Count}" />
+                </l:Localize>
+            </TextBlock.Text>
+        </TextBlock>
+        <TextBlock>
+            <TextBlock.Text>
+                <l:Localize Key="{x:Static shared:BenchmarkStringsKeys.Open}">
+                    <l:Argument Value="{Binding Name}" />
+                    <l:Argument Value="{Binding Count}" />
+                </l:Localize>
+            </TextBlock.Text>
+        </TextBlock>
+        <TextBlock>
+            <TextBlock.Text>
+                <l:Localize Key="{x:Static shared:BenchmarkStringsKeys.Close}">
+                    <l:Argument Value="{Binding Name}" />
+                    <l:Argument Value="{Binding Count}" />
+                </l:Localize>
+            </TextBlock.Text>
+        </TextBlock>
+        <TextBlock>
+            <TextBlock.Text>
+                <l:Localize Key="{x:Static shared:BenchmarkStringsKeys.Delete}">
+                    <l:Argument Value="{Binding Name}" />
+                    <l:Argument Value="{Binding Count}" />
+                </l:Localize>
+            </TextBlock.Text>
+        </TextBlock>
+        <TextBlock>
+            <TextBlock.Text>
+                <l:Localize Key="{x:Static shared:BenchmarkStringsKeys.UserMessages}">
+                    <l:Argument Value="{Binding Name}" />
+                    <l:Argument Value="{Binding Count}" />
+                </l:Localize>
+            </TextBlock.Text>
+        </TextBlock>
+        <TextBlock>
+            <TextBlock.Text>
+                <l:Localize Key="{x:Static shared:BenchmarkStringsKeys.Enum_Priority_Priority1}">
+                    <l:Argument Value="{Binding Name}" />
+                    <l:Argument Value="{Binding Count}" />
+                </l:Localize>
+            </TextBlock.Text>
+        </TextBlock>
+        <TextBlock>
+            <TextBlock.Text>
+                <l:Localize Key="{x:Static shared:BenchmarkStringsKeys.Enum_Priority_Priority2}">
+                    <l:Argument Value="{Binding Name}" />
+                    <l:Argument Value="{Binding Count}" />
+                </l:Localize>
+            </TextBlock.Text>
+        </TextBlock>
+        <TextBlock>
+            <TextBlock.Text>
+                <l:Localize Key="{x:Static shared:BenchmarkStringsKeys.Enum_Priority_Priority3}">
+                    <l:Argument Value="{Binding Name}" />
+                    <l:Argument Value="{Binding Count}" />
+                </l:Localize>
+            </TextBlock.Text>
+        </TextBlock>
+    </StackPanel>
+</UserControl>

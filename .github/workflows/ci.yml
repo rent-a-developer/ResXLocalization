@@ -5,6 +5,15 @@ on:
     branches:
       - main
       - release/**
+    # labeled and unlabeled re-run the checks when a maintainer adds or removes accept-allocation-increase,
+    # which turns a failing allocation alert of the benchmark comparison into a passing one and back. They
+    # re-run the whole workflow; the concurrency group below cancels the run in progress, and labeling is rare.
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - labeled
+      - unlabeled
   push:
     branches:
       - main
@@ -25,6 +34,8 @@ env:
   AOT_OUTPUT: artifacts/package-aot
   AVALONIA_CONSUMER_PROJECT: tests/package-consumption/AvaloniaConsumer/AvaloniaConsumer.csproj
   COMBINED_CONSUMER_PROJECT: tests/package-consumption/CombinedConsumer/CombinedConsumer.csproj
+  BENCHMARK_DATA_BRANCH: benchmark-data
+  BENCHMARK_REPORTS: artifacts/benchmarks
   CONFIGURATION: Release
   CONSUMER_DIRECTORY: tests/package-consumption
   DOCFX_CONFIG: build/docfx/docfx.json
@@ -332,12 +343,16 @@ jobs:
           echo "version=${version}" >> "${GITHUB_OUTPUT}"
           echo "Packed version ${version}"
 
+      # An ordinary artifact rather than the Pages artifact: deploy-docs adds the benchmark results to the
+      # site before it builds the Pages artifact. Only deploy-docs (pushes to main) consumes it.
       - name: Upload documentation site
-        # The Pages artifact is only consumed by deploy-docs (pushes to main); skip the upload on PRs.
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
+          name: docs-site
           path: ${{ env.DOCS_SITE }}
+          if-no-files-found: error
+          retention-days: 1
 
       - name: Upload NuGet packages
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -349,6 +364,239 @@ jobs:
           if-no-files-found: error
           retention-days: 30
           compression-level: 0
+
+  # Decides whether the benchmarks run: only when something they measure, or how they are run, changed, so a
+  # documentation-only pull request is not held up by them. A skipped job counts as passed for a required
+  # check. Without a previous commit to compare with - a new branch, a tag, a manual run - they run.
+  benchmark-changes:
+    name: Detect benchmark changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      run: ${{ steps.changes.outputs.run }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Compare the changed files
+        id: changes
+        shell: bash
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "${BASE}" ] || ! git cat-file -e "${BASE}^{commit}" 2> /dev/null; then
+            echo "No previous commit to compare with; the benchmarks run."
+            echo "run=true" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          pattern='^(src/|benchmarks/|build/|Directory\.[^/]+$|global\.json$|\.github/workflows/ci\.yml$|scripts/convert-benchmark-results\.ps1$)'
+
+          if git diff --name-only "${BASE}" HEAD | grep -qE "${pattern}"; then
+            echo "run=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "Nothing the benchmarks measure changed; they are skipped."
+            echo "run=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+  # One suite per entry, in parallel with the build jobs, all on one runner type so that the history stays
+  # comparable. Every benchmark class writes its own report, so each table's Ratio column is against that
+  # class's baseline; --join would merge a suite's classes into one table with one baseline. The suites check
+  # their own results before measuring and exit non-zero when a benchmark fails or none ran, so a broken
+  # benchmark fails here instead of missing from the report.
+  benchmarks:
+    name: Benchmarks (${{ matrix.suite }})
+    runs-on: windows-latest
+    timeout-minutes: 15
+    needs: benchmark-changes
+    if: needs.benchmark-changes.outputs.run == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        suite:
+          - Core
+          - Avalonia
+          - WPF
+    env:
+      BENCHMARK_PROJECT: benchmarks/ResXLocalization.${{ matrix.suite }}.Benchmarks/ResXLocalization.${{ matrix.suite }}.Benchmarks.csproj
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+          dotnet-quality: ga
+
+      - name: Cache NuGet packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ${{ env.NUGET_PACKAGES }}
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.props', '**/*.targets', '**/*.slnx', '.config/dotnet-tools.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore ${{ env.BENCHMARK_PROJECT }} --configfile ${{ env.NUGET_CONFIG }}
+
+      - name: Build
+        run: dotnet build ${{ env.BENCHMARK_PROJECT }} --configuration ${{ env.CONFIGURATION }} --no-restore /p:ContinuousIntegrationBuild=true
+
+      - name: Run benchmarks
+        run: dotnet run --project ${{ env.BENCHMARK_PROJECT }} --configuration ${{ env.CONFIGURATION }} --no-build -- --filter "*"
+
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: benchmark-results-${{ matrix.suite }}
+          path: ${{ env.BENCHMARK_REPORTS }}/ResXLocalization.${{ matrix.suite }}.Benchmarks/
+          if-no-files-found: error
+          retention-days: 30
+
+  # Compares the results with the latest results from main and reports both series in the job summary: a time
+  # above 150% is an alert, an allocation above 125% fails a pull request - unless a maintainer accepted the
+  # increase with the label accept-allocation-increase. On main the results are appended to the history on the
+  # benchmark-data branch, with this run's reports under latest/, which deploy-docs publishes. Only this job
+  # can write.
+  benchmark-report:
+    name: Benchmark report
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: benchmarks
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      BENCHMARK_SERIES: artifacts/benchmarks/series
+      # A fork's token cannot comment, so only a pull request from this repository comments on an alert; the
+      # job summary has the comparison either way.
+      COMMENT_ON_ALERT: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+      IS_MAIN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Download benchmark results
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: benchmark-results-*
+          path: ${{ env.BENCHMARK_REPORTS }}
+
+      - name: Merge benchmark results
+        run: pwsh -NoProfile -NonInteractive -File scripts/convert-benchmark-results.ps1 -ReportDirectory ${{ env.BENCHMARK_REPORTS }} -OutputDirectory ${{ env.BENCHMARK_SERIES }}
+
+      # The action needs the data branch to exist. The first push to main creates it, with one commit and no
+      # results; a pull request before that has nothing to compare with.
+      - name: Find the benchmark data branch
+        id: data-branch
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git ls-remote --exit-code --heads origin "${BENCHMARK_DATA_BRANCH}" > /dev/null; then
+            echo "exists=true" >> "${GITHUB_OUTPUT}"
+          elif [ "${IS_MAIN}" = "true" ]; then
+            tree="$(gh api "repos/${GITHUB_REPOSITORY}/git/trees" -f 'tree[][path]=README.md' -f 'tree[][mode]=100644' -f 'tree[][type]=blob' -f 'tree[][content]=Benchmark results of main, written by CI. This branch holds no code and is never merged.' --jq .sha)"
+            commit="$(gh api "repos/${GITHUB_REPOSITORY}/git/commits" -f message="Create the benchmark data branch" -f tree="${tree}" --jq .sha)"
+            gh api "repos/${GITHUB_REPOSITORY}/git/refs" -f ref="refs/heads/${BENCHMARK_DATA_BRANCH}" -f sha="${commit}" > /dev/null
+            echo "exists=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "::notice title=No benchmark baseline::main has no benchmark results yet, so there is nothing to compare with."
+            echo "exists=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Compare times
+        if: steps.data-branch.outputs.exists == 'true'
+        uses: benchmark-action/github-action-benchmark@4322e5726e6334590d251fc4f92bec0efafc45dc # v1.22.2
+        with:
+          name: Time
+          tool: benchmarkdotnet
+          output-file-path: ${{ env.BENCHMARK_SERIES }}/times.json
+          gh-pages-branch: ${{ env.BENCHMARK_DATA_BRANCH }}
+          benchmark-data-dir-path: history
+          github-token: ${{ github.token }}
+          auto-push: false
+          alert-threshold: "150%"
+          fail-on-alert: false
+          comment-on-alert: ${{ env.COMMENT_ON_ALERT }}
+          summary-always: true
+          max-items-in-chart: 200
+
+      # skip-fetch-gh-pages: the step above fetched the branch and committed to it locally, and fetching it
+      # again would be refused as a non-fast-forward update. Only a pull request fails on an alert: on main the
+      # increase was reviewed, and the new values become the baseline.
+      - name: Compare allocations
+        if: steps.data-branch.outputs.exists == 'true'
+        uses: benchmark-action/github-action-benchmark@4322e5726e6334590d251fc4f92bec0efafc45dc # v1.22.2
+        with:
+          name: Allocations
+          tool: customSmallerIsBetter
+          output-file-path: ${{ env.BENCHMARK_SERIES }}/allocations.json
+          gh-pages-branch: ${{ env.BENCHMARK_DATA_BRANCH }}
+          benchmark-data-dir-path: history
+          github-token: ${{ github.token }}
+          auto-push: false
+          skip-fetch-gh-pages: true
+          alert-threshold: "125%"
+          fail-on-alert: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'accept-allocation-increase') }}
+          comment-on-alert: ${{ env.COMMENT_ON_ALERT }}
+          summary-always: true
+          max-items-in-chart: 200
+
+      # Each of the two steps above committed to the local data branch. Squash them, add this run's HTML and
+      # markdown reports under latest/ (one per benchmark class) with an index page, and push one commit.
+      - name: Publish to the benchmark data branch
+        if: env.IS_MAIN == 'true' && steps.data-branch.outputs.exists == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          reports="$(mktemp -d)"
+          links=""
+          for suite in Core Avalonia WPF; do
+            for html in "${BENCHMARK_REPORTS}/benchmark-results-${suite}/results"/*-report.html; do
+              report="$(basename "${html}" -report.html)"
+              cp "${html}" "${reports}/${report}.html"
+              cp "${html%.html}-github.md" "${reports}/${report}.md"
+              links="${links}<li>${suite}: <a href=\"${report}.html\">${report##*.}</a> (<a href=\"${report}.md\">markdown</a>)</li>"
+            done
+          done
+
+          {
+            echo '<!doctype html>'
+            echo '<html lang="en">'
+            echo '<head><meta charset="utf-8"><title>ResXLocalization benchmark results</title></head>'
+            echo '<body>'
+            echo '<h1>ResXLocalization benchmark results</h1>'
+            echo "<p>Commit ${GITHUB_SHA}. Each report starts with the hardware and runtime it was measured on.</p>"
+            echo '<ul>'
+            echo "${links}"
+            echo '</ul>'
+            echo '<p><a href="../history/">History of every benchmark on main</a></p>'
+            echo '</body>'
+            echo '</html>'
+          } > "${reports}/index.html"
+
+          git switch "${BENCHMARK_DATA_BRANCH}"
+          git reset --soft HEAD~2
+          rm -rf latest
+          mkdir latest
+          cp "${reports}"/* latest/
+          git add history latest
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit --quiet -m "Benchmark results for ${GITHUB_SHA}"
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "${BENCHMARK_DATA_BRANCH}"
 
   # Prove the source generator's Roslyn floor forever: consume the packed packages with ONLY the .NET 8
   # SDK. A generator compiled against a newer Roslyn than the .NET 8 compiler would emit CS9057, skip
@@ -549,14 +797,19 @@ jobs:
           retention-days: 14
 
   # Publish the DocFX site to GitHub Pages on every push to main (requires Pages to be set to
-  # "GitHub Actions" as the source in the repository settings).
+  # "GitHub Actions" as the source in the repository settings), with the benchmark-data branch under
+  # benchmarks/. It waits for benchmark-report without depending on it: when the benchmarks fail or are
+  # skipped, the site is deployed with the last results the branch has.
   deploy-docs:
     name: Deploy docs to GitHub Pages
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: package-and-docs
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs:
+      - package-and-docs
+      - benchmark-report
+    if: always() && needs.package-and-docs.result == 'success' && github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
+      contents: read
       pages: write
       id-token: write
     environment:
@@ -564,6 +817,40 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
+      - name: Download documentation site
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: docs-site
+          path: ${{ env.DOCS_SITE }}
+
+      - name: Find the benchmark data branch
+        id: data-branch
+        shell: bash
+        run: |
+          if git ls-remote --exit-code --heads "https://github.com/${GITHUB_REPOSITORY}.git" "${BENCHMARK_DATA_BRANCH}" > /dev/null; then
+            echo "exists=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "exists=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Add the benchmark results
+        if: steps.data-branch.outputs.exists == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ env.BENCHMARK_DATA_BRANCH }}
+          path: ${{ env.DOCS_SITE }}/benchmarks
+          persist-credentials: false
+
+      - name: Remove the checkout metadata
+        if: steps.data-branch.outputs.exists == 'true'
+        shell: bash
+        run: rm -rf "${DOCS_SITE}/benchmarks/.git"
+
+      - name: Upload the Pages artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
+        with:
+          path: ${{ env.DOCS_SITE }}
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5

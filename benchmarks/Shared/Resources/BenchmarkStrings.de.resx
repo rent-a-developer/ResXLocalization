@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- German translations for BenchmarkStrings.resx; built into the de satellite assembly. There is deliberately no de-DE satellite. -->
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Greeting" xml:space="preserve">
+    <value>Hallo</value>
+  </data>
+  <data name="Title" xml:space="preserve">
+    <value>Einstellungen</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Speichern</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="Open" xml:space="preserve">
+    <value>Öffnen</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Löschen</value>
+  </data>
+  <data name="UserMessages" xml:space="preserve">
+    <value>{0} hat {1} neue Nachrichten</value>
+  </data>
+  <data name="FilesDeleted" xml:space="preserve">
+    <value>{Count, plural, one {# Datei} other {# Dateien}} von {Name} gelöscht</value>
+  </data>
+  <data name="Enum_Priority_Priority1" xml:space="preserve">
+    <value>Priorität 1</value>
+  </data>
+  <data name="Enum_Priority_Priority2" xml:space="preserve">
+    <value>Priorität 2</value>
+  </data>
+  <data name="Enum_Priority_Priority3" xml:space="preserve">
+    <value>Priorität 3</value>
+  </data>
+  <data name="Enum_Priority_Priority4" xml:space="preserve">
+    <value>Priorität 4</value>
+  </data>
+  <data name="Enum_Priority_Priority5" xml:space="preserve">
+    <value>Priorität 5</value>
+  </data>
+  <data name="Enum_Priority_Priority6" xml:space="preserve">
+    <value>Priorität 6</value>
+  </data>
+  <data name="Enum_Priority_Priority7" xml:space="preserve">
+    <value>Priorität 7</value>
+  </data>
+  <data name="Enum_Priority_Priority8" xml:space="preserve">
+    <value>Priorität 8</value>
+  </data>
+  <data name="Enum_Priority_Priority9" xml:space="preserve">
+    <value>Priorität 9</value>
+  </data>
+  <data name="Enum_Priority_Priority10" xml:space="preserve">
+    <value>Priorität 10</value>
+  </data>
+</root>

@@ -56,8 +56,11 @@ Constraints from the repository:
 
 ```
  benchmarks/
-   Directory.Build.props                 imports root props, NoWarn, compiles Shared/*.cs
-   Shared/                               [Config], self-check helper (compiled into all three)
+   Directory.Build.props                 imports root props, NoWarn, compiles Shared/*.cs, links
+                                         Shared/Resources/BenchmarkStrings.* into every project
+   Shared/                               [Config], self-check, expected texts, culture setup, Priority,
+                                         ArgumentValues, TranslationSource (compiled into all three)
+   Shared/Resources/                     BenchmarkStrings.resx, .de.resx, .Designer.cs (linked into all three)
    ResXLocalization.Core.Benchmarks      Core, MessageFormat                     $(CurrentTargetFramework)
    ResXLocalization.Avalonia.Benchmarks  Avalonia headless                       $(CurrentTargetFramework)
    ResXLocalization.WPF.Benchmarks       WPF                                     $(CurrentWindowsTargetFramework)
@@ -72,7 +75,9 @@ lookup that doubles in cost moves a UI row by a few percent, below both CI thres
   formatter installed.
 - `benchmarks/Directory.Build.props` imports the root props, like `tests/` does, adds the `NoWarn` for
   `CS1574;CS1591` that samples and tests carry for generated keys, and compiles `benchmarks/Shared/*.cs` into
-  every benchmark project, so the configuration and the self-check exist once.
+  every benchmark project, so the configuration, the self-check and the types every suite uses (`Priority`,
+  `ArgumentValues`, `TranslationSource`) exist once. It also links the one `BenchmarkStrings` resource file
+  set (see "Resource data") into every project.
 - All three join `ResXLocalization.slnx` under `/04_benchmarks/`; Core and Avalonia also join the
   non-Windows filter, WPF does not, as in `src/`. They are built by the existing build jobs, so a broken
   benchmark fails the build, but they are not test projects and `dotnet test` ignores them.
@@ -86,26 +91,36 @@ project for MessageFormat (a project for one class); placing them under `tests/`
 
 ### Resource data
 
-- **Core**: `Resources/BenchmarkStrings.resx` with about 10 keys (a plain text, texts with positional and
-  named arguments, one ICU message with two named arguments, the enum values), a `.de` satellite that translates
-  them, and no `de-DE` satellite. Every benchmark looks up in `de-DE`, which is how most apps ship: a
+- **One resource file set for all three suites**: `benchmarks/Shared/Resources/BenchmarkStrings.resx` with
+  plain texts, a text with two arguments, one ICU message with two named arguments and the 10 enum keys, a
+  `.de` file that translates them, and no `de-DE` file. `benchmarks/Directory.Build.props` links them into
+  every project, which embeds the neutral file and builds its own `de` satellite from the `.de` file; a suite
+  carries keys only another suite uses, which changes no number (see below). Its `LogicalName` is the
+  designer class's base name, `RentADeveloper.ResXLocalization.Benchmarks.BenchmarkStrings`, because a linked
+  file would otherwise be named after the project's `RootNamespace` and its link path. The designer class
+  and the generated `BenchmarkStringsKeys` are in the namespace of the code under `Shared/`, which every
+  benchmark file already imports, so no project needs a using of its own for them.
+- **Core**: Every benchmark looks up in `de-DE`, which is how most apps ship: a
   specific culture with a satellite for its language. The fallback walk `de-DE -> de` is `ResourceManager`'s
   and costs the baseline and the library the same; it matters for search-all, where every manager without
-  the key is walked through the whole chain (`de-DE -> de -> neutral`) before the next one is tried, and
-  that walk is the library's cost. Search-all benchmarks register 0, 4 or 19
+  the key is walked through the whole chain (`de-DE -> de -> neutral`) before the next one is tried. That
+  walk is the cost of any search over several files, so the search-all baseline is a hand-written loop over
+  the same managers that pays it too (see "Baselines"). Search-all benchmarks register 0, 4 or 19
   managers without the key before `BenchmarkStrings`, for 1, 5 or 20 managers in all. They come from one
-  `Filler.resx` with a single other key: the benchmark creates 19 `ResourceManager` instances over its base
-  name. The library tells managers apart by instance, and each instance has its own resource-set cache, so
+  `Filler.resx` with a single other key, in the Core project only, whose `CustomToolNamespace` puts
+  `FillerKeys` into the benchmark classes' namespace: the benchmark creates 19 `ResourceManager` instances
+  over its base name. The library tells managers apart by instance, and each instance has its own resource-set cache, so
   every miss is a real lookup with the full fallback walk, the same work as 19 different files.
-- **Avalonia and WPF**: each its own `Resources/BenchmarkStrings.resx` with 10 keys, including an argument
-  key and the enum keys, with a `.de` satellite. Each 10-element view uses all 10 keys once, so a view has
-  different texts, as a real one does.
+- **Avalonia and WPF**: each 10-element view uses 10 different keys once,
+  so a view has different texts, as a real one does: seven texts and the first three enum keys, and the
+  `{l:LocalizeEnum}` view one member each of the shared `Priority` enum, whose 10 members `Priority1` to
+  `Priority10` exist only for that.
 
 The key count does not change the numbers: `ResourceManager` keeps a loaded resource set in a dictionary, so
 one lookup costs the same with 10 keys or 1,000. Loading the set is a one-time startup cost and is not
 measured.
 
-Every `BenchmarkStrings.resx` has a `BenchmarkStrings.Designer.cs` in the shape `PublicResXFileCodeGenerator`
+`BenchmarkStrings.resx` has a `BenchmarkStrings.Designer.cs` in the shape `PublicResXFileCodeGenerator`
 emits: a public static property per key that calls `ResourceManager.GetString(name, resourceCulture)`. It is
 the baseline (see "Baselines"). Typed keys come from the source generator, which handles a resx with a
 designer, as in the samples.
@@ -116,19 +131,42 @@ Visual Studio. The data is fixed, so nothing needs to regenerate it.
 
 Alternatives: a script that generates large data sets (1,000 keys, 100-element views), which would run once
 and then go out of date, and whose size does not change the results; a build-time generator, which would be
-new tooling for a fixed data set.
+new tooling for a fixed data set; a resource file set per project, as each sample has its own (three copies
+of the same texts, two of them identical, and the shared code reached each project's copy only through a
+global using of that project's `Resources` namespace).
 
 ### BenchmarkDotNet configuration
 
 - One `[Config]` shared by all classes: `MemoryDiagnoser`, the JSON (full) and GitHub-markdown and HTML
-  exporters, and one short job used locally and in CI:
-  - **3 warmup and 3 measured iterations of 100 ms each**, instead of BenchmarkDotNet's 500 ms and its
-    automatic choice of more iterations. Fewer, shorter iterations make the mean time vary more between
-    runs, which is acceptable because time only raises an alert at 150%. Allocations, which fail the check,
-    do not change with the number of iterations.
+  exporters, and one short job used locally and in CI. The config adds only the JSON exporter: BenchmarkDotNet
+  merges every `[Config]` with its default configuration, which already has the other two, and adding them
+  again makes it warn about duplicate exporters.
+  - **3 warmup and 15 measured iterations of 100 ms each**, instead of BenchmarkDotNet's 500 ms and its
+    automatic choice of the iteration count. Every UI class runs one operation per iteration (see "The
+    dispatcher goes idle between iterations"), so its iterations are its samples: with 3 of them the 99.9%
+    error was often larger than the mean, and two classes measuring the same 100-element view differed by
+    40%. 15 iterations cost seconds per class. The scaling classes have 5 (`[IterationCount(5)]`), because an
+    iteration of a 10,000-element row takes up to a second plus its setup and cleanup. Time only raises an
+    alert at 150%; allocations, which fail the check, do not change with the number of iterations.
   - **The warmups stay**: .NET 10 allocates some objects on the stack, but only in fully optimized code. A
     benchmark measured before the JIT has optimized it would count allocations a running app does not have
     (spec: "Measurements run on optimized code").
+  - **The forms classes have 50 (Avalonia) and 300 (WPF) warmup iterations**, and the host runs **without
+    the tiered JIT's call-counting delay** (`System.Runtime.TieredCompilation.CallCountingDelayMs = 0` as a
+    `RuntimeHostConfigurationOption` in `benchmarks/Directory.Build.props`). One operation there runs
+    hundreds of UI-framework methods, and a method is promoted to optimized code only after 30 calls and
+    once no new method was compiled for 100 ms. An iteration is one operation, and every operation compiles
+    new methods, so the delay kept restarting: with Avalonia's Fluent theme, the first row of the first class
+    measured three times as slow as the same operation later in the process, with 15 warmups and with 50.
+    Without the delay and with 50 warmups (more than the 30 calls) every Avalonia row matches the same
+    operation in the scaling class. WPF ships as ReadyToRun code, which the JIT recompiles to optimized code
+    on a background thread, thousands of methods: with 50 warmups the first WPF row of the process still
+    measured about 2 ms more than the same row run last (`Static` 3.4 ms against 1.4 ms; turning the JIT's
+    tiering and ReadyToRun off brought it to 1.7 ms, a larger gen0 budget or non-concurrent GC changed
+    nothing). With 300 every WPF row measures the same wherever it runs, for about 10 s more. Dynamic PGO still runs, so code and allocations are a long-running application's;
+    turning tiered compilation off instead changed the Core suite's allocations (no dynamic PGO, so less
+    stack allocation). It is the host's configuration because the benchmarks run in-process. The scaling
+    classes keep 3 warmups: one operation is large enough, and they run after the forms classes.
   - **In-process toolchain** (`InProcessEmitToolchain`): every benchmark runs in the BenchmarkDotNet host
     process instead of a separately built and started process. That removes a build and a process start per
     benchmark; the cost is that benchmarks share one process and its GC state, which does not change these
@@ -145,9 +183,23 @@ new tooling for a fixed data set.
   show whether the cost per element stays the same as N grows.
 - Each class's `[GlobalSetup]` runs every benchmark method of the class once and throws when the text is not
   the expected one, which makes BenchmarkDotNet stop the class with an error (spec: "Benchmarks verify their
-  own results").
+  own results"). The expected texts are read from the resx files themselves (`ExpectedViewTexts`): German
+  from the `.de` satellite alone, without fallback, so a missing satellite fails the check instead of letting
+  every side show English.
 - `Program.Main` is `BenchmarkSwitcher.FromAssembly(...).Run(args)`, so local runs can filter with
-  `--filter`.
+  `--filter`. Without arguments it runs every benchmark (`--filter *`) instead of BenchmarkDotNet's
+  interactive prompt, which would wait for input. It returns 1 when a benchmark has no result, so CI fails,
+  and when nothing ran: arguments without `--filter` reach that prompt, which gets no input.
+- **One report per class**, not `--join`: a joined table has one baseline for every class that shares a job,
+  so in the Core suite every Ratio was against `CodeLookupBenchmarks`' baseline.
+- Method names say what a row calls, so a row reads on its own in the history chart: `ResXDesignerProperty`,
+  `GetTypedKey`, `GetStringKeyScoped`, `GetStringKeySearchAll`, `GetEnum`, `HandWrittenSearchAll`,
+  `StringFormatDesignerProperty`,
+  `GetWithFromValues` / `FromTuples` / `FromObject`, `MessageFormatterDirect`, `GetWithMessageFormat`; the UI
+  classes `Static`, `Localize`, `LocalizeWithArguments`, `LocalizeEnum`, `OpenStatic`, `OpenLocalize`,
+  `SwitchTranslationSource`, `SwitchLocalize`.
+- Every result table has its baseline row, the search-all table included: one hand-written search row per
+  manager count next to the search-all row (spec: "Every result has a baseline").
 
 ### Baselines
 
@@ -157,14 +209,24 @@ benchmarked (a comparison can be added later as extra rows, outside the allocati
 | Benchmark | `[Baseline = true]` |
 | --- | --- |
 | Code lookup (typed, scoped, search-all, enum) | `BenchmarkStrings.Greeting` (designer property) |
-| Code lookup with arguments | `string.Format(culture, BenchmarkStrings.PeopleInvited, count)` |
+| Search-all with 1, 5 or 20 managers | `HandWrittenSearchAll`: `GetString(key, culture)` on the same managers, in registration order, until one has the key |
+| Code lookup with arguments | `string.Format(culture, BenchmarkStrings.UserMessages, name, count)` |
 | ICU MessageFormat | `messageFormatter.FormatMessage(BenchmarkStrings.FilesDeleted, values, culture)` |
 | Extension forms (100 elements) | the same 10-element views with `{x:Static}` |
 | Opening a view with N elements | the same views with `{x:Static}` |
 | Culture switch with N elements | the same views with `{Binding [Key], Source={x:Static local:TranslationSource.Instance}}` |
 
+- **Search-all**: the designer property knows which file holds a key, so against it the search-all row
+  measured the search itself: at 20 managers 65 times the time, nearly all of it `ResourceManager`'s misses,
+  which any search over 20 files pays. The baseline is the loop an application writes without the library
+  when it does not know the file: `GetString(key, culture)` on each of the same manager instances, in the same
+  order the localizer has them, until one returns a value. The ratio is what the library adds to that search.
+  `CodeLookupBenchmarks` keeps the designer property: with one registered manager its search-all row does the
+  same work as the property.
 - **Culture**: the designer class reads `CultureInfo.CurrentUICulture` while its `Culture` property is unset,
-  so each `[GlobalSetup]` sets `CurrentUICulture` and `Localizer.Current.CurrentCulture` to the same culture.
+  so every setup calls `BenchmarkCulture.Use`, which sets `CurrentUICulture`, `Localizer.Current.CurrentCulture`
+  and `TranslationSource.Instance.Culture` to the same culture. Only the culture-switch benchmarks set one
+  side directly: the side they measure, so that the other side's notification is not part of the operation.
 - **ICU**: the baseline uses one `new MessageFormatter()` with the library's defaults, which is what
   `UseMessageFormat()` creates, so pattern caching is the same on both sides. The ratio is the cost of
   `ResXLocalization.MessageFormat` itself: building the argument dictionary, the culture substitution and the
@@ -173,12 +235,15 @@ benchmarked (a comparison can be added later as extra rows, outside the allocati
   the MessageFormat library and cost the baseline the same. The adapter's overhead depends only on the
   number of arguments and whether they are named, so the message has two named arguments, which run both
   of the adapter's loops (positions and names).
-- **`TranslationSource`**: the usual hand-written way to switch languages live, about 20 lines per UI
-  framework, in each UI project. A singleton implementing `INotifyPropertyChanged` with
+- **`TranslationSource`**: the usual hand-written way to switch languages live, about 20 lines, in
+  `benchmarks/Shared/` for both UI suites. A singleton implementing `INotifyPropertyChanged` with
   `this[string key] => BenchmarkStrings.ResourceManager.GetString(key, this.Culture)` and a `Culture` setter
-  that raises `PropertyChanged` for the indexer (`"Item[]"`). Elements bind `[key]` on it with the
-  framework's normal binding. Its culture-switch row sets `TranslationSource.Instance.Culture`; the library's
-  row sets `Localizer.Current.CurrentCulture`.
+  that raises one `PropertyChanged` for the indexer, with the framework's name, chosen by `#if WINDOWS` (only
+  the WPF project has a `-windows` target framework): `"Item[]"` (`Binding.IndexerName`) in WPF and `"Item"`
+  in Avalonia, whose compiled indexer bindings ignore `"Item[]"` (found by the feasibility check). Raising
+  both would make the baseline handle two events; an empty name ("every property changed") works in both
+  but made the baseline's 10,000-element switch allocate three times as much in WPF. Elements bind `[key]` on it with the framework's normal binding. Its culture-switch row sets
+  `TranslationSource.Instance.Culture`; the library's row sets `Localizer.Current.CurrentCulture`.
 
 Alternatives: raw `ResourceManager.GetString` (the same cost as the designer property, but code consumers do
 not recognize); Microsoft.Extensions.Localization in the Core suite (rarely used in XAML applications, so it
@@ -206,8 +271,8 @@ app:
 - **WPF** compiles `.xaml` to BAML, and `InitializeComponent` reads it at run time with WPF's XAML reader and
   its service provider. Reading BAML is a cost consumers pay too; the baseline views pay it as well, so the
   ratio still shows what `{l:Localize}` adds.
-- **Views per UI project**: five 10-element views, written by hand, each using one form for all its
-  elements:
+- **Views per UI project**: five 10-element views under `Views/`, written by hand, each using one form for
+  all its elements:
 
   ```
    {x:Static}                      baseline of both benchmarks
@@ -236,7 +301,13 @@ app:
   culture (`Localizer.Current.CurrentCulture`, or `TranslationSource.Instance.Culture` for its baseline),
   processes the dispatcher's pending work and checks the last element's text.
 - **Avalonia** runs on the headless platform: `[GlobalSetup]` starts a `HeadlessUnitTestSession` once, every
-  benchmark body runs through its dispatcher, and the window is a headless window. Headless replaces only
+  benchmark body runs through its dispatcher, and the window is a headless window. The application has the
+  Fluent theme, as a desktop application does, so every control gets its theme styles, as WPF's controls get
+  their default theme styles. Templates are applied only by layout, which no row runs in either framework;
+  the library does not depend on them or on the visual tree (it has no attach or detach hooks, and
+  `DataContext` is inherited through the logical tree), which the self-checks confirm. The session's
+  dispatch flows the caller's execution context, and with it `CultureInfo.CurrentUICulture`, so the culture
+  is set on the BenchmarkDotNet thread: a culture set inside a dispatched body is gone in the next one. Headless replaces only
   the operating system window, input, compositor and message loop; compiled XAML, controls, the property
   system, bindings and the library are the same code as in a desktop app, and binding updates after
   `PropertyChanged` run on the UI thread without the dispatcher. The numbers therefore show the library's
@@ -244,6 +315,17 @@ app:
 - **WPF** has no headless mode and uses a real `Window`, shown with `ShowActivated = false` outside the
   visible screen area. The benchmarks are marked `[STAThread]` so BenchmarkDotNet runs them on an STA
   thread, and pending dispatcher work is processed with a `DispatcherFrame`.
+- **Pending work is processed down to binding priority only**: WPF's frame ends at
+  `DispatcherPriority.DataBind`, Avalonia's `RunJobs` at `DispatcherPriority.Normal` (Avalonia's `DataBind` is
+  obsolete). Both are above layout and rendering, which therefore stay out of the measurement in both
+  frameworks.
+- **The dispatcher goes idle between iterations**: every UI class has an `[IterationCleanup]` that empties the
+  window, collects garbage and runs the dispatcher's idle work, outside the measurement, as an application's
+  dispatcher is idle between two user actions. WPF removes the weak-event listeners of collected bindings only
+  at idle priority; without this step every view an earlier operation created was still a listener of
+  `Localizer.Current`, and a culture switch with 100 elements took about six times as long. Avalonia does the
+  same for parity. Because of the `[IterationCleanup]`, BenchmarkDotNet runs one operation per iteration in the
+  forms classes too, like the scaling classes.
 
 Alternatives: a scaling run per form (mostly parallel lines, three times the slowest part of the suite,
 and the arguments form would need a library-free baseline for live switching with arguments); building the
@@ -256,15 +338,15 @@ library's cost).
 ### Regression detection with github-action-benchmark, two series
 
 The action reads one BenchmarkDotNet JSON file (`tool: benchmarkdotnet`) and compares only the mean time.
-Each project writes its own report (`--join` merges the classes within a project), so one script merges the
-three and derives the allocation series; the job then feeds the action twice:
+Each class writes its own report, so one script merges them and derives the allocation series; the job then
+feeds the action twice:
 
 ```
- Core / Avalonia / WPF  *-report-full-compressed.json  (one per project)
+ Core / Avalonia / WPF  *-report-full.json  (one per class)
    |
    v
  scripts/convert-benchmark-results.ps1
-   +--> merged.json      (the three Benchmarks arrays, the first report's host info)
+   +--> times.json       (every report's Benchmarks array, the first report's host info)
    |      --> github-action-benchmark  tool: benchmarkdotnet          "Time"
    |            alert-threshold 150%, fail-on-alert false, summary-always true
    |
@@ -274,13 +356,19 @@ three and derives the allocation series; the job then feeds the action twice:
                 fail-on-alert: true, false while the PR has label accept-allocation-increase
 ```
 
-Benchmark names include their class's namespace, which differs per project, so names from the three reports
-cannot collide.
+Benchmark names include their class and its namespace, which differs per project, so names from different
+reports cannot collide.
 
 - **Pull request**: `auto-push: false`; the action compares against the latest entry on the data branch
   and writes the result to the job summary. `comment-on-alert` is on only when the pull request comes from
   this repository, because a fork's token cannot comment.
-- **Push to `main`**: `auto-push: true` appends the entry to the `benchmark-data` branch.
+- **Push to `main`**: both steps run with `auto-push: false` and commit to the local data branch (the second
+  with `skip-fetch-gh-pages: true`, because fetching the branch again would be refused as a non-fast-forward);
+  the job then squashes the two commits, adds `latest/` and pushes one commit. The allocation step fails only
+  on a pull request: on `main` the increase was reviewed, and the new values become the baseline.
+- **No data branch yet**: the first push to `main` creates `benchmark-data` with one README commit through the
+  GitHub API, because the action requires the branch to exist; a pull request before that skips the
+  comparison with a notice.
 - An allocation baseline of 0 bytes: the action computes the ratio against 0; the conversion script writes
   allocated bytes plus 1 so a 0 -> N change becomes an alert instead of a division by zero (spec: "a
   benchmark that allocated nothing on `main` SHALL fail on any allocation").
@@ -339,7 +427,7 @@ third-party action to detect changed paths (`git diff` does the same without a n
 
 The `benchmark-data` branch holds the action's history (`history/data.js` and its chart `index.html`) and,
 written by the job on `main` in the same push, the latest BenchmarkDotNet HTML and markdown reports under
-`latest/`. `deploy-docs` builds the Pages content from two sources:
+`latest/`, one per class, with an `index.html` that links them. `deploy-docs` builds the Pages content from two sources:
 
 ```
  package-and-docs  --(artifact: docs-site)--+
@@ -392,8 +480,11 @@ Alternative: commit result markdown into `docs/` from CI (a bot commit on `main`
 
 ## Migration Plan
 
-1. Merge the projects, the job and the docs page.
+1. Open the pull request; once its run has passed, archive this change in the same branch, then merge the
+   projects, the job and the docs page.
 2. The first push to `main` creates the `benchmark-data` branch and the first entry.
-3. Pull requests compare against it from then on.
+3. Pull requests compare against it from then on. What only `main` can show - the data branch, the published
+   pages, a comparison - is a checklist in the pull request's description, checked after merge, because the
+   change is archived by then.
 
 Rollback: remove the job and restore the Pages artifact upload in `package-and-docs`; the branch can stay.

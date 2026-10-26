@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>$(CurrentTargetFramework)</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ResXLocalization.Core\ResXLocalization.Core.csproj" />
+    <ProjectReference Include="..\..\src\ResXLocalization.MessageFormat\ResXLocalization.MessageFormat.csproj" />
+    <!-- Source generator that turns each .resx into its typed <Name>Keys class (analyzer, not a runtime
+         reference). UndefineProperties stops publish-time properties from flowing into the netstandard2.0
+         generator project, which would otherwise fail with NETSDK1207. -->
+    <ProjectReference Include="..\..\src\ResXLocalization.SourceGenerators\ResXLocalization.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" UndefineProperties="PublishAot;RuntimeIdentifier;SelfContained;PublishTrimmed" />
+  </ItemGroup>
+
+  <!-- The resource managers the search-all benchmark registers before BenchmarkStrings, which it creates over
+       the base name of Filler.resx. CustomToolNamespace puts the generated FillerKeys into the namespace of
+       the benchmark classes, which therefore need no using that only a generated type needs. -->
+  <ItemGroup>
+    <EmbeddedResource Update="Resources\Filler.resx" CustomToolNamespace="RentADeveloper.ResXLocalization.Core.Benchmarks" />
+  </ItemGroup>
+
+</Project>

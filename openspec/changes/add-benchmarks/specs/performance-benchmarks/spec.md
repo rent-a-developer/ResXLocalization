@@ -34,12 +34,18 @@ in the same culture.
 
 ### Requirement: Search-all lookups are benchmarked by the number of registered resource managers
 The suite SHALL measure a search-all lookup whose key exists only in the last registered resource manager,
-for 1, 5 and 20 registered resource managers.
+for 1, 5 and 20 registered resource managers, against hand-written code that searches the same resource
+managers, in the same order and culture, until one contains the key.
 
 #### Scenario: Lookup cost grows with the registered managers
 - **WHEN** the search-all benchmark runs
 - **THEN** the results contain one row per manager count (1, 5 and 20), each finding the key in the last
   registered manager
+
+#### Scenario: The baseline searches the same managers
+- **WHEN** the search-all benchmark runs with a manager count
+- **THEN** its baseline row searches the same resource manager instances in the same order and culture, so
+  the ratio shows only what ResXLocalization adds to the search
 
 #### Scenario: Managers without the key are searched in the lookup culture
 - **WHEN** the search-all benchmark looks up a key in a specific culture, such as `de-DE`

@@ -43,6 +43,7 @@ supports neither).
 | `src/ResXLocalization.WPF` | The same for WPF. Windows-only, no Native AOT |
 | `samples/` | Two runnable showcases, one per UI framework. Excluded from coverage |
 | `tests/` | Five suites: Core and `tests/ResXLocalization.MessageFormat.Tests` (both on both frameworks), the generator, and one sample-test suite per UI framework |
+| `benchmarks/` | Three BenchmarkDotNet suites - Core with MessageFormat, Avalonia headless, WPF - each against the code an application writes without the library, and `Shared/`, compiled into all three. Not test projects; CI runs them and gates on allocations |
 | `tests/package-consumption/` | Package-only consumers. The repository's `Directory.Build.*` deliberately does **not** apply there |
 | `build/` | The shared resx and packaging targets, and the DocFX configuration |
 | `scripts/` | Every check and workflow, as PowerShell 7 |
